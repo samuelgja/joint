@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable no-console */
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
@@ -12,7 +13,6 @@ import type { Cell } from '../types/cell.types'
 import { useGraph } from '../hooks/use-graph'
 import { useGraphCells } from '../hooks/use-graph-cells'
 import { CellsExplorer } from './cell-explorer'
-import { updateGraph } from '../utils/update-graph'
 
 const paperOptions: dia.Paper.Options = {
   width: 400,
@@ -74,15 +74,11 @@ type Story = StoryObj<typeof Paper>
 
 export const WithCellsAsReactState: Story = {
   args: {
-    // renderElement: renderSimpleElement,
     style: { border: '1px solid #ccc' },
   },
   render: () => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [cells, setCells] = useState([...CELLS])
-    // const [graph] = useRef(new dia.Graph())
 
-    // const [input, setInput] = useState('')
     return (
       <GraphProvider
         onCellsChange={(changedCells) => {
@@ -128,21 +124,12 @@ export const WithCellsAsReactState: Story = {
 }
 
 function CellsExplorerViaHook() {
-  const cells = useGraphCells()
-  const graph = useGraph()
-  return (
-    <CellsExplorer
-      cells={cells}
-      onChange={(newCells) => {
-        updateGraph(graph, newCells)
-      }}
-    />
-  )
+  const [cells, setCells] = useGraphCells()
+  return <CellsExplorer cells={cells} onChange={setCells} />
 }
 
 export const WithHooksAPI: Story = {
   args: {
-    // renderElement: renderSimpleElement,
     style: { border: '1px solid #ccc' },
   },
   render: () => {
