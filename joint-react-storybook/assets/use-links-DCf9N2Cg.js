@@ -1,0 +1,1 @@
+import{k as o,l as u,w as c}from"./create-njWDpS2D.js";function i(e){return e.map(t=>t)}function p(e=i,t=o){const{subscribe:n,getLinks:r}=u(),s=r;return c.useSyncExternalStoreWithSelector(n,s,s,e,t)}export{p as u};

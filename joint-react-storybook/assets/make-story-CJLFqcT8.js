@@ -1,0 +1,2 @@
+function p(o){const{component:r,code:n,name:e,apiURL:c,description:t="",args:s,decorators:a,play:i}=o;return{play:i,args:s,render:r,decorators:a,parameters:{docs:{description:{story:`${e?`####${e}
+`:""}[API reference](${c})<br/>${t}`},source:{code:n}}}}}function d(o){const{code:r,apiURL:n,description:e=""}=o;return{docs:{description:{component:`[API reference](${n})<br/>${e}`},source:{code:r}}}}export{p as a,d as m};

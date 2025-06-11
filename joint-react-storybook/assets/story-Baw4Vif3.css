@@ -1,0 +1,1 @@
+.link{stroke-dasharray:5 5;stroke-dashoffset:0;animation:dashmove 1s linear infinite}@keyframes dashmove{to{stroke-dashoffset:-20}}

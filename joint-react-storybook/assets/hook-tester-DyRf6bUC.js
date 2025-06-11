@@ -1,0 +1,1 @@
+import{j as t}from"./index-DwP6fAIG.js";/* empty css              */import{H as i,b as n}from"./with-simple-data-BKTSf5MX.js";function a({useHook:e,hookArgs:r,render:o}){const s=e(...r);return o?o(s):t.jsx(i,{className:"node",children:t.jsx(n,{showCopy:!1,data:JSON.stringify(s)})})}a.__docgenInfo={description:"",methods:[],displayName:"HookTester"};export{a as H};

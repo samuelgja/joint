@@ -1,0 +1,1 @@
+import{r}from"./index-B0WjJBI_.js";function f(s,e){const t=r.useRef(null),u=r.useCallback(n=>{t.current=n,typeof e=="function"?e(n):e&&(e.current=n)},[e]),o=r.useMemo(()=>({ref:u}),[u]);if(!s)return{elementRef:t,svgChildren:null};const c=r.cloneElement(s,o);return{elementRef:t,elementChildren:c}}export{f as u};

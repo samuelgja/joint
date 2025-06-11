@@ -1,0 +1,9 @@
+import{j as k}from"./index-DwP6fAIG.js";import{r as e}from"./index-B0WjJBI_.js";import{C as y}from"./custom-CNnXkfQ2.js";import{s as S}from"./create-njWDpS2D.js";function x(h,p){const{children:l,layer:t,padding:r,rx:o,ry:s,useFirstSubpath:n,nonScalingStroke:i,isHidden:m,...a}=h,u=e.useMemo(()=>({padding:r,layer:t,attrs:a,useFirstSubpath:n,nonScalingStroke:i,rx:o,ry:s}),[a,t,i,r,o,s,n]),g=e.useCallback((d,c,f,b)=>S.add(d,c,f,b),[]);return k.jsx(y,{options:u,ref:p,onCreateHighlighter:g,isHidden:m,children:l})}const T=e.forwardRef(x);T.__docgenInfo={description:`Stroke highlighter component.
+Adds a stroke around an arbitrary cell view's SVG node.
+@see https://docs.jointjs.com/api/highlighters/#stroke
+@group Components
+@example
+\`\`\`tsx
+import { Highlighter } from '@joint/react'
+return <Highlighter.Stroke />
+\`\`\``,methods:[],displayName:"Stroke",props:{layer:{required:!1,tsType:{name:"string"},description:"The stacking order of the highlighter. See dia.HighlighterView for supported values."},padding:{required:!1,tsType:{name:"number"},description:"The space between the stroke and the element"},rx:{required:!1,tsType:{name:"number"},description:"The stroke's border radius on the x-axis"},ry:{required:!1,tsType:{name:"number"},description:"The stroke's border radius on the y-axis"},useFirstSubpath:{required:!1,tsType:{name:"boolean"},description:"Draw the stroke by using the first subpath of the target el compound path."},nonScalingStroke:{required:!1,tsType:{name:"boolean"},description:"When enabled the stroke width of the highlighter is not dependent on the transformations of the paper (e.g. zoom level). It defaults to false."},isHidden:{required:!1,tsType:{name:"boolean"},description:"If the highlighter is disabled or not."}},composes:["PropsWithChildren"]};export{T as S};

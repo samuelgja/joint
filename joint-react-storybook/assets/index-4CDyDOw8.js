@@ -1,0 +1,1 @@
+import{M as m}from"./mask-DJTgPChi.js";import{O as s}from"./opacity-BIjguiiq.js";import{S as r}from"./stroke-CxK-R5f1.js";import{C as p}from"./custom-CNnXkfQ2.js";const t={Mask:m,Opacity:s,Stroke:r,Custom:p};var a;(o=>{o.Mask=t.Mask,o.Opacity=t.Opacity,o.Stroke=t.Stroke,o.Custom=t.Custom})(a||(a={}));export{a as H};
