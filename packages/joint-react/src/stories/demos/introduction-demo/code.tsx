@@ -19,13 +19,13 @@ import {
   useGraph,
   useLinks,
   usePaper,
-  useUpdateElement,
   type DiagramElement,
   type DiagramViewProps,
   type RenderElement,
 } from '@joint/react';
 import { useCallback, useState } from 'react';
 import { ShowJson } from 'storybook-config/decorators/with-simple-data';
+import { useCellActions } from '../../../hooks/use-cell-actions';
 
 // Define types for the elements
 interface ElementBase extends DiagramElement {
@@ -163,7 +163,7 @@ function MessageComponent({
     }
   }
   const id = useCellId();
-  const setMessage = useUpdateElement<MessageElement>(id, 'inputText');
+  const { set } = useCellActions<MessageElement>();
   return (
     <Highlighter.Stroke
       padding={10}
@@ -192,7 +192,7 @@ function MessageComponent({
                 className="w-full border-1 border-solid border-rose-white rounded-lg p-2 mt-3"
                 placeholder="Type here..."
                 onChange={({ target: { value } }) => {
-                  setMessage(value);
+                  set(id, (previous) => ({ ...previous, inputText: value }));
                 }}
               />
             </div>

@@ -269,6 +269,7 @@ export function createStoreWithGraph<
       return;
     }
     const { batchName } = options;
+
     elementsEvents.notifySubscribers(batchName);
   }
 

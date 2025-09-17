@@ -8,11 +8,11 @@ import {
   createLinks,
   Diagram,
   MeasuredNode,
-  useUpdateElement,
   type InferElement,
   type OnSetSize,
 } from '@joint/react';
 import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
+import { useCellActions } from '../../../hooks/use-cell-actions';
 
 type Data = {
   id: string;
@@ -56,12 +56,10 @@ function ListElement({
     element.size(w, h, { async: false });
   }, []);
 
-  const setInputs = useUpdateElement<BaseElementWithData, 'inputs'>(id, 'inputs');
+  const { set } = useCellActions<BaseElementWithData>();
 
   const addInput = () => {
-    setInputs((previous) => {
-      return [...previous, ''];
-    });
+    set(id, (previous) => ({ ...previous, inputs: [...previous.inputs, ''] }));
   };
 
   return (
@@ -107,7 +105,7 @@ function ListElement({
                     onChange={(event) => {
                       const newInputs = [...inputs];
                       newInputs[index] = event.target.value;
-                      setInputs(newInputs);
+                      set(id, (previous) => ({ ...previous, inputs: newInputs }));
                     }}
                   />
                 </li>

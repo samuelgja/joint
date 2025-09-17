@@ -2,13 +2,13 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
 /* eslint-disable react-hooks/rules-of-hooks */
 import type { Meta, StoryObj } from '@storybook/react';
-import { useCreateElement } from './use-create-element';
 import type { SimpleElement } from '../../.storybook/decorators/with-simple-data';
 import { HTMLNode, SimpleDiagramDecorator } from '../../.storybook/decorators/with-simple-data';
 import '../stories/examples/index.css';
 import { BUTTON_CLASSNAME, PAPER_CLASSNAME } from 'storybook-config/theme';
 import { getAPILink } from '../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation, makeStory } from '../stories/utils/make-story';
+import { useCellActions } from './use-cell-actions';
 import { Diagram } from '../components';
 
 const API_URL = getAPILink('useCreateElement');
@@ -20,7 +20,7 @@ const meta: Meta<typeof Hook> = {
   component: Hook,
   decorators: [SimpleDiagramDecorator],
   render: () => {
-    const addElement = useCreateElement<SimpleElement>();
+    const { set } = useCellActions<SimpleElement>();
     return (
       <div className="flex flex-row">
         <div style={{ width: '100%', height: 450 }}>
@@ -37,12 +37,14 @@ const meta: Meta<typeof Hook> = {
             type="button"
             className={BUTTON_CLASSNAME}
             onClick={() =>
-              addElement({
+              set({
                 id: '10',
                 label: 'New node added',
                 color: 'red',
                 x: 300,
                 y: 100,
+                height: 40,
+                width: 120,
               })
             }
           >
