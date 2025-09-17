@@ -1,11 +1,11 @@
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { CellWithId } from '../../types/cell.types';
-import type { GraphElement } from '../../types/element-types';
-import typedMemo from '../../utils/typed-memo';
-import { useElement } from '../../hooks';
+import type { CellWithId } from '../../../types/cell.types';
+import type { DiagramElement } from '../../../types/element-types';
+import typedMemo from '../../../utils/typed-memo';
+import { useElement } from '../../../hooks';
 
-export interface PaperPortalProps<Data extends CellWithId = GraphElement> {
+export interface ElementItemProps<Data extends CellWithId = DiagramElement> {
   /**
    * A function that renders the element. It is called every time the element is rendered.
    */
@@ -17,8 +17,8 @@ export interface PaperPortalProps<Data extends CellWithId = GraphElement> {
 }
 
 // eslint-disable-next-line jsdoc/require-jsdoc
-function SVGElementItemComponent<Data extends CellWithId = GraphElement>(
-  props: PaperPortalProps<Data>
+function SVGElementItemComponent<Data extends CellWithId = DiagramElement>(
+  props: ElementItemProps<Data>
 ) {
   const { renderElement, portalElement, ...rest } = props;
   if (!portalElement) {
@@ -56,8 +56,8 @@ export const SVGElementItem = typedMemo(SVGElementItemComponent);
  * @returns The rendered element inside the portal.
  * @internal
  */
-function HTMLElementItemComponent<Data extends CellWithId = GraphElement>(
-  props: PaperPortalProps<Data>
+function HTMLElementItemComponent<Data extends CellWithId = DiagramElement>(
+  props: ElementItemProps<Data>
 ) {
   const { renderElement, portalElement, ...rest } = props;
   const cell = rest as Data;

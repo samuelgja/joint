@@ -1,9 +1,8 @@
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { Paper } from './paper';
 import {
-  SimpleGraphDecorator,
+  SimpleDiagramDecorator,
   type SimpleElement,
 } from '../../../.storybook/decorators/with-simple-data';
 import { action } from '@storybook/addon-actions';
@@ -13,21 +12,22 @@ import { MeasuredNode } from '../measured-node/measured-node';
 import { getAPILink } from '../../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation } from '../../stories/utils/make-story';
 import { jsx } from '../../utils/joint-jsx/jsx-to-markup';
+import { Diagram } from '.';
 
-export type Story = StoryObj<typeof Paper>;
+export type Story = StoryObj<typeof Diagram.View>;
 
-const API_URL = getAPILink('Paper', 'variables');
-const meta: Meta<typeof Paper> = {
-  title: 'Components/Paper',
-  component: Paper,
-  decorators: [SimpleGraphDecorator],
+const API_URL = getAPILink('Diagram.View', 'variables');
+const meta: Meta<typeof Diagram.View> = {
+  title: 'Components/Diagram.View',
+  component: Diagram.View,
+  decorators: [SimpleDiagramDecorator],
   parameters: makeRootDocumentation({
     description: `
-Paper is a component that renders graph elements. It is used to display and interact with graph elements.
+Diagram.View is a component that renders graph elements. It is used to display and interact with graph elements.
     `,
     apiURL: API_URL,
-    code: `import { Paper } from '@joint/react'
-<Paper renderElement={() => <rect rx={10} ry={10} width={100} height={50} fill={"blue"} />} />
+    code: `import { Diagram.View } from '@joint/react'
+<Diagram.View renderElement={() => <rect rx={10} ry={10} width={100} height={50} fill={"blue"} />} />
     `,
   }),
 };

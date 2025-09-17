@@ -3,9 +3,8 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   useCellId,
   useElements,
   useGraph,
@@ -76,7 +75,7 @@ function Main() {
   const elements = useElements<BaseElementWithData>();
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper
+      <Diagram.View
         width="100%"
         className={PAPER_CLASSNAME}
         clickThreshold={10}
@@ -107,8 +106,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

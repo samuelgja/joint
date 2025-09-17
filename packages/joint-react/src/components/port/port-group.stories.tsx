@@ -2,15 +2,7 @@
 /* eslint-disable sonarjs/prefer-read-only-props */
 import type { Meta, StoryObj } from '@storybook/react';
 import '../../stories/examples/index.css';
-import {
-  createElements,
-  createLinks,
-  GraphProvider,
-  MeasuredNode,
-  Paper,
-  Port,
-  useElement,
-} from '@joint/react';
+import { createElements, createLinks, Diagram, MeasuredNode, Port, useElement } from '@joint/react';
 import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import { PortGroup } from './port-group';
 import { getAPILink } from '../../stories/utils/get-api-documentation-link';
@@ -72,15 +64,15 @@ function RenderItem(Story: React.FC) {
 function PaperDecorator(Story: React.FC) {
   const renderItem = () => RenderItem(Story);
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialLinks}>
-      <Paper
+    <Diagram elements={initialElements} links={initialLinks}>
+      <Diagram.View
         className={PAPER_CLASSNAME}
         width={'100%'}
         height={350}
         renderElement={renderItem}
         linkPinning={false}
       />
-    </GraphProvider>
+    </Diagram>
   );
 }
 

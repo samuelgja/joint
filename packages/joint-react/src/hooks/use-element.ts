@@ -1,8 +1,8 @@
 import { util } from '@joint/core';
 import { useCellId } from './use-cell-id';
-import { useGraphStore } from './use-graph-store';
+import { useDiagramStore } from './use-diagram-store';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
-import type { GraphElement } from '../types/element-types';
+import type { DiagramElement } from '../types/element-types';
 import { useCallback } from 'react';
 
 /**
@@ -33,12 +33,12 @@ import { useCallback } from 'react';
  * @param isEqual The function used to check equality. @default util.isEqual
  * @returns The selected element based on the current cell id.
  */
-export function useElement<Element extends GraphElement, ReturnedElements = Element>(
+export function useElement<Element extends DiagramElement, ReturnedElements = Element>(
   selector: (item: Element) => ReturnedElements = (item) => item as unknown as ReturnedElements,
   isEqual: (a: ReturnedElements, b: ReturnedElements) => boolean = util.isEqual
 ): ReturnedElements {
   const id = useCellId();
-  const { subscribe, getElement } = useGraphStore();
+  const { subscribe, getElement } = useDiagramStore();
 
   const subscribeForElement = useCallback(
     (subscribeCallback: () => void) => {

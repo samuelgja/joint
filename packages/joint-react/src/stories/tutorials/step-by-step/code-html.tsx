@@ -3,10 +3,9 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
-  type GraphProps,
+  type DiagramProps,
   type InferElement,
 } from '@joint/react';
 import '../../examples/index.css';
@@ -50,15 +49,20 @@ function RenderItem(props: CustomElement) {
 function Main() {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderItem} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={RenderItem}
+      />
     </div>
   );
 }
 
-export default function App(props: Readonly<GraphProps>) {
+export default function App(props: Readonly<DiagramProps>) {
   return (
-    <GraphProvider {...props} initialLinks={initialEdges} initialElements={initialElements}>
+    <Diagram {...props} links={initialEdges} elements={initialElements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

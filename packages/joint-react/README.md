@@ -65,7 +65,7 @@ Here's a complete example of a simple diagram with two connected nodes:
 
 ```tsx
 import React, { useCallback } from 'react';
-import { GraphProvider, Paper, createElements, createLinks } from '@joint/react';
+import { Diagram, Paper, createElements, createLinks } from '@joint/react';
 
 // Define your diagram elements (nodes)
 const initialElements = createElements([
@@ -112,8 +112,8 @@ function DiagramExample() {
 
   return (
     <div style={{ height: '400px', border: '1px solid #ccc' }}>
-      <Paper
-        initialElements={initialElements}
+      <Diagram.View
+        elements={initialElements}
         width="100%"
         height="100%"
         renderElement={renderElement}
@@ -123,15 +123,15 @@ function DiagramExample() {
   );
 }
 
-// Wrap your app with GraphProvider
+// Wrap your app with Diagram
 export default function App() {
   return (
-    <GraphProvider
-      initialElements={initialElements}
-      initialLinks={initialLinks}
+    <Diagram
+      elements={initialElements}
+      links={initialLinks}
     >
       <DiagramExample />
-    </GraphProvider>
+    </Diagram>
   );
 }
 ```
@@ -147,7 +147,7 @@ function DiagramExample() {
   }, []);
 
   return (
-    <Paper
+    <Diagram.View
       width="100%"
       height="100%"
       onElementPointerClick={handleElementClick}
@@ -193,15 +193,15 @@ const handleElementClick = useCallback((element) => {
 
 ## 📌 Core Components
 
-### 1. **GraphProvider**
-The `GraphProvider` component manages a shared [JointJS Graph instance](https://docs.jointjs.com/api/dia/Graph/) to handle the state of your diagram. Wrap it around any components that interact with the graph.
+### 1. **Diagram**
+The `Diagram` component manages a shared [JointJS Graph instance](https://docs.jointjs.com/api/dia/Graph/) to handle the state of your diagram. Wrap it around any components that interact with the graph.
 
 ```tsx
-import { GraphProvider } from '@joint/react';
+import { Diagram } from '@joint/react';
 
-<GraphProvider>
+<Diagram>
   {/* Components like Paper for rendering nodes and edges */}
-</GraphProvider>
+</Diagram>
 ```
 
 ### 2. **Paper**
@@ -214,7 +214,7 @@ const renderElement = (element) => (
   <rect width={element.size().width} height={element.size().height} fill="cyan" />
 );
 
-<Paper width={800} height={600} renderElement={renderElement} />
+<Diagram.View width={800} height={600} renderElement={renderElement} />
 ```
 
 ### 3. **Rendering HTML Elements**
@@ -233,7 +233,7 @@ const renderElement = ({ width, height }) => (
 ## 🛠️ Core Hooks and Utilities
 
 ### 🔹 Accessing Elements
-- `useElements()`: Retrieve all diagram elements (requires `GraphProvider` context).
+- `useElements()`: Retrieve all diagram elements (requires `Diagram` context).
 - `useElement()`: Retrieve individual element data, typically used within `renderElement`.
 
 ### 🔹 Modifying Elements

@@ -2,9 +2,8 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   useElements,
   type InferElement,
 } from '@joint/react';
@@ -74,7 +73,12 @@ function Main() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row', position: 'relative' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={ResizableNode} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={ResizableNode}
+      />
       <div>
         <u>width & height</u>
         {elementsSize.map((size, index) => (
@@ -90,8 +94,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

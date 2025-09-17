@@ -3,8 +3,7 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
-  Paper,
+  Diagram,
   useElements,
   useUpdateElement,
   type InferElement,
@@ -51,7 +50,12 @@ function Main() {
   const elements = useElements<BaseElementWithData>();
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderElement} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={RenderElement}
+      />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {elements.map((item) => {
           return <ElementInput key={item.id} {...item} />;
@@ -63,8 +67,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

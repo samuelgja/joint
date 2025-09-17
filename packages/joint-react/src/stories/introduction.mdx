@@ -9,15 +9,15 @@ import { getAPIDocumentationLink, getAPIPropsLink } from './utils/get-api-docume
 
 ## 📌 Core Components
 
-### 1. {getAPIDocumentationLink('GraphProvider')}
-The `GraphProvider` component manages a shared [JointJS Graph instance](https://docs.jointjs.com/api/dia/Graph/) to handle the state of your diagram. Wrap it around any components that interact with the graph.
+### 1. {getAPIDocumentationLink('Diagram')}
+The `Diagram` component manages a shared [JointJS Graph instance](https://docs.jointjs.com/api/dia/Graph/) to handle the state of your diagram. Wrap it around any components that interact with the graph.
 
 ```tsx
-import { GraphProvider } from '@joint/react';
+import { Diagram } from '@joint/react';
 
-<GraphProvider>
+<Diagram>
   {/* Components like Paper for rendering nodes and edges */}
-</GraphProvider>
+</Diagram>
 ```
 
 ### 2. {getAPIDocumentationLink('Paper', 'variables')}
@@ -30,7 +30,7 @@ const renderElement = (element) => (
   <rect width={element.size().width} height={element.size().height} fill="cyan" />
 );
 
-<Paper width={800} height={600} renderElement={renderElement} />
+<Diagram.View width={800} height={600} renderElement={renderElement} />
 ```
 
 ### 3. **Embedding HTML in SVG Nodes**
@@ -49,7 +49,7 @@ const renderElement = ({ width, height }) => (
 ## 🛠️ Core Hooks and Utilities
 
 ### 🔹 Accessing Elements
-- {getAPIDocumentationLink('useElements')}: Retrieve all diagram elements (requires `GraphProvider` context).
+- {getAPIDocumentationLink('useElements')}: Retrieve all diagram elements (requires `Diagram` context).
 - {getAPIDocumentationLink('useElement')}: Retrieve individual element data, typically used within `renderElement`.
 
 ### 🔹 Modifying Elements

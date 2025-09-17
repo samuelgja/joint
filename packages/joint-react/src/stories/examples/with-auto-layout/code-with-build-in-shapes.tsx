@@ -1,9 +1,8 @@
 import '../index.css';
 import {
   createElements,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   type InferElement,
   type OnLoadOptions,
   type RenderElement,
@@ -109,7 +108,7 @@ function Main() {
     }
   }
   return (
-    <Paper
+    <Diagram.View
       width="100%"
       className={PAPER_CLASSNAME}
       height={280}
@@ -121,8 +120,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements}>
+    <Diagram elements={initialElements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

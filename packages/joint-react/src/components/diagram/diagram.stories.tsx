@@ -2,31 +2,30 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import {
-  SimpleGraphDecorator,
+  testElements,
+  testLinks,
   type SimpleElement,
 } from '../../../.storybook/decorators/with-simple-data';
 import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import { MeasuredNode } from '../measured-node/measured-node';
-import { PaperProvider } from './paper-provider';
-import { Paper } from '../paper/paper';
 import { useEffect, useState } from 'react';
 import { getAPILink } from '../../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation } from '../../stories/utils/make-story';
+import { Diagram } from '.';
 
-export type Story = StoryObj<typeof PaperProvider>;
+export type Story = StoryObj<typeof Diagram>;
 
-const API_URL = getAPILink('Paper', 'variables');
-const meta: Meta<typeof PaperProvider> = {
-  title: 'Components/PaperProvider',
-  component: PaperProvider,
-  decorators: [SimpleGraphDecorator],
+const API_URL = getAPILink('Diagram', 'variables');
+const meta: Meta<typeof Diagram> = {
+  title: 'Components/Diagram',
+  component: Diagram,
   parameters: makeRootDocumentation({
     description: `
-Paper Provider is a component that distribute paper context. It must have Paper children. It is used to display and interact with graph elements.
+Diagram is a component that distribute paper context. It must have Diagram children. It is used to display and interact with graph elements.
     `,
     apiURL: API_URL,
-    code: `import { Paper } from '@joint/react'
-<Paper renderElement={() => <rect rx={10} ry={10} width={100} height={50} fill={"blue"} />} />
+    code: `import { Diagram } from '@joint/react'
+<Diagram renderElement={() => <rect rx={10} ry={10} width={100} height={50} fill={"blue"} />} />
     `,
   }),
 };
@@ -58,8 +57,9 @@ function RenderHTMLElement({ width, height }: SimpleElement) {
 
 export const Default: Story = {
   args: {
-    width: '100%',
-    children: <Paper className={PAPER_CLASSNAME} renderElement={RenderHTMLElement} />,
+    elements: testElements,
+    links: testLinks,
+    children: <Diagram.View className={PAPER_CLASSNAME} renderElement={RenderHTMLElement} />,
   },
 };
 function Component() {
@@ -72,13 +72,19 @@ function Component() {
   }, []);
   return (
     isReady && (
-      <Paper interactive={false} className={PAPER_CLASSNAME} renderElement={RenderHTMLElement} />
+      <Diagram.View
+        interactive={false}
+        className={PAPER_CLASSNAME}
+        renderElement={RenderHTMLElement}
+      />
     )
   );
 }
+
 export const ConditionalRender: Story = {
   args: {
-    width: '100%',
+    elements: testElements,
+    links: testLinks,
     children: <Component />,
   },
 };

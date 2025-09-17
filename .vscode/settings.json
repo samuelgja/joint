@@ -1,0 +1,4 @@
+{
+  // Use a different script just for this project
+  "better.test.customScript": "bun run jest",
+}

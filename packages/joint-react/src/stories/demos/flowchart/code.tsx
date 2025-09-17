@@ -3,14 +3,13 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 import './index.css';
-import type { GraphLink, OnSetSize } from '@joint/react';
+import type { DiagramLink, OnSetSize } from '@joint/react';
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   Highlighter,
   MeasuredNode,
-  Paper,
   type InferElement,
 } from '@joint/react';
 import { PAPER_CLASSNAME, PRIMARY, SECONDARY } from 'storybook-config/theme';
@@ -100,7 +99,7 @@ const flowchartNodes = createElements<NodeElement>([
     cy: 460,
   },
 ]);
-const LINK_OPTIONS: Partial<GraphLink> = {
+const LINK_OPTIONS: Partial<DiagramLink> = {
   z: 2,
   attrs: {
     line: {
@@ -326,7 +325,7 @@ function RenderFlowchartNode(props: FlowchartNodeProps) {
 
 function Main() {
   return (
-    <Paper
+    <Diagram.View
       onLinkMouseEnter={({ linkView, paper }) => {
         paper.removeTools();
         dia.HighlighterView.removeAll(paper);
@@ -410,8 +409,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={flowchartNodes} initialLinks={flowchartLinks}>
+    <Diagram elements={flowchartNodes} links={flowchartLinks}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

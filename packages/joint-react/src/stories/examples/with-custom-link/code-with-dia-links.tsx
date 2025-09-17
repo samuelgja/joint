@@ -5,9 +5,8 @@ import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import { shapes, util } from '@joint/core';
 import {
   createElements,
-  GraphProvider,
-  Paper,
-  type GraphProps,
+  Diagram,
+  type DiagramProps,
   type InferElement,
   type RenderElement,
 } from '@joint/react';
@@ -43,7 +42,7 @@ function Main() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper
+      <Diagram.View
         defaultLink={() => new LinkModel()}
         width="100%"
         className={PAPER_CLASSNAME}
@@ -54,11 +53,11 @@ function Main() {
   );
 }
 
-export default function App(props: Readonly<GraphProps>) {
+export default function App(props: Readonly<DiagramProps>) {
   return (
-    <GraphProvider
+    <Diagram
       {...props}
-      initialLinks={[
+      links={[
         {
           source: '1',
           target: '2',
@@ -67,10 +66,10 @@ export default function App(props: Readonly<GraphProps>) {
           attrs: { line: { stroke: PRIMARY } },
         },
       ]}
-      initialElements={initialElements}
+      elements={initialElements}
       cellNamespace={{ LinkModel }}
     >
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

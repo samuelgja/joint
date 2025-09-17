@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { dia } from '@joint/core';
 import { isAttribute, isDefined, isDiaId, isSetter, type Setter } from '../utils/is';
-import { useGraphStore } from './use-graph-store';
+import { useDiagramStore } from './use-diagram-store';
 
 export interface BaseAttributes extends dia.Cell.Attributes {
   readonly markup?: string | dia.MarkupJSON;
@@ -50,7 +50,7 @@ function setCellHelper<Attributes, Attribute extends keyof Attributes>(
  * Set the element attribute in the graph.
  * It returns a function to set the element attribute.
  *
- * It must be used inside the GraphProvider.
+ * It must be used inside the Diagram.
  * @group Hooks
  * @param id The ID of the element.
  * @param attribute The attribute to set.
@@ -106,7 +106,7 @@ export function useUpdateElement<
   Attributes = BaseAttributes,
   Attribute extends keyof Attributes = keyof Attributes,
 >(id?: dia.Cell.ID, attributeParameter?: Attribute) {
-  const { graph } = useGraphStore();
+  const { graph } = useDiagramStore();
   const setElement = useCallback(
     (idOrAttributeOrValue: unknown, attributeOrValue?: unknown, value?: unknown) => {
       if (isDiaId(idOrAttributeOrValue) && isAttribute(attributeOrValue) && isDefined(value)) {

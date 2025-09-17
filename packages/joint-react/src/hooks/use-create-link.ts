@@ -2,7 +2,7 @@ import type { dia } from '@joint/core';
 import { useGraph } from './use-graph';
 import { useCallback } from 'react';
 import { processLink } from '../utils/cell/cell-utilities';
-import type { GraphLink } from '../types/link-types';
+import type { DiagramLink } from '../types/link-types';
 
 /**
  * A custom hook that adds a link to the graph.
@@ -14,7 +14,7 @@ import type { GraphLink } from '../types/link-types';
  * addLink({ id: '1', source: { id: '2' }, target: { id: '3' } });
  * ```
  */
-export function useCreateLink<T extends dia.Link | GraphLink>() {
+export function useCreateLink<T extends dia.Link | DiagramLink>() {
   const graph = useGraph();
   return useCallback(
     (link: T) => {

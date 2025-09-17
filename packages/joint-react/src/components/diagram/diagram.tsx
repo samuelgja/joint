@@ -1,40 +1,44 @@
 import type { dia } from '@joint/core';
-import type { GraphLink } from '../../types/link-types';
+import type { DiagramLink } from '../../types/link-types';
+import { DiagramAreElementsMeasuredContext, DiagramContext } from '../../context/diagram-context';
 import {
-  GraphAreElementsMeasuredContext,
-  GraphStoreContext,
-} from '../../context/graph-store-context';
-import { useLayoutEffect, type Dispatch, type PropsWithChildren, type SetStateAction } from 'react';
-import { createStore, type Store } from '../../data/create-store';
+  forwardRef,
+  useImperativeHandle,
+  useLayoutEffect,
+  type Dispatch,
+  type PropsWithChildren,
+  type SetStateAction,
+} from 'react';
+import { createStore, type DiagramStore } from '../../data/create-diagram-store';
 import { useElements } from '../../hooks/use-elements';
 import { useGraph } from '../../hooks';
 import { setElements, setLinks } from '../../utils/cell/cell-utilities';
-import type { GraphElement } from '../../types/element-types';
+import type { DiagramElement } from '../../types/element-types';
 import { CONTROLLED_MODE_BATCH_NAME } from '../../utils/graph/update-graph';
 import { useImperativeApi } from '../../hooks/use-imperative-api';
 
-interface GraphProviderHandlerProps<
+interface DiagramBaseProps<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Element extends dia.Element | GraphElement = any,
+  Element extends dia.Element | DiagramElement = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Link extends dia.Link | GraphLink = any,
+  Link extends dia.Link | DiagramLink = any,
 > {
   /**
    * Elements (nodes) to be added to graph.
    * When `onElementsChange`, it enabled controlled mode.
    * If there is no `onElementsChange` provided, it will be used just on onload (initial)
    */
-  readonly initialElements?: Element[];
+  readonly elements?: Element[];
 
   /**
    * Links (edges) to be added to graph.
    * When `onLinksChange`, it enabled controlled mode.
    * If there is no `onLinksChange` provided, it will be used just on onload (initial)
    */
-  readonly initialLinks?: Link[];
+  readonly links?: Link[];
 
   /**
-   * Callback triggered when elements (nodes) change.
+   * Callback triggered when eleme§nts (nodes) change.
    * Providing this prop enables controlled mode for elements.
    * If specified, this function will override the default behavior, allowing you to manage all element changes manually instead of relying on `graph.change`.
    */
@@ -55,8 +59,8 @@ interface GraphProviderHandlerProps<
  * @param props - {GraphProviderHandler} props
  * @private
  */
-export function GraphProviderHandler(props: PropsWithChildren<GraphProviderHandlerProps>) {
-  const { initialElements, initialLinks, onElementsChange, onLinksChange, children } = props;
+export function GraphProviderHandler(props: PropsWithChildren<DiagramBaseProps>) {
+  const { elements, links, onElementsChange, onLinksChange, children } = props;
   const areElementsMeasured = useElements((items) => {
     let areMeasured = true;
     for (const [, { width = 0, height = 0 }] of items) {
@@ -81,10 +85,10 @@ export function GraphProviderHandler(props: PropsWithChildren<GraphProviderHandl
 
     graph.startBatch(CONTROLLED_MODE_BATCH_NAME);
     if (areElementsInControlledMode) {
-      setElements({ graph, elements: initialElements });
+      setElements({ graph, elements });
     }
     if (areLinksInControlledMode) {
-      setLinks({ graph, links: initialLinks });
+      setLinks({ graph, links });
     }
     graph.stopBatch(CONTROLLED_MODE_BATCH_NAME);
   }, [
@@ -92,8 +96,8 @@ export function GraphProviderHandler(props: PropsWithChildren<GraphProviderHandl
     areElementsMeasured,
     areLinksInControlledMode,
     graph,
-    initialElements,
-    initialLinks,
+    elements,
+    links,
     isControlledMode,
   ]);
 
@@ -102,24 +106,24 @@ export function GraphProviderHandler(props: PropsWithChildren<GraphProviderHandl
     // It fixes issue with a flickering of un-measured react elements.
     if (isControlledMode) return;
     if (!areElementsMeasured) return;
-    setLinks({ graph, links: initialLinks });
+    setLinks({ graph, links });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [areElementsMeasured, isControlledMode]);
 
   return (
-    <GraphAreElementsMeasuredContext.Provider value={areElementsMeasured}>
+    <DiagramAreElementsMeasuredContext.Provider value={areElementsMeasured}>
       {children}
-    </GraphAreElementsMeasuredContext.Provider>
+    </DiagramAreElementsMeasuredContext.Provider>
   );
 }
 
-export interface GraphProps<
+export interface DiagramProps<
   Graph extends dia.Graph = dia.Graph,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Element extends dia.Element | GraphElement = any,
+  Element extends dia.Element | DiagramElement = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Link extends dia.Link | GraphLink = any,
-> extends GraphProviderHandlerProps<Element, Link> {
+  Link extends dia.Link | DiagramLink = any,
+> extends DiagramBaseProps<Element, Link> {
   /**
    * Graph instance to use. If not provided, a new graph instance will be created.
    * @see https://docs.jointjs.com/api/dia/Graph
@@ -150,47 +154,47 @@ export interface GraphProps<
    * Store is build around graph, it handles react updates and states, it can be created separately and passed to the provider via `createStore` function.
    * @see `createStore`
    */
-  readonly store?: Store;
+  readonly store?: DiagramStore<Graph>;
 }
 
 /**
- *
- * GraphProvider component creates a graph instance and provide `dia.graph` to it's children.
- * It relies on @see useCreateGraphStore hook to create the graph instance.
- *
- * Without this provider, the library will not work.
- * @param props - {GraphProvider} props
- * @returns GraphProvider component
+ * Diagram component creates a graph instance and provides `dia.graph` to its children.
+ * This component is essential for the library to function correctly. It manages the graph instance and supports controlled and uncontrolled modes for elements and links.
+ * @param props - The properties for the Diagram component.
+ * @param forwardedRef - A reference to the DiagramStore instance.
+ * @returns The Diagram component.
  * @example
- * Using provider:
+ * Using the Diagram component:
  * ```tsx
- * import { GraphProvider } from '@joint/react'
- *
+ * import { Diagram } from '@joint/react';
  * function App() {
- *  return (
- *   <GraphProvider>
- *    <MyApp />
- *  </GraphProvider>
- * )
+ *   return (
+ *     <Diagram>
+ *       <MyApp />
+ *     </Diagram>
+ *   );
+ * }
  * ```
  * @example
- * Using provider with default elements and links:
+ * Using the Diagram component with default elements and links:
  * ```tsx
- * import { GraphProvider } from '@joint/react'
- *
+ * import { Diagram } from '@joint/react';
  * function App() {
- *  return (
- *   <GraphProvider initialElements={[]} initialLinks={[]}>
- *    <MyApp />
- *  </GraphProvider>
- * )
+ *   return (
+ *     <Diagram elements={[]} links={[]}>
+ *       <MyApp />
+ *     </Diagram>
+ *   );
+ * }
  * ```
- * @group Components
  */
-export function GraphProvider<
-  Element extends dia.Element | GraphElement,
-  Link extends dia.Link | GraphLink,
->(props: Readonly<GraphProps<dia.Graph, Element, Link>>) {
+function DiagramBase<
+  Element extends dia.Element | DiagramElement,
+  Link extends dia.Link | DiagramLink,
+>(
+  props: Readonly<DiagramProps<dia.Graph, Element, Link>>,
+  forwardedRef: React.Ref<DiagramStore | null>
+) {
   const { children, store, ...rest } = props;
   /**
    * Graph store instance.
@@ -216,13 +220,35 @@ export function GraphProvider<
     []
   );
 
+  useImperativeHandle(forwardedRef, () => {
+    if (!isReady || !ref.current) {
+      // Return a default value or throw an error to ensure non-nullable type.
+      return null as unknown as DiagramStore<dia.Graph>;
+    }
+    return ref.current;
+  }, [isReady, ref]);
+
   if (!isReady) {
     return null;
   }
 
   return (
-    <GraphStoreContext.Provider value={ref.current}>
+    <DiagramContext.Provider value={ref.current}>
       <GraphProviderHandler {...props}>{children}</GraphProviderHandler>
-    </GraphStoreContext.Provider>
+    </DiagramContext.Provider>
   );
 }
+
+/**
+ * GraphProviderHandler component is used to handle the graph instance and provide it to the children.
+ * It also handles the default elements and links.
+ * @returns GraphProviderHandler component
+ * @param props - {GraphProviderHandler} props
+ * @private
+ */
+export const Diagram = forwardRef(DiagramBase) as <
+  Element extends dia.Element | DiagramElement = dia.Element,
+  Link extends dia.Link | DiagramLink = dia.Link,
+>(
+  props: Readonly<DiagramProps<dia.Graph, Element, Link>> & { ref?: React.Ref<DiagramStore | null> }
+) => ReturnType<typeof DiagramBase>;

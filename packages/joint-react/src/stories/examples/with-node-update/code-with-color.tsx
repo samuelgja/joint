@@ -3,8 +3,7 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
-  Paper,
+  Diagram,
   useUpdateElement,
   type InferElement,
 } from '@joint/react';
@@ -57,15 +56,20 @@ function RenderElement({ color, id }: BaseElementWithData) {
 function Main() {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderElement} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={RenderElement}
+      />
     </div>
   );
 }
 
 export default function WithColor() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

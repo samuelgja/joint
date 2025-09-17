@@ -6,9 +6,8 @@ import { useCallback, type PropsWithChildren } from 'react';
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   useUpdateElement,
   type InferElement,
   type OnSetSize,
@@ -126,14 +125,19 @@ function Main() {
     return <ListElement {...element}>{element.label}</ListElement>;
   }, []);
   return (
-    <Paper width="100%" className={PAPER_CLASSNAME} height={500} renderElement={renderElement} />
+    <Diagram.View
+      width="100%"
+      className={PAPER_CLASSNAME}
+      height={500}
+      renderElement={renderElement}
+    />
   );
 }
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

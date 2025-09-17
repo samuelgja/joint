@@ -2,9 +2,8 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   useElements,
   usePaper,
   useUpdateElement,
@@ -40,6 +39,7 @@ function RotatableNode({ label, id, width, height }: Readonly<BaseElementWithDat
 
   const dragHandle = useCallback(
     (event: PointerEvent) => {
+      if (!paper) return;
       const graph = paper.model;
       const point = paper.clientToLocalPoint(event.clientX, event.clientY);
       const center = graph.getCell(id).getBBox().center();
@@ -98,7 +98,12 @@ function Main() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row', position: 'relative' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RotatableNode} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={RotatableNode}
+      />
       <div>
         <u>angle</u>
         {elementRotation.map((rotation, index) => (
@@ -114,8 +119,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

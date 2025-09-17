@@ -5,8 +5,7 @@ import '../index.css';
 import {
   createElements,
   createLinks,
-  GraphProvider,
-  Paper,
+  Diagram,
   jsx,
   type InferElement,
   type RenderElement,
@@ -97,7 +96,7 @@ function Main() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'row', position: 'relative' }}>
-      <Paper
+      <Diagram.View
         width="100%"
         className={PAPER_CLASSNAME}
         height={280}
@@ -119,8 +118,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

@@ -4,12 +4,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useCreateElement } from './use-create-element';
 import type { SimpleElement } from '../../.storybook/decorators/with-simple-data';
-import { HTMLNode, SimpleGraphDecorator } from '../../.storybook/decorators/with-simple-data';
+import { HTMLNode, SimpleDiagramDecorator } from '../../.storybook/decorators/with-simple-data';
 import '../stories/examples/index.css';
-import { Paper } from '../components';
 import { BUTTON_CLASSNAME, PAPER_CLASSNAME } from 'storybook-config/theme';
 import { getAPILink } from '../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation, makeStory } from '../stories/utils/make-story';
+import { Diagram } from '../components';
 
 const API_URL = getAPILink('useCreateElement');
 
@@ -18,13 +18,13 @@ export type Story = StoryObj<typeof Hook>;
 const meta: Meta<typeof Hook> = {
   title: 'Hooks/useCreateElement',
   component: Hook,
-  decorators: [SimpleGraphDecorator],
+  decorators: [SimpleDiagramDecorator],
   render: () => {
     const addElement = useCreateElement<SimpleElement>();
     return (
       <div className="flex flex-row">
         <div style={{ width: '100%', height: 450 }}>
-          <Paper
+          <Diagram.View
             className={PAPER_CLASSNAME}
             width={'100%'}
             height={450}
@@ -54,7 +54,7 @@ const meta: Meta<typeof Hook> = {
   },
   parameters: makeRootDocumentation({
     apiURL: API_URL,
-    description: `\`useCreateElement\` is a hook to add elements to the graph. It returns a function to add an element. It must be used inside the GraphProvider.`,
+    description: `\`useCreateElement\` is a hook to add elements to the graph. It returns a function to add an element. It must be used inside the Diagram.`,
     code: `import { useCreateElement } from '@joint/react'
 
 function Component() {

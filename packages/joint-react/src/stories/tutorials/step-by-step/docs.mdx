@@ -27,7 +27,7 @@ Welcome! This guide will help you get started with the new `@joint/react` librar
 - **Link (Edge):** A connection between two elements.
 - **Graph:** The data model holding all elements and links.
 - **Paper:** The UI component that renders the graph.
-- **GraphProvider:** React context provider for managing the graph state.
+- **Diagram:** React context provider for managing the graph state.
 - **Ports:** Named connection points on elements for precise linking.
 - **MeasuredNode:** Utility for auto-sizing nodes based on their content.
 
@@ -77,19 +77,19 @@ const linksWithPorts = createLinks([
 
 ## 4. Setting Up the Graph Context
 
-Wrap your app (or diagram) with {getAPIDocumentationLink('GraphProvider')}. This provides the graph context to all child components.
+Wrap your app (or diagram) with {getAPIDocumentationLink('Diagram')}. This provides the graph context to all child components.
 - **initialElements:** Initial elements to load.
 - **initialLinks:** Initial links to load.
 ```tsx
-<GraphProvider initialElements={elements} initialLinks={links}>
+<Diagram elements={elements} links={links}>
   {/* Your diagram components */}
-</GraphProvider>
+</Diagram>
 ```
 
-- You can also use `initialElements` and `initialLinks` directly on the {getAPIDocumentationLink('Paper', 'variables')} component for simple cases without need to use the GraphProvider.
+- You can also use `initialElements` and `initialLinks` directly on the {getAPIDocumentationLink('Paper', 'variables')} component for simple cases without need to use the Diagram.
 
 ```tsx
-<Paper initialElements={elements} initialLinks={links}>
+<Diagram.View elements={elements} links={links}>
   {/* Your diagram components */}
 </Paper>
 ```
@@ -110,7 +110,7 @@ function RenderItem({ width, height, label }: MyNode) {
   return <rect width={width} height={height} fill="lightblue"><title>{label}</title></rect>;
 }
 
-<Paper width="100%" height={300} renderElement={RenderItem} />
+<Diagram.View width="100%" height={300} renderElement={RenderItem} />
 ```
 
 ---
@@ -134,7 +134,7 @@ function RenderHTMLNode({ label, width, height }) {
 Or, with `useHTMLOverlay` (renders HTML outside SVG, no `foreignObject` needed):
 
 ```tsx
-<Paper useHTMLOverlay renderElement={RenderHTMLNode} />
+<Diagram.View useHTMLOverlay renderElement={RenderHTMLNode} />
 ```
 
 ---
@@ -208,7 +208,7 @@ function RenderNodeWithPorts({ label, width, height }) {
 Handle user interactions with events like `onLinkMouseEnter`, `onElementsSizeReady`, etc.
 
 ```tsx
-<Paper
+<Diagram.View
   onLinkMouseEnter={({ linkView, paper }) => {
     // Add custom link tools or highlighters
   }}
@@ -225,7 +225,7 @@ Handle user interactions with events like `onLinkMouseEnter`, `onElementsSizeRea
 You can change how links behave and look by setting props like `defaultRouter`, `defaultConnector`, `defaultAnchor`, etc.
 
 ```tsx
-<Paper
+<Diagram.View
   defaultRouter={{ name: 'rightAngle', args: { margin: 28 } }}
   defaultConnector={{ name: 'straight' }}
   // ...other props
@@ -236,7 +236,7 @@ You can change how links behave and look by setting props like `defaultRouter`, 
 
 ## 9. Key Terms
 
-- **GraphProvider:** React context for graph data.
+- **Diagram:** React context for graph data.
 - **Paper:** Renders the graph visually.
 - **Element:** Node in the graph.
 - **Link:** Edge between nodes.

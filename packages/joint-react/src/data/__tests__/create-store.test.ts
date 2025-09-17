@@ -1,6 +1,5 @@
- 
 import { dia } from '@joint/core';
-import { createStore } from '../create-store';
+import { createStore } from '../create-diagram-store';
 import { waitFor } from '@testing-library/react';
 
 describe('createStore', () => {
@@ -21,8 +20,8 @@ describe('createStore', () => {
     const element = new dia.Element({ id: 'element1', type: 'standard.Rectangle' });
     const link = new dia.Link({ id: 'link1', type: 'standard.Link', source: { id: 'element1' } });
     const store = createStore({
-      initialElements: [element],
-      initialLinks: [link],
+      elements: [element],
+      links: [link],
     });
     expect(store.getElements().size).toBe(1);
     expect(store.getElement('element1')).toBeDefined();

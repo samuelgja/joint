@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { GraphProvider, Paper, type GraphProps, type PaperProps } from '../components';
+import { Diagram, type DiagramProps, type DiagramViewProps } from '../components';
 
 /**
  * This wrapper is used to render a graph provider.
@@ -11,17 +11,17 @@ import { GraphProvider, Paper, type GraphProps, type PaperProps } from '../compo
  * @description
  * This wrapper is used to render a graph provider.
  */
-export function graphProviderWrapper(props: GraphProps): React.JSXElementConstructor<{
+export function graphProviderWrapper(props: DiagramProps): React.JSXElementConstructor<{
   children: React.ReactNode;
 }> {
   return function GraphProviderWrapper({ children }) {
-    return <GraphProvider {...props}>{children}</GraphProvider>;
+    return <Diagram {...props}>{children}</Diagram>;
   };
 }
 
 interface Options {
-  paperProps?: PaperProps;
-  graphProps?: GraphProps;
+  paperProps?: DiagramViewProps;
+  graphProps?: DiagramProps;
 }
 /**
  * This wrapper is used to render a paper with a graph provider.
@@ -42,16 +42,16 @@ export function paperRenderElementWrapper(options: Options): React.JSXElementCon
       return children;
     }, [children]);
     return (
-      <GraphProvider {...graphProps}>
-        <Paper {...paperProps} renderElement={renderElement}></Paper>
-      </GraphProvider>
+      <Diagram {...graphProps}>
+        <Diagram.View {...paperProps} renderElement={renderElement}></Diagram.View>
+      </Diagram>
     );
   };
 }
 
 export const simpleRenderElementWrapper = paperRenderElementWrapper({
   graphProps: {
-    initialElements: [
+    elements: [
       {
         id: '1',
         width: 97,

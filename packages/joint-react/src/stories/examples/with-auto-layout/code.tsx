@@ -5,9 +5,8 @@
 import '../index.css';
 import {
   createElements,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   useElements,
   useGraph,
   type InferElement,
@@ -117,7 +116,7 @@ function Main() {
           Add Node
         </button>
       </div>
-      <Paper
+      <Diagram.View
         width="100%"
         className={PAPER_CLASSNAME}
         height={450}
@@ -130,8 +129,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements}>
+    <Diagram elements={initialElements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

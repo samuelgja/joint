@@ -1,5 +1,5 @@
 import type { dia } from '@joint/core';
-import { useGraphStore } from './use-graph-store';
+import { useDiagramStore } from './use-diagram-store';
 
 /**
  * Custom hook to retrieve the graph instance from the graph store.
@@ -14,6 +14,6 @@ import { useGraphStore } from './use-graph-store';
  * ```
  */
 export function useGraph<Graph extends dia.Graph = dia.Graph>() {
-  const { graph } = useGraphStore<Graph>();
+  const { graph } = useDiagramStore<Graph>();
   return graph;
 }

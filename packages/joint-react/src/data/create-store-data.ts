@@ -2,8 +2,8 @@ import type { dia } from '@joint/core';
 import { util } from '@joint/core';
 import { getElement, getLink } from '../utils/cell/get-cell';
 import { CellMap } from '../utils/cell/cell-map';
-import type { GraphLink } from '../types/link-types';
-import type { GraphElement } from '../types/element-types';
+import type { DiagramLink } from '../types/link-types';
+import type { DiagramElement } from '../types/element-types';
 import { diffUpdate } from '../utils/diff-update';
 
 export interface UpdateResult {
@@ -13,12 +13,12 @@ export interface UpdateResult {
 }
 interface StoreData<
   Graph extends dia.Graph = dia.Graph,
-  Element extends GraphElement = GraphElement,
+  Element extends DiagramElement = DiagramElement,
 > {
   readonly updateStore: (graph: Graph) => UpdateResult;
   readonly destroy: () => void;
   elements: CellMap<Element>;
-  links: CellMap<GraphLink>;
+  links: CellMap<DiagramLink>;
 }
 /**
  * Main data structure for the graph store data.
@@ -37,7 +37,7 @@ interface StoreData<
  */
 export function createStoreData<
   Graph extends dia.Graph = dia.Graph,
-  Element extends GraphElement = GraphElement,
+  Element extends DiagramElement = DiagramElement,
 >(): StoreData<Graph, Element> {
   /**
    * Update the store data with the graph data.
@@ -52,7 +52,7 @@ export function createStoreData<
 
     // New updates, if cell is inserted or updated, we track it inside this diff.
     const elementsDiff = new CellMap<Element>();
-    const linkDiff = new CellMap<GraphLink>();
+    const linkDiff = new CellMap<DiagramLink>();
     const diffIds = new Set<dia.Cell.ID>();
     for (const cell of cells) {
       if (cell.isElement()) {

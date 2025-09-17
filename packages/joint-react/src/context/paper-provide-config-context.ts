@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { PaperContext } from './paper-context';
+import type { ViewConfig } from '../components/diagram/diagram.view.types';
 
 export interface PaperProviderConfigContext {
   /**
@@ -10,7 +10,7 @@ export interface PaperProviderConfigContext {
    * @param paperCtx - The paper context
    * @returns
    */
-  readonly overwriteDefaultPaperElement?: (paperCtx: PaperContext) => HTMLElement | SVGElement;
+  readonly overwriteDefaultPaperElement?: (paperCtx: ViewConfig) => HTMLElement | SVGElement;
 }
 
 export const PaperProviderConfigContext = createContext<PaperProviderConfigContext | null>(null);

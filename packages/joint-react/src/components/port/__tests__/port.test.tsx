@@ -29,7 +29,7 @@ describe('port', () => {
     const wrapper = paperRenderElementWrapper({
       graphProps: {
         graph,
-        initialElements: [
+        elements: [
           {
             id: 'element-1',
           },
@@ -93,7 +93,7 @@ describe('port', () => {
     const wrapper = paperRenderElementWrapper({
       graphProps: {
         graph,
-        initialElements: [
+        elements: [
           {
             id: 'element-1',
           },

@@ -3,7 +3,7 @@ import { useElement } from '../use-element';
 import { paperRenderElementWrapper, simpleRenderElementWrapper } from '../../utils/test-wrappers';
 import { useUpdateElement } from '../use-update-element';
 import { useCreateElement } from '../use-create-element';
-import type { GraphElement } from '../../types/element-types';
+import type { DiagramElement } from '../../types/element-types';
 
 describe('use-element', () => {
   it('should return data from usuElement hook without selector', async () => {
@@ -66,7 +66,7 @@ describe('use-element', () => {
   it('should measure use-elements selector - how many count it was called', async () => {
     const wrapper = paperRenderElementWrapper({
       graphProps: {
-        initialElements: [
+        elements: [
           {
             id: '1',
             width: 97,
@@ -82,7 +82,7 @@ describe('use-element', () => {
     });
     const renders = jest.fn();
     let selectorCalls = 0;
-    function selector(element: GraphElement) {
+    function selector(element: DiagramElement) {
       selectorCalls++;
       return element;
     }

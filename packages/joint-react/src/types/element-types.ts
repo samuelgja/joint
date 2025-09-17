@@ -24,7 +24,7 @@ export interface StandardShapesTypeMapper {
 
 export type StandardShapesType = keyof StandardShapesTypeMapper;
 
-export interface GraphElement extends JointAttributes {
+export interface DiagramElement extends JointAttributes {
   /**
    * Unique identifier of the element.
    */

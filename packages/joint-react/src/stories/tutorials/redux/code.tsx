@@ -5,12 +5,11 @@
 import {
   createElements,
   createLinks,
-  GraphProvider,
-  Paper,
+  Diagram,
   useGraph,
   setElements as setElementsViaGraph,
   setLinks as setLinksViaGraph,
-  type GraphProps,
+  type DiagramProps,
   type InferElement,
 } from '@joint/react';
 import '../../examples/index.css'; // Import custom styles
@@ -146,7 +145,12 @@ function PaperApp() {
   return (
     <div className="flex flex-col ">
       {/* Render the Paper component */}
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderItem} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={RenderItem}
+      />
       {/* Button to add a new element directly via the graph */}
       <div className="flex flex-row">
         <button
@@ -248,8 +252,8 @@ function PaperApp() {
   );
 }
 
-// Main component that connects the Redux store to the GraphProvider
-function Main(props: Readonly<GraphProps>) {
+// Main component that connects the Redux store to the Diagram
+function Main(props: Readonly<DiagramProps>) {
   // Select links and elements from the Redux store
   const links = useSelector((state: RootState) => state.links);
   const elements = useSelector((state: RootState) => state.elements);
@@ -257,10 +261,10 @@ function Main(props: Readonly<GraphProps>) {
   return (
     <>
       {/* Provide the graph context with initial elements and links */}
-      <GraphProvider
+      <Diagram
         {...props}
-        initialLinks={links}
-        initialElements={elements}
+        links={links}
+        elements={elements}
         onElementsChange={(items) => {
           // Dispatch an action to update elements in the Redux store
           store.dispatch(setElements(items));
@@ -270,7 +274,7 @@ function Main(props: Readonly<GraphProps>) {
         }}
       >
         <PaperApp />
-      </GraphProvider>
+      </Diagram>
     </>
   );
 }

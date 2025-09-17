@@ -4,16 +4,7 @@ import { dia, highlighters, linkTools, V } from '@joint/core';
 import { shapes } from '@joint/core';
 import { createElements, type InferElement } from '../../../utils/create';
 import { PAPER_CLASSNAME, PRIMARY, LIGHT, BG } from 'storybook-config/theme';
-import {
-  getCellId,
-  GraphProvider,
-  jsx,
-  MeasuredNode,
-  Paper,
-  Port,
-  TextNode,
-  useLinks,
-} from '@joint/react';
+import { getCellId, Diagram, jsx, MeasuredNode, Port, TextNode, useLinks } from '@joint/react';
 
 const NODE_WIDTH = 150;
 const NODE_HEIGHT = 55;
@@ -160,7 +151,7 @@ const toolsView = new dia.ToolsView({
 
 function Main() {
   return (
-    <Paper
+    <Diagram.View
       defaultLink={() => new shapes.standard.Link({ attrs: { line: { stroke: LIGHT } } })}
       renderElement={NodeElement}
       className={PAPER_CLASSNAME}
@@ -207,8 +198,8 @@ function Main() {
 
 export default function App() {
   return (
-    <GraphProvider initialElements={elements}>
+    <Diagram elements={elements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

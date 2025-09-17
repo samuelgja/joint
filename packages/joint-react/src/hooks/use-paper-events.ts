@@ -21,6 +21,9 @@ export function usePaperEvents(events: PaperEvents) {
   const paper = usePaper();
   const graph = useGraph();
   useLayoutEffect(() => {
+    if (!paper || !graph) {
+      return;
+    }
     // An object to keep track of the listeners. It's not exposed, so the users
     const stopListening = handlePaperEvents(graph, paper, events);
     return () => {

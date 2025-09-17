@@ -1,43 +1,40 @@
-import React, { useState } from 'react';
+import React, { createRef, useState } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
-import { GraphStoreContext } from '../../../context/graph-store-context';
-import { GraphProvider } from '../graph-provider';
-import { createStore, type Store } from '../../../data/create-store';
+import { DiagramContext } from '../../../context/diagram-context';
+import { createStore, type DiagramStore } from '../../../data/create-diagram-store';
 import { dia } from '@joint/core';
 import { useElements, useLinks } from '../../../hooks';
 import { createElements } from '../../../utils/create';
-import * as stories from '../graph-provider.stories';
-import { runStorybookSnapshot } from '../../../utils/run-storybook-snapshot';
-import type { GraphElement } from '../../../types/element-types';
+import type { DiagramElement } from '../../../types/element-types';
+import { Diagram } from '..';
 
-runStorybookSnapshot({
-  Component: GraphProvider,
-  stories,
-  name: 'GraphProvider',
-});
-describe('graph-provider', () => {
+describe('diagram', () => {
   it('should render children and match snapshot', () => {
     const { asFragment, getByText } = render(
-      <GraphProvider>
+      <Diagram>
         <div>Child Content</div>
-      </GraphProvider>
+      </Diagram>
     );
     expect(getByText('Child Content')).toMatchSnapshot();
     expect(asFragment()).toMatchSnapshot();
   });
 
   it('should provide a graph instance in context', () => {
-    let contextGraph: Store | undefined;
+    let contextGraph: DiagramStore | null = null;
     function TestComponent() {
-      contextGraph = React.useContext(GraphStoreContext);
+      contextGraph = React.useContext(DiagramContext);
       return null;
     }
     render(
-      <GraphProvider>
+      <Diagram>
         <TestComponent />
-      </GraphProvider>
+      </Diagram>
     );
-    expect(contextGraph).toBeInstanceOf(Object);
+
+    if (!contextGraph) {
+      throw new Error('contextGraph is not defined');
+    }
+    expect(contextGraph).toBeDefined();
   });
 
   it('should render graph provider with links and elements', async () => {
@@ -60,9 +57,9 @@ describe('graph-provider', () => {
     }
     render(
       // eslint-disable-next-line react-perf/jsx-no-new-array-as-prop
-      <GraphProvider initialElements={elements} initialLinks={[link]}>
+      <Diagram elements={elements} links={[link]}>
         <TestComponent />
-      </GraphProvider>
+      </Diagram>
     );
 
     await waitFor(() => {
@@ -83,9 +80,9 @@ describe('graph-provider', () => {
       return null;
     }
     render(
-      <GraphProvider graph={graph}>
+      <Diagram graph={graph}>
         <TestComponent />
-      </GraphProvider>
+      </Diagram>
     );
 
     await waitFor(() => {
@@ -117,9 +114,9 @@ describe('graph-provider', () => {
       return null;
     }
     render(
-      <GraphProvider initialElements={elements}>
+      <Diagram elements={elements}>
         <TestComponent />
-      </GraphProvider>
+      </Diagram>
     );
 
     await waitFor(() => {
@@ -134,9 +131,9 @@ describe('graph-provider', () => {
     mockStore.destroy = mockDestroy;
 
     const { unmount } = render(
-      <GraphProvider store={mockStore}>
+      <Diagram store={mockStore}>
         <div>Test</div>
-      </GraphProvider>
+      </Diagram>
     );
 
     expect(mockDestroy).not.toHaveBeenCalled();
@@ -148,7 +145,7 @@ describe('graph-provider', () => {
     const graph = new dia.Graph();
     const cell = new dia.Element({ id: 'element1', type: 'standard.Rectangle' });
     graph.addCell(cell);
-    let currentElements: GraphElement[] = [];
+    let currentElements: DiagramElement[] = [];
     function Elements() {
       const elements = useElements();
       currentElements = elements;
@@ -156,10 +153,10 @@ describe('graph-provider', () => {
     }
 
     const { unmount } = render(
-      <GraphProvider graph={graph}>
+      <Diagram graph={graph}>
         <Elements />
         <div>Test</div>
-      </GraphProvider>
+      </Diagram>
     );
 
     expect(graph.getCell('element1')).toBe(cell);
@@ -192,7 +189,7 @@ describe('graph-provider', () => {
     const store = createStore({ graph });
     const cell = new dia.Element({ id: 'element1', type: 'standard.Rectangle' });
     graph.addCell(cell);
-    let currentElements: GraphElement[] = [];
+    let currentElements: DiagramElement[] = [];
     // eslint-disable-next-line sonarjs/no-identical-functions
     function Elements() {
       const elements = useElements();
@@ -201,10 +198,10 @@ describe('graph-provider', () => {
     }
 
     const { unmount } = render(
-      <GraphProvider store={store}>
+      <Diagram store={store}>
         <Elements />
         <div>Test</div>
-      </GraphProvider>
+      </Diagram>
     );
 
     expect(graph.getCell('element1')).toBe(cell);
@@ -254,9 +251,9 @@ describe('graph-provider', () => {
     }
     render(
       // eslint-disable-next-line react-perf/jsx-no-new-array-as-prop
-      <GraphProvider initialElements={elements} initialLinks={[link]}>
+      <Diagram elements={elements} links={[link]}>
         <TestComponent />
-      </GraphProvider>
+      </Diagram>
     );
 
     await waitFor(() => {
@@ -274,7 +271,11 @@ describe('graph-provider', () => {
         type: 'ReactElement',
       },
     ]);
-    const link = new dia.Link({ id: 'link1', type: 'standard.Link', source: { id: 'element1' } });
+    const initialLink = new dia.Link({
+      id: 'link1',
+      type: 'standard.Link',
+      source: { id: 'element1' },
+    });
     let linkCount = 0;
     let elementCount = 0;
     function TestComponent() {
@@ -288,23 +289,23 @@ describe('graph-provider', () => {
     }
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
-    let setElementsOutside = (_: GraphElement[]) => {};
+    let setElementsOutside = (_: DiagramElement[]) => {};
     let setLinksOutside = (_: dia.Link[]) => {};
 
     function Graph() {
       const [elements, setElements] = useState(initialElements);
-      const [links, setLinks] = useState([link]);
-      setElementsOutside = setElements as unknown as (elements: GraphElement[]) => void;
+      const [links, setLinks] = useState([initialLink]);
+      setElementsOutside = setElements as unknown as (elements: DiagramElement[]) => void;
       setLinksOutside = setLinks as unknown as (links: dia.Link[]) => void;
       return (
-        <GraphProvider
-          initialElements={elements}
+        <Diagram
+          elements={elements}
           onElementsChange={setElements}
-          initialLinks={links}
+          links={links}
           onLinksChange={setLinks}
         >
           <TestComponent />
-        </GraphProvider>
+        </Diagram>
       );
     }
     render(<Graph />);
@@ -360,5 +361,13 @@ describe('graph-provider', () => {
       expect(linkCount).toBe(2);
       expect(elementCount).toBe(2);
     });
+  });
+
+  it('should pass ref instance to the Diagram component', () => {
+    // eslint-disable-next-line @eslint-react/no-create-ref
+    const diagramRef = createRef<DiagramStore>();
+    render(<Diagram ref={diagramRef} />);
+    expect(diagramRef.current).not.toBeNull();
+    expect(diagramRef.current?.destroy).toBeDefined();
   });
 });

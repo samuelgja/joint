@@ -1,0 +1,140 @@
+import type { dia } from '@joint/core';
+import type { PortsStore } from '../../data/create-ports-store';
+import type { DiagramElement } from '../../types/element-types';
+import type { OmitWithoutIndexSignature } from '../../types';
+import type { DiagramLink } from '../../types/link-types';
+import type { OnPaperRenderElement } from '../../hooks/use-element-views';
+import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
+import type { PaperEvents } from '../../types/event.types';
+
+export interface OnLoadOptions {
+  readonly paper: dia.Paper;
+  readonly graph: dia.Graph;
+}
+
+export interface ViewConfig {
+  readonly id: string;
+  readonly paper: dia.Paper;
+  readonly portsStore: PortsStore;
+  readonly elementViews: Record<dia.Cell.ID, dia.ElementView>;
+  renderElement?: RenderElement<DiagramElement>;
+  renderPaper: (element: HTMLElement) => void;
+  readonly isReactId: boolean;
+}
+
+type ReactPaperOptionsBase = OmitWithoutIndexSignature<dia.Paper.Options, 'frozen' | 'defaultLink'>;
+export interface ReactPaperOptions extends ReactPaperOptionsBase {
+  /**
+   * Default link for the paper - for example if there is new element added, this will be used as default.
+   */
+  readonly defaultLink?:
+    | ((cellView: dia.CellView, magnet: SVGElement) => dia.Link | DiagramLink)
+    | dia.Link
+    | DiagramLink;
+}
+
+export type RenderElement<ElementItem extends DiagramElement = DiagramElement> = (
+  element: ElementItem
+) => ReactNode;
+
+/**
+ * The props for the Paper component. Extend the `dia.Paper.Options` interface.
+ * For more information, see the JointJS documentation.
+ * @see https://docs.jointjs.com/api/dia/Paper
+ */
+export interface DiagramViewProps<ElementItem extends DiagramElement = DiagramElement>
+  extends ReactPaperOptions,
+    PropsWithChildren,
+    PaperEvents {
+  /**
+   * A function that renders the element.
+   * 
+   * Note: Jointjs works by default with SVG's so by default renderElement is append inside the SVGElement node.
+   * To use HTML elements, you need to use the `HTMLNode` component or `foreignObject` element.
+   * 
+   * This is called when the data from `elementSelector` changes.
+   * @example
+   * Example with `global component`:
+   * ```tsx
+   * type BaseElementWithData = InferElement<typeof initialElements>
+   * function RenderElement({ label }: BaseElementWithData) {
+   *  return <HTMLElement className="node">{label}</HTMLElement>
+   * }
+   * ```
+   * @example
+   * Example with `local component`:
+   * ```tsx
+   * 
+  type BaseElementWithData = InferElement<typeof initialElements>
+  const renderElement: RenderElement<BaseElementWithData> = useCallback(
+      (element) => <HTMLElement className="node">{element.label}</HTMLElement>,
+      []
+  )
+   * ```
+   */
+
+  readonly renderElement?: RenderElement<ElementItem>;
+  /**
+   * Event called when all elements are properly measured (has all elements width and height greater than 1 - default).
+   * In react, we cannot detect jointjs paper render:done event properly, so we use this special event to check if all elements are measured.
+   * It is useful for like onLoad event to do some layout or other operations with `graph` or `paper`.
+   */
+  readonly onElementsSizeReady?: (options: OnLoadOptions) => void;
+
+  /**
+   * Event called when the paper is resized.
+   * It is useful for like onLoad event to do some layout or other operations with `graph` or `paper`.
+   */
+  readonly onElementsSizeChange?: (options: OnLoadOptions) => void;
+
+  /**
+   * The style of the paper element.
+   */
+  readonly style?: CSSProperties;
+  /**
+   * Class name of the paper element.
+   */
+  readonly className?: string;
+
+  /**
+   * A function that selects the elements to be rendered.
+   * It defaults to the `GraphElement` elements because `dia.Element` is not a valid React element (it do not change reference after update).
+   * @default (item: dia.Cell) => `BaseElement`
+   * @see DiagramElement
+   */
+  readonly elementSelector?: (item: DiagramElement) => ElementItem;
+  /**
+   * The scale of the paper. It's useful to create for example a zoom feature or minimap Paper.
+   */
+
+  readonly scale?: number;
+
+  /**
+   * The threshold for click events in pixels.
+   * If the mouse moves more than this distance, it will be considered a drag event.
+   * @default 10
+   */
+  readonly clickThreshold?: number;
+
+  /**
+   * Enabled if renderElements is render to pure HTML elements.
+   * By default, `joint/react` renderElements to SVG elements, so for using HTML elements without this prop, you need to use `foreignObject` element.
+   * @experimental - this feature is still experimental and there are known issues with HTML elements rendering. Use at your own risk.
+   * @default false
+   */
+  readonly useHTMLOverlay?: boolean;
+
+  /**
+   * A function that is called when the paper is ready.
+   * @param element - The element that is being rendered
+   * @param portalElement  - The portal element that is being rendered
+   * @returns
+   */
+  readonly onRenderElement?: OnPaperRenderElement;
+
+  /**
+   * Optional ID for the view, if not provided, a unique ID will be generated.
+   * !important - when using multiple views (on DEV), you need to provide an unique ID to each view to avoid conflicts.
+   */
+  readonly id?: string;
+}

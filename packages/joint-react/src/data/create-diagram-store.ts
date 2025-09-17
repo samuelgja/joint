@@ -2,20 +2,21 @@ import { dia, shapes } from '@joint/core';
 import { listenToCellChange } from '../utils/cell/listen-to-cell-change';
 import { ReactElement } from '../models/react-element';
 import { setElements } from '../utils/cell/cell-utilities';
-import type { GraphElement } from '../types/element-types';
-import type { GraphLink } from '../types/link-types';
+import type { DiagramElement } from '../types/element-types';
+import type { DiagramLink } from '../types/link-types';
 import { subscribeHandler } from '../utils/subscriber-handler';
 import { createStoreData, type UpdateResult } from './create-store-data';
 import type { CellMap } from '../utils/cell/cell-map';
 import type { Dispatch, SetStateAction } from 'react';
 import { CONTROLLED_MODE_BATCH_NAME } from '../utils/graph/update-graph';
+import type { ViewConfig } from '../components/diagram/diagram.view.types';
 
 export const DEFAULT_CELL_NAMESPACE: Record<string, unknown> = { ...shapes, ReactElement };
 
 export interface StoreOptions<
   Graph extends dia.Graph,
-  Element extends dia.Element | GraphElement,
-  Link extends dia.Link | GraphLink,
+  Element extends dia.Element | DiagramElement,
+  Link extends dia.Link | DiagramLink,
 > {
   /**
    * Graph instance to use. If not provided, a new graph instance will be created.
@@ -38,13 +39,13 @@ export interface StoreOptions<
    * Initial elements to be added to graph
    * It's loaded just once, so it cannot be used as React state.
    */
-  readonly initialElements?: Element[];
+  readonly elements?: Element[];
 
   /**
    * Initial links to be added to graph
    * It's loaded just once, so it cannot be used as React state.
    */
-  readonly initialLinks?: Link[];
+  readonly links?: Link[];
   /**
    * Callback triggered when elements (nodes) change.
    * Providing this prop enables controlled mode for elements.
@@ -60,7 +61,7 @@ export interface StoreOptions<
   readonly onLinksChange?: Dispatch<SetStateAction<Link[]>>;
 }
 
-export interface Store<Graph extends dia.Graph = dia.Graph> {
+export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
   /**
    * The JointJS graph instance.
    */
@@ -73,19 +74,19 @@ export interface Store<Graph extends dia.Graph = dia.Graph> {
   /**
    * Get elements
    */
-  readonly getElements: () => CellMap<GraphElement>;
+  readonly getElements: () => CellMap<DiagramElement>;
   /**
    * Get element by id
    */
-  readonly getElement: <Element extends GraphElement>(id: dia.Cell.ID) => Element;
+  readonly getElement: <Element extends DiagramElement>(id: dia.Cell.ID) => Element;
   /**
    *  Get links
    */
-  readonly getLinks: () => CellMap<GraphLink>;
+  readonly getLinks: () => CellMap<DiagramLink>;
   /**
    * Get link by id
    */
-  readonly getLink: (id: dia.Cell.ID) => GraphLink;
+  readonly getLink: (id: dia.Cell.ID) => DiagramLink;
   /**
    *  Remove all listeners and cleanup the graph.
    */
@@ -109,6 +110,13 @@ export interface Store<Graph extends dia.Graph = dia.Graph> {
    * This will trigger a re-render of all components that are subscribed to the store.
    */
   readonly forceUpdateStore: () => UpdateResult;
+
+  readonly setView: (name: string, viewConfig: ViewConfig) => () => void;
+  readonly getView: (name?: string) => ViewConfig | undefined;
+  readonly subscribeToView: (
+    name: string | undefined,
+    onViewConfigChange: (viewConfig: ViewConfig | undefined) => void
+  ) => () => void;
 }
 
 /**
@@ -125,8 +133,8 @@ export interface Store<Graph extends dia.Graph = dia.Graph> {
  */
 function createGraph<
   Graph extends dia.Graph = dia.Graph,
-  Element extends dia.Element | GraphElement = dia.Element | GraphElement,
-  Link extends dia.Link | GraphLink = dia.Link | GraphLink,
+  Element extends dia.Element | DiagramElement = dia.Element | DiagramElement,
+  Link extends dia.Link | DiagramLink = dia.Link | DiagramLink,
 >(options: StoreOptions<Graph, Element, Link> = {}): Graph {
   const { cellModel, cellNamespace = DEFAULT_CELL_NAMESPACE, graph } = options;
   const newGraph =
@@ -177,10 +185,10 @@ function isBatchNameObject(value: unknown): value is { batchName: string } {
  */
 export function createStoreWithGraph<
   Graph extends dia.Graph,
-  Element extends dia.Element | GraphElement,
-  Link extends dia.Link | GraphLink,
->(options?: StoreOptions<Graph, Element, Link>): Store<Graph> {
-  const { initialElements, graph, onElementsChange, onLinksChange } = options || {};
+  Element extends dia.Element | DiagramElement,
+  Link extends dia.Link | DiagramLink,
+>(options?: StoreOptions<Graph, Element, Link>): DiagramStore<Graph> {
+  const { elements, graph, onElementsChange, onLinksChange } = options || {};
 
   if (!graph) {
     // Create a new graph instance or use the provided one
@@ -189,8 +197,9 @@ export function createStoreWithGraph<
   // set elements to the graph
   setElements({
     graph,
-    elements: initialElements,
+    elements,
   });
+
   // create store data - caching the elements and links for the react
   const graphData = createStoreData();
   // listen to dia.graph cell changes and trigger `onCellChange` where there is change occurs in graph
@@ -226,8 +235,8 @@ export function createStoreWithGraph<
     // We call `onElementsChange` and `onLinksChange` explicitly only when direct change on `dia.Graph` occurs.
     if (batchName !== CONTROLLED_MODE_BATCH_NAME) {
       if (onElementsChange && updateResult.areElementsChanged) {
-        const elements = graphData.elements.map((element) => element);
-        onElementsChange(elements as SetStateAction<Element[]>);
+        const mappedElements = graphData.elements.map((element) => element);
+        onElementsChange(mappedElements as SetStateAction<Element[]>);
       }
       if (onLinksChange && updateResult.areLinksChanged) {
         const links = graphData.links.map((link) => link);
@@ -280,11 +289,65 @@ export function createStoreWithGraph<
       return;
     }
     graph.clear();
+    views.clear();
   }
   // Force update the graph to ensure it's in sync with the store.
   forceUpdateStore();
 
-  const store: Store<Graph> = {
+  /**
+   * Check function to ensure if we register two views with different ids, all be non react ids.
+   * When user want to use two `Diagram.View` with single `Diagram`, he must provide `id` as prop to each of the view.
+   * @param viewConfig
+   */
+  function viewCheck() {
+    if (views.size <= 1) {
+      return;
+    }
+
+    let isThereReactId = false;
+    for (const [, existingView] of views) {
+      if (existingView.isReactId) {
+        isThereReactId = true;
+        break;
+      }
+    }
+    if (isThereReactId) {
+      throw new Error(
+        'When using multiple `Diagram.View` with single `Diagram`, you must provide `id` property for each of the `Diagram.View` Component'
+      );
+    }
+  }
+  const views = new Map<string, ViewConfig>();
+  const store: DiagramStore<Graph> = {
+    setView(name: string, viewConfig: ViewConfig) {
+      views.set(name, viewConfig);
+      if (process.env.NODE_ENV !== 'production') {
+        viewCheck();
+      }
+      return () => {
+        views.delete(name);
+      };
+    },
+    getView(name) {
+      if (!name) {
+        // return first view if name is not provided
+        return views.values().next().value;
+      }
+      return views.get(name);
+    },
+    subscribeToView(name, onViewConfigChange) {
+      const callback = () => {
+        if (!name) {
+          // return first view if name is not provided
+          const firstView = views.values().next().value;
+          onViewConfigChange(firstView);
+          return;
+        }
+        onViewConfigChange(views.get(name));
+      };
+      callback();
+      return elementsEvents.subscribe(callback);
+    },
     forceUpdateStore,
     destroy,
     graph,
@@ -295,7 +358,7 @@ export function createStoreWithGraph<
     getLinks() {
       return graphData.links;
     },
-    getElement<E extends GraphElement>(id: dia.Cell.ID) {
+    getElement<E extends DiagramElement>(id: dia.Cell.ID) {
       const item = graphData.elements.get(id);
 
       if (!item) {
@@ -350,9 +413,9 @@ export function createStoreWithGraph<
  */
 export function createStore<
   Graph extends dia.Graph,
-  Element extends dia.Element | GraphElement,
-  Link extends dia.Link | GraphLink,
->(options?: StoreOptions<Graph, Element, Link>): Store<Graph> {
+  Element extends dia.Element | DiagramElement,
+  Link extends dia.Link | DiagramLink,
+>(options?: StoreOptions<Graph, Element, Link>): DiagramStore<Graph> {
   const graph = createGraph<Graph, Element, Link>(options);
   return createStoreWithGraph<Graph, Element, Link>({
     ...options,

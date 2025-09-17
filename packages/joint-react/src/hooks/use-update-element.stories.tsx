@@ -19,7 +19,7 @@ const meta: Meta<typeof Hook> = {
   render: () => <RenderItemDecorator renderElement={Hook} />,
   parameters: makeRootDocumentation({
     apiURL: API_URL,
-    description: `\`useUpdateElement\` is a hook to set element attributes. It returns a function to set the element attribute. It must be used inside the GraphProvider.
+    description: `\`useUpdateElement\` is a hook to set element attributes. It returns a function to set the element attribute. It must be used inside the Diagram.
     `,
     code: `import { useUpdateElement } from '@joint/react'
 

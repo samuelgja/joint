@@ -1,7 +1,7 @@
-import { useGraphStore } from './use-graph-store';
+import { useDiagramStore } from './use-diagram-store';
 import { util } from '@joint/core';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
-import type { GraphElement } from '../types/element-types';
+import type { DiagramElement } from '../types/element-types';
 import type { CellMap } from '../utils/cell/cell-map';
 
 /**
@@ -9,7 +9,7 @@ import type { CellMap } from '../utils/cell/cell-map';
  * @param items - The items to select from.
  * @returns - The selected items.
  */
-function defaultSelector<Elements extends GraphElement = GraphElement>(
+function defaultSelector<Elements extends DiagramElement = DiagramElement>(
   items: CellMap<Elements>
 ): Elements[] {
   return items.map((item) => item) as Elements[];
@@ -57,7 +57,7 @@ function defaultSelector<Elements extends GraphElement = GraphElement>(
  * @returns - The selected elements.
  */
 export function useElements<
-  Elements extends GraphElement = GraphElement,
+  Elements extends DiagramElement = DiagramElement,
   SelectorReturnType = Elements[],
 >(
   selector: (
@@ -65,7 +65,7 @@ export function useElements<
   ) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
   isEqual: (a: SelectorReturnType, b: SelectorReturnType) => boolean = util.isEqual
 ): SelectorReturnType {
-  const { subscribe, getElements } = useGraphStore();
+  const { subscribe, getElements } = useDiagramStore();
   const typedGetElements = getElements as () => CellMap<Elements>;
   const elements = useSyncExternalStoreWithSelector(
     subscribe,

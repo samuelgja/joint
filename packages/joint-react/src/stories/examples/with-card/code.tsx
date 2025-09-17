@@ -5,9 +5,8 @@ import { useCallback, type PropsWithChildren } from 'react';
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   type InferElement,
   type OnSetSize,
   type RenderElement,
@@ -74,14 +73,19 @@ function Main() {
     return <Card {...element}>{element.label}</Card>;
   }, []);
   return (
-    <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={renderElement} />
+    <Diagram.View
+      width="100%"
+      className={PAPER_CLASSNAME}
+      height={280}
+      renderElement={renderElement}
+    />
   );
 }
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

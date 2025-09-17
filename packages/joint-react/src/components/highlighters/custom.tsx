@@ -55,10 +55,13 @@ function RawComponent<
   const paper = usePaper();
   const highlighterId = useId();
   const { elementRef, elementChildren } = useChildrenRef(children, forwardedRef);
-
+  const hasPaper = !!paper;
   useImperativeApi(
     {
       onLoad() {
+        if (!paper) {
+          throw new Error('Paper not found in Highlighter.Custom');
+        }
         const cellView = paper.findViewByModel(id);
         if (!cellView) {
           throw new Error('CellView not found for highlighter');
@@ -82,7 +85,7 @@ function RawComponent<
         // @ts-expect-error Internal API
         instance.update();
       },
-      isDisabled: isHidden ?? false,
+      isDisabled: isHidden || !hasPaper,
     },
     dependencyExtract(options)
   );

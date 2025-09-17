@@ -1,6 +1,5 @@
-import { useContext } from 'react';
-import { PaperContext } from '../context/paper-context';
 import type { dia } from '@joint/core';
+import { useDiagramView } from './use-diagram-view';
 
 /**
  * Return jointjs paper instance from the paper context.
@@ -13,10 +12,7 @@ import type { dia } from '@joint/core';
  * @returns - The jointjs paper instance.
  * @throws - If the hook is not used inside the paper context.
  */
-export function usePaper(): dia.Paper {
-  const paperCtx = useContext(PaperContext);
-  if (!paperCtx) {
-    throw new Error('usePaper must be used within a `PaperProvider` or `Paper` component');
-  }
-  return paperCtx.paper;
+export function usePaper(): dia.Paper | undefined {
+  const viewConfig = useDiagramView();
+  return viewConfig?.paper;
 }

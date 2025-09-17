@@ -2,11 +2,10 @@ import { useCallback, useState } from 'react';
 import {
   createElements,
   createLinks,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   usePaper,
-  type GraphProps,
+  type DiagramProps,
   type InferElement,
 } from '@joint/react';
 import '../../examples/index.css';
@@ -43,9 +42,10 @@ function Controls() {
         type="button"
         // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
         onClick={() => {
-          const center = paper.getArea().center();
+          const center = paper?.getArea().center();
+          if (!center) return;
           zoomLevel = Math.min(3, zoomLevel + 0.2);
-          paper.scaleUniformAtPoint(zoomLevel, center);
+          paper?.scaleUniformAtPoint(zoomLevel, center);
         }}
         className={BUTTON_CLASSNAME}
       >
@@ -55,9 +55,10 @@ function Controls() {
         type="button"
         // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
         onClick={() => {
-          const center = paper.getArea().center();
+          const center = paper?.getArea().center();
+          if (!center) return;
           zoomLevel = Math.max(0.2, zoomLevel - 0.2);
-          paper.scaleUniformAtPoint(zoomLevel, center);
+          paper?.scaleUniformAtPoint(zoomLevel, center);
         }}
         className={`${BUTTON_CLASSNAME} ml-2`}
       >
@@ -89,7 +90,12 @@ function Main() {
   );
 
   return (
-    <Paper useHTMLOverlay={isHTMLEnabled} width={400} height={400} renderElement={renderItem}>
+    <Diagram.View
+      useHTMLOverlay={isHTMLEnabled}
+      width={400}
+      height={400}
+      renderElement={renderItem}
+    >
       <Controls />
       <button
         type="button"
@@ -101,14 +107,14 @@ function Main() {
       >
         is HTML Overlay enabled: {isHTMLEnabled ? 'true' : 'false'}
       </button>
-    </Paper>
+    </Diagram.View>
   );
 }
 
-export default function App(props: Readonly<GraphProps>) {
+export default function App(props: Readonly<DiagramProps>) {
   return (
-    <GraphProvider {...props} initialLinks={initialEdges} initialElements={initialElements}>
+    <Diagram {...props} links={initialEdges} elements={initialElements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

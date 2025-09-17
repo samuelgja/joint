@@ -4,9 +4,8 @@ import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import {
   createElements,
   createLinks,
-  GraphProvider,
-  Paper,
-  type GraphProps,
+  Diagram,
+  type DiagramProps,
   type InferElement,
 } from '@joint/react';
 
@@ -42,15 +41,20 @@ function RenderItem({ width, height, color }: CustomElement) {
 function Main() {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderItem} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={RenderItem}
+      />
     </div>
   );
 }
 
-export default function App(props: Readonly<GraphProps>) {
+export default function App(props: Readonly<DiagramProps>) {
   return (
-    <GraphProvider {...props} initialLinks={initialEdges} initialElements={initialElements}>
+    <Diagram {...props} links={initialEdges} elements={initialElements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

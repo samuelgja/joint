@@ -1,9 +1,8 @@
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 import {
   createElements,
-  GraphProvider,
+  Diagram,
   MeasuredNode,
-  Paper,
   useElements,
   useGraph,
   type InferElement,
@@ -45,15 +44,20 @@ function ResizableNode({ id, label, width, height }: Readonly<BaseElementWithDat
 function Main() {
   return (
     <div style={{ display: 'flex', flexDirection: 'row', position: 'relative' }}>
-      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={ResizableNode} />
+      <Diagram.View
+        width="100%"
+        className={PAPER_CLASSNAME}
+        height={280}
+        renderElement={ResizableNode}
+      />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements}>
+    <Diagram elements={initialElements}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

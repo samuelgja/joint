@@ -1,13 +1,6 @@
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
-import {
-  createElements,
-  createLinks,
-  GraphProvider,
-  Highlighter,
-  Paper,
-  type InferElement,
-} from '@joint/react';
+import { createElements, createLinks, Diagram, Highlighter, type InferElement } from '@joint/react';
 import '../index.css';
 import { useState } from 'react';
 import { PAPER_CLASSNAME, PRIMARY, SECONDARY } from 'storybook-config/theme';
@@ -68,7 +61,7 @@ function RenderItemWithChildren({ height, width, label }: BaseElementWithData) {
 function Main() {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Paper
+      <Diagram.View
         width="100%"
         className={PAPER_CLASSNAME}
         height={280}
@@ -79,8 +72,8 @@ function Main() {
 }
 export default function App() {
   return (
-    <GraphProvider initialElements={initialElements} initialLinks={initialEdges}>
+    <Diagram elements={initialElements} links={initialEdges}>
       <Main />
-    </GraphProvider>
+    </Diagram>
   );
 }

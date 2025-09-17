@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, type CSSProperties } from 'react';
-import { usePaper } from '../../hooks';
+import { usePaper } from '../../../hooks';
 import { mvc, V } from '@joint/core';
 import { createPortal } from 'react-dom';
 
@@ -20,6 +20,7 @@ function Component({ onSetElement }: Readonly<Props>) {
       if (!divRef.current) {
         return;
       }
+      if (!paper) return;
       divRef.current.style.width = paper.el.style.width;
       divRef.current.style.height = paper.el.style.height;
       divRef.current.style.transformOrigin = '0 0';
@@ -39,15 +40,19 @@ function Component({ onSetElement }: Readonly<Props>) {
 
   const style = useMemo(
     (): CSSProperties => ({
-      width: paper.el.style.width,
-      height: paper.el.style.height,
+      width: paper?.el.style.width,
+      height: paper?.el.style.height,
       position: 'absolute',
       left: '0px',
       top: '0px',
       pointerEvents: 'none',
     }),
-    [paper.el.style.height, paper.el.style.width]
+    [paper?.el.style.height, paper?.el.style.width]
   );
+
+  if (!paper) {
+    return;
+  }
 
   const element = <div ref={divRef} style={style} />;
   return <>{createPortal(element, paper.el)}</>;

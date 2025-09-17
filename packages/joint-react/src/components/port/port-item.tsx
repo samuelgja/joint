@@ -3,11 +3,11 @@ import { memo, useContext, useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { useCellId } from '../../hooks';
 import { PortGroupContext } from '../../context/port-group-context';
-import { useGraphStore } from '../../hooks/use-graph-store';
+import { useDiagramStore } from '../../hooks/use-diagram-store';
 import { PORTAL_SELECTOR } from '../../data/create-ports-data';
 import { jsx } from '../../utils/joint-jsx/jsx-to-markup';
 import { createElements } from '../../utils/create';
-import { PaperContext } from '../../context';
+import { DiagramViewContext } from '../../context';
 
 const elementMarkup = jsx(<g joint-selector={PORTAL_SELECTOR} />);
 
@@ -59,12 +59,12 @@ export interface PortItemProps {
 function Component(props: PortItemProps) {
   const { magnet, id, children, groupId, z, x, y, dx, dy } = props;
   const cellId = useCellId();
-  const paperCtx = useContext(PaperContext);
-  if (!paperCtx) {
+  const diagramViewCtx = useContext(DiagramViewContext);
+  if (!diagramViewCtx) {
     throw new Error('PortItem must be used within a `PaperProvider` or `Paper` component');
   }
-  const { portsStore, paper } = paperCtx;
-  const { graph } = useGraphStore();
+  const { portsStore, paper } = diagramViewCtx;
+  const { graph } = useDiagramStore();
 
   const contextGroupId = useContext(PortGroupContext);
 
