@@ -49,8 +49,8 @@ export interface DiagramViewProps<ElementItem extends DiagramElement = DiagramEl
   /**
    * A function that renders the element.
    * 
-   * Note: Jointjs works by default with SVG's so by default renderElement is append inside the SVGElement node.
-   * To use HTML elements, you need to use the `HTMLNode` component or `foreignObject` element.
+   * Note: JointJS works with SVG by default, so `renderElement` is appended inside an SVG node.
+   * To render HTML elements, use the experimental `useHTMLOverlay` prop or an SVG `foreignObject`.
    * 
    * This is called when the data from `elementSelector` changes.
    * @example

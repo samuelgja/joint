@@ -11,10 +11,10 @@ import { Diagram, type DiagramProps, type DiagramViewProps } from '../components
  * @description
  * This wrapper is used to render a graph provider.
  */
-export function graphProviderWrapper(props: DiagramProps): React.JSXElementConstructor<{
+export function diagramProviderWrapper(props: DiagramProps): React.JSXElementConstructor<{
   children: React.ReactNode;
 }> {
-  return function GraphProviderWrapper({ children }) {
+  return function DiagramProviderWrapper({ children }) {
     return <Diagram {...props}>{children}</Diagram>;
   };
 }
@@ -58,7 +58,7 @@ export const simpleRenderElementWrapper = paperRenderElementWrapper({
         height: 99,
       },
     ],
-    initialLinks: [
+    links: [
       {
         id: '3',
         source: '1',

@@ -11,7 +11,7 @@ import { Diagram } from '../components';
 const API_URL = getAPILink('useElements');
 
 const meta: Meta<typeof HookTester> = {
-  title: 'Hooks/useElements',
+  title: 'Hooks/useElements useLinks',
   component: HookTester,
   decorators: [SimpleDiagramDecorator],
   parameters: makeRootDocumentation({

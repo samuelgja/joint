@@ -1,10 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { graphProviderWrapper } from '../../utils/test-wrappers';
+import { diagramProviderWrapper } from '../../utils/test-wrappers';
 import { useLinks } from '../use-links';
 
 describe('use-links', () => {
-  const wrapper = graphProviderWrapper({
-    initialElements: [
+  const wrapper = diagramProviderWrapper({
+    elements: [
       {
         id: '1',
         width: 97,
@@ -16,7 +16,7 @@ describe('use-links', () => {
         height: 99,
       },
     ],
-    initialLinks: [
+    links: [
       {
         id: '3',
         source: '1',

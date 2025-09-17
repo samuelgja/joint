@@ -21,11 +21,16 @@ const meta: Meta<typeof Diagram> = {
   component: Diagram,
   parameters: makeRootDocumentation({
     description: `
-Diagram is a component that distribute paper context. It must have Diagram children. It is used to display and interact with graph elements.
+Diagram provides a shared Graph context for its descendants. Use it to scope any components that read or write the diagram state. You can render one or multiple Diagram.View instances inside.
     `,
     apiURL: API_URL,
     code: `import { Diagram } from '@joint/react'
-<Diagram renderElement={() => <rect rx={10} ry={10} width={100} height={50} fill={"blue"} />} />
+function Render({ width, height }) {
+  return <rect rx={10} ry={10} width={width} height={height} fill="blue" />
+}
+<Diagram>
+  <Diagram.View className={PAPER_CLASSNAME} renderElement={Render} />
+</Diagram>
     `,
   }),
 };

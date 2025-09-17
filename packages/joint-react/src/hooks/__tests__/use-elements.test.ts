@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { graphProviderWrapper } from '../../utils/test-wrappers';
+import { diagramProviderWrapper } from '../../utils/test-wrappers';
 import { useElements } from '../use-elements';
 
 describe('use-elements', () => {
-  const wrapper = graphProviderWrapper({
+  const wrapper = diagramProviderWrapper({
     elements: [
       {
         id: '1',

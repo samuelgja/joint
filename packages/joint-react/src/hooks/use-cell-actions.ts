@@ -3,12 +3,12 @@ import { dia } from '@joint/core';
 import { processElement, processLink } from '../utils/cell/cell-utilities';
 import { updateCell } from '../utils/graph/update-graph';
 
-import type { GraphElement } from '../types/element-types';
-import type { GraphLink } from '../types/link-types';
+import type { DiagramElement } from '../types/element-types';
 import type { CellWithId } from '../types/cell.types';
-import { useGraphStore } from './use-graph-store';
+import type { DiagramLink } from '../types/link-types';
+import { useDiagramStore } from './use-diagram-store';
 
-interface CellActions<Attributes extends dia.Element | GraphElement> {
+interface CellActions<Attributes extends dia.Element | DiagramElement> {
   set: {
     (attributes: Attributes): void;
     (id: dia.Cell.ID, updater: (previous: Attributes) => Attributes): void;
@@ -21,7 +21,7 @@ interface CellActions<Attributes extends dia.Element | GraphElement> {
  * @param cell - The cell to check.
  * @returns True if the cell is a link, false otherwise.
  */
-function isLink(cell: CellWithId): cell is GraphLink<'standard.Link'> {
+function isLink(cell: CellWithId): cell is DiagramLink<'standard.Link'> {
   return cell instanceof dia.Link || ('source' in cell && 'target' in cell);
 }
 
@@ -32,7 +32,7 @@ function isLink(cell: CellWithId): cell is GraphLink<'standard.Link'> {
  * @returns - An object containing methods to set and remove cells.
  * @example
  * ```tsx
- * const { set, remove } = useCellActions<GraphElement | GraphLink<"standard.Link">>();
+ * const { set, remove } = useCellActions<DiagramElement | DiagramLink<"standard.Link">>();
  *
  * // Update element
  * set({ id: '1', position: { x: 100, y: 150 } });
@@ -43,9 +43,9 @@ function isLink(cell: CellWithId): cell is GraphLink<'standard.Link'> {
  * ```
  */
 export function useCellActions<
-  Attributes extends GraphElement | GraphLink<'standard.Link'>,
+  Attributes extends DiagramElement | DiagramLink<'standard.Link'>,
 >(): CellActions<Attributes> {
-  const { graph, getElement, getLink } = useGraphStore();
+  const { graph, getElement, getLink } = useDiagramStore();
 
   return useMemo(
     (): CellActions<Attributes> => ({
@@ -60,9 +60,9 @@ export function useCellActions<
           maybeUpdater &&
           typeof maybeUpdater === 'function'
         ) {
-          //   let   cell: Attributes extends GraphElement | GraphLink<"standard.Link">
+          //   let   cell: Attributes extends DiagramElement | DiagramLink<"standard.Link">
 
-          let cell: GraphElement | GraphLink | undefined;
+          let cell: DiagramElement | DiagramLink | undefined;
           try {
             cell = getElement(attributesOrId);
           } catch {
@@ -77,7 +77,7 @@ export function useCellActions<
         }
         const areAttributesLink = isLink(attributes);
         const cell = areAttributesLink
-          ? processLink(attributes as dia.Link | GraphLink<'standard.Link'>)
+          ? processLink(attributes as dia.Link | DiagramLink<'standard.Link'>)
           : processElement(attributes);
         updateCell(graph, cell);
       },
