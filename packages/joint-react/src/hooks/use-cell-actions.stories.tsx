@@ -314,7 +314,7 @@ function HookSetAndRemoveLink({ label, id }: SimpleElement) {
         className={BUTTON_CLASSNAME}
         onClick={() =>
           set({
-            id: 'xxlink',
+            id: 'l-1',
             source: id,
             target: id === '1' ? '2' : '1',
             attrs: {
@@ -325,7 +325,7 @@ function HookSetAndRemoveLink({ label, id }: SimpleElement) {
       >
         Set link
       </button>
-      <button className={BUTTON_CLASSNAME} onClick={() => remove('xxlink')}>
+      <button className={BUTTON_CLASSNAME} onClick={() => remove('l-1')}>
         Remove Link
       </button>
       label: {label}

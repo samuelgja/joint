@@ -41,6 +41,7 @@ function MiniMap() {
   return (
     <div className="absolute bottom-4 right-6 w-[200px] h-[150px] border border-[#dde6ed] rounded-lg overflow-hidden">
       <Diagram.View
+        id="minimap"
         interactive={false}
         scale={0.4}
         width="100%"
@@ -68,6 +69,7 @@ function Main() {
   return (
     <div className="flex flex-row relative">
       <Diagram.View
+        id="main-view"
         width="100%"
         className={PAPER_CLASSNAME}
         height={280}

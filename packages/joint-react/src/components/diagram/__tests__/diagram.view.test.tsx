@@ -293,9 +293,11 @@ describe('DiagramView Component', () => {
     function UpdatePosition() {
       const graph = useGraph();
       useEffect(() => {
-        const element = graph.getCell('1');
-        console.log('CALLED');
-        element.set('position', { x: 100, y: 100 });
+        // eslint-disable-next-line @eslint-react/web-api/no-leaked-timeout
+        setTimeout(() => {
+          const element = graph.getCell('1');
+          element.set('position', { x: 100, y: 100 });
+        }, 20);
       }, [graph]);
       return null;
     }

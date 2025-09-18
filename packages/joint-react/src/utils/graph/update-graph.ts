@@ -38,6 +38,7 @@ interface UpdateCellOptions {
   readonly graph: dia.Graph;
   readonly newCell: CellOrJsonCell;
   readonly newCellsMap?: Record<string, CellOrJsonCell>;
+  readonly isLink?: boolean;
 }
 /**
  * Update a cell in the graph or add it if it does not exist.
@@ -51,17 +52,18 @@ export function updateCell(options: UpdateCellOptions) {
   }
   newCellsMap[id] = newCell;
   const originalCell = graph.getCell(newCell.id);
-  if (!originalCell) {
+  if (originalCell) {
+    const isLink = originalCell.isLink();
+    if (originalCell.get('type') === getType(newCell, 'type') && !isLink) {
+      originalCell.set(getAttributes(newCell));
+    } else {
+      // The type of the cell has changed. We need to replace the cell.
+      originalCell.remove({ disconnectLinks: true });
+      graph.addCell(newCell);
+    }
+  } else {
     graph.addCell(newCell);
-    return;
   }
-
-  if (originalCell.get('type') === getType(newCell, 'type')) {
-    originalCell.set(getAttributes(newCell));
-    return;
-  }
-  originalCell.remove({ disconnectLinks: true });
-  graph.addCell(newCell);
 }
 
 interface Options {
@@ -82,7 +84,7 @@ export function updateGraph(options: Options) {
   // Here we do not want to remove the existing elements but only update them if they exist.
   // e.g. Using resetCells() would remove all elements from the graph and add new ones.
   for (const newCell of cells) {
-    updateCell({ graph, newCell, newCellsMap });
+    updateCell({ graph, newCell, newCellsMap, isLink });
   }
 
   if (originalCells) {

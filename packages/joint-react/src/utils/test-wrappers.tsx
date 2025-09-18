@@ -17,8 +17,8 @@ export function diagramProviderWrapper(props: DiagramProps): React.JSXElementCon
 }
 
 interface Options {
-  paperProps?: DiagramViewProps;
-  graphProps?: DiagramProps;
+  diagramViewProps?: DiagramViewProps;
+  diagramProps?: DiagramProps;
 }
 /**
  * Testing helper to render a `Diagram.View` inside a `Diagram` provider.
@@ -32,21 +32,26 @@ interface Options {
 export function paperRenderElementWrapper(options: Options): React.JSXElementConstructor<{
   children: React.ReactNode;
 }> {
-  const { paperProps, graphProps } = options;
+  const { diagramViewProps, diagramProps } = options;
   return function GraphProviderWrapper({ children }) {
     const renderElement = useCallback(() => {
       return children;
     }, [children]);
     return (
-      <Diagram {...graphProps}>
-        <Diagram.View {...paperProps} renderElement={renderElement}></Diagram.View>
+      <Diagram {...diagramProps}>
+        <Diagram.View
+          {...diagramViewProps}
+          width={100}
+          height={100}
+          renderElement={renderElement}
+        ></Diagram.View>
       </Diagram>
     );
   };
 }
 
 export const simpleRenderElementWrapper = paperRenderElementWrapper({
-  graphProps: {
+  diagramProps: {
     elements: [
       {
         id: '1',

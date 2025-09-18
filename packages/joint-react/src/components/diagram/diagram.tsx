@@ -56,6 +56,8 @@ interface DiagramBaseProps<
  * Internal handler coordinating initial population and controlled-mode mirroring
  * for elements and links. Also delays link creation until elements are measured
  * in uncontrolled mode to avoid flicker.
+ * @param props - The properties for the DiagramProviderHandler, including elements, links, and callbacks.
+ * @returns A context provider for the measured state of elements.
  * @private
  */
 export function DiagramProviderHandler(props: PropsWithChildren<DiagramBaseProps>) {

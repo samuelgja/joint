@@ -16,7 +16,7 @@ describe('createStore', () => {
     expect(store.graph).toBe(customGraph);
   });
 
-  it('should add default elements', () => {
+  it('should add default elements', async () => {
     const element = new dia.Element({ id: 'element1', type: 'standard.Rectangle' });
     const link = new dia.Link({ id: 'link1', type: 'standard.Link', source: { id: 'element1' } });
     const store = createStore({

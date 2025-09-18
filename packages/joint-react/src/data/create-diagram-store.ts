@@ -228,7 +228,6 @@ export function createStoreWithGraph<
     }
 
     const updateResult = graphData.updateStore(graph);
-
     // Skip processing changes in controlled mode since they are already handled.
     // This prevents circular calls to `onElementsChange`.
     // For example, if a user manages elements via React state and updates the graph using setElements,
@@ -300,7 +299,6 @@ export function createStoreWithGraph<
   /**
    * Check function to ensure if we register two views with different ids, all be non react ids.
    * When user want to use two `Diagram.View` with single `Diagram`, he must provide `id` as prop to each of the view.
-   * @param DiagramViewContext
    */
   function viewCheck() {
     if (views.size <= 1) {
@@ -321,12 +319,17 @@ export function createStoreWithGraph<
     }
   }
   const views = new Map<string, DiagramViewContext>();
+  const viewsListeners = new Map<string, Set<() => void>>();
 
   const store: DiagramStore<Graph> = {
     setView(name: string, DiagramViewContext: DiagramViewContext) {
       views.set(name, DiagramViewContext);
       if (process.env.NODE_ENV !== 'production') {
         viewCheck();
+      }
+      const listeners = viewsListeners.get(name);
+      if (listeners) {
+        for (const listener of listeners) listener();
       }
       return () => {
         views.delete(name);
@@ -340,6 +343,11 @@ export function createStoreWithGraph<
       return views.get(name);
     },
     subscribeToView(name, onDiagramViewContextChange) {
+      let listeners = viewsListeners.get(name || '');
+      if (!listeners) {
+        listeners = new Set<() => void>();
+        viewsListeners.set(name || '', listeners);
+      }
       const callback = () => {
         if (!name) {
           // return first view if name is not provided
@@ -349,12 +357,10 @@ export function createStoreWithGraph<
         }
         onDiagramViewContextChange(views.get(name));
       };
+      listeners.add(callback);
       callback();
       return () => {
-        if (!name) {
-          return;
-        }
-        views.delete(name);
+        listeners?.delete(callback);
       };
     },
     forceUpdateStore,

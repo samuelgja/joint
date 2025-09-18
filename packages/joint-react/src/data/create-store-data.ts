@@ -186,7 +186,18 @@ export function createStoreData<
     destroy,
     getElementById,
     getLinkById,
-    elements: ref.elements,
-    links: ref.links,
+    get elements() {
+      return ref.elements;
+    },
+    set elements(_value: Element[]) {
+      throw new Error('elements is read-only; call updateStore(graph) instead.');
+    },
+
+    get links() {
+      return ref.links;
+    },
+    set links(_value: DiagramLink[]) {
+      throw new Error('links is read-only; call updateStore(graph) instead.');
+    },
   } as StoreData<Graph, Element>;
 }
