@@ -52,7 +52,7 @@ type ElementWithSelected<T> = { readonly isSelected: boolean } & T;
 const BUTTON_CLASSNAME =
   'bg-blue-500 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm flex items-center';
 
-// Define static properties for the paper - used by minimap and main paper
+// Define static properties for the view's Paper - used by minimap and main view
 const PAPER_PROPS: DiagramViewProps<Element> = {
   defaultRouter: {
     name: 'rightAngle',
@@ -449,7 +449,7 @@ function ElementsInfo() {
   );
 }
 
-// Define main paper component and render elements
+// Define main view component and render elements
 function Main() {
   const [isMinimapVisible, setIsMinimapVisible] = useState(false);
   const [selectedElement, setSelectedElement] = useState<dia.Cell.ID | null>(null);

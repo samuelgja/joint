@@ -53,10 +53,9 @@ interface DiagramBaseProps<
 }
 
 /**
- * GraphProviderHandler component is used to handle the graph instance and provide it to the children.
- * It also handles the default elements and links.
- * @returns GraphProviderHandler component
- * @param props - {GraphProviderHandler} props
+ * Internal handler coordinating initial population and controlled-mode mirroring
+ * for elements and links. Also delays link creation until elements are measured
+ * in uncontrolled mode to avoid flicker.
  * @private
  */
 export function GraphProviderHandler(props: PropsWithChildren<DiagramBaseProps>) {

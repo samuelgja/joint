@@ -61,7 +61,7 @@ function Component(props: PortItemProps) {
   const cellId = useCellId();
   const diagramViewCtx = useContext(DiagramViewContext);
   if (!diagramViewCtx) {
-    throw new Error('PortItem must be used within a `PaperProvider` or `Paper` component');
+    throw new Error('PortItem must be used within a Diagram.View context');
   }
   const { portsStore, paper } = diagramViewCtx;
   const { graph } = useDiagramStore();

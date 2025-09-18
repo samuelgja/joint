@@ -5,7 +5,7 @@ import { handlePaperEvents } from '../utils/handle-paper-events';
 import { useGraph } from './use-graph';
 
 /**
- * A hook that listens to paper events and triggers the corresponding callbacks.
+ * A hook that listens to view (Paper) events and triggers the corresponding callbacks.
  * @param events - An object where keys are event names and values are callback functions.
  * @group Hooks
  * @example

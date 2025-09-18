@@ -2,14 +2,11 @@ import { useCallback } from 'react';
 import { Diagram, type DiagramProps, type DiagramViewProps } from '../components';
 
 /**
- * This wrapper is used to render a graph provider.
- * It is used in the tests to render a graph provider.
- * @param props - The props for the graph provider.
- * @returns - The wrapper.
+ * Testing helper to render a `Diagram` provider.
+ * @param props - Props forwarded to the `Diagram` root component.
+ * @returns A component that wraps children with `Diagram`.
  * @internal
  * @group utils
- * @description
- * This wrapper is used to render a graph provider.
  */
 export function diagramProviderWrapper(props: DiagramProps): React.JSXElementConstructor<{
   children: React.ReactNode;
@@ -24,12 +21,11 @@ interface Options {
   graphProps?: DiagramProps;
 }
 /**
- * This wrapper is used to render a paper with a graph provider.
- * It is used in the tests to render a paper with a graph provider.
- * @param options - The options for the wrapper.
- * @param options.paperProps - The props for the paper.
- * @param options.graphProps - The props for the graph provider.
- * @returns - The wrapper.
+ * Testing helper to render a `Diagram.View` inside a `Diagram` provider.
+ * @param options - Wrapper options.
+ * @param options.paperProps - Props for `Diagram.View`.
+ * @param options.graphProps - Props for the `Diagram` root.
+ * @returns A component that wraps children inside `Diagram` + `Diagram.View`.
  * @internal
  * @group utils
  */

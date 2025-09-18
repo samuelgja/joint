@@ -27,11 +27,15 @@ const meta: Meta<typeof Diagram.View> = {
   decorators: [SimpleDiagramDecorator],
   parameters: makeRootDocumentation({
     description: `
-Diagram.View is a component that renders graph elements. It is used to display and interact with graph elements.
+Diagram.View renders nodes and links using the JointJS Paper under the hood. Compose it inside a Diagram. Define node UI via the renderElement prop, and use useHTMLOverlay or <foreignObject> for HTML content.
     `,
     apiURL: API_URL,
-    code: `import { Diagram.View } from '@joint/react'
-<Diagram.View renderElement={() => <rect rx={10} ry={10} width={100} height={50} fill={"blue"} />} />
+    code: `import { Diagram } from '@joint/react'
+<Diagram>
+  <Diagram.View renderElement={({ width, height }) => (
+    <rect rx={10} ry={10} width={width} height={height} fill={"blue"} />
+  )} />
+</Diagram>
     `,
   }),
 };
