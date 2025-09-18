@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/cognitive-complexity */
 import type { dia } from '@joint/core';
 import type { CellOrJsonCell } from '../cell/cell-utilities';
 import { getCellId } from '../link-utilities';
@@ -39,30 +38,30 @@ interface UpdateCellOptions {
   readonly newCell: CellOrJsonCell;
   readonly newCellsMap?: Record<string, CellOrJsonCell>;
   readonly isLink?: boolean;
+  readonly isSilenced?: boolean;
 }
 /**
  * Update a cell in the graph or add it if it does not exist.
  * @param options - The options for updating the cell.
  */
 export function updateCell(options: UpdateCellOptions) {
-  const { graph, newCell, newCellsMap = {} } = options;
+  const { graph, newCell, newCellsMap = {}, isSilenced } = options;
   const id = getCellId(newCell.id);
-  if (!id) {
-    return;
-  }
+  if (!id) return;
+
   newCellsMap[id] = newCell;
   const originalCell = graph.getCell(newCell.id);
+
   if (originalCell) {
     const isLink = originalCell.isLink();
     if (originalCell.get('type') === getType(newCell, 'type') && !isLink) {
-      originalCell.set(getAttributes(newCell));
+      originalCell.set(getAttributes(newCell), { silent: isSilenced });
     } else {
-      // The type of the cell has changed. We need to replace the cell.
-      originalCell.remove({ disconnectLinks: true });
-      graph.addCell(newCell);
+      originalCell.remove({ disconnectLinks: true, silent: isSilenced });
+      graph.addCell(newCell, { silent: isSilenced });
     }
   } else {
-    graph.addCell(newCell);
+    graph.addCell(newCell, { silent: isSilenced });
   }
 }
 
@@ -70,6 +69,7 @@ interface Options {
   readonly graph: dia.Graph;
   readonly cells: CellOrJsonCell[];
   readonly isLink: boolean;
+  readonly isSilenced?: boolean;
 }
 
 /**
@@ -77,14 +77,14 @@ interface Options {
  * @param options - The options for updating the graph.
  */
 export function updateGraph(options: Options) {
-  const { graph, cells, isLink } = options;
+  const { graph, cells, isLink, isSilenced } = options;
   const originalCells = isLink ? graph.getLinks() : graph.getElements();
   const newCellsMap: Record<string, CellOrJsonCell> = {};
 
   // Here we do not want to remove the existing elements but only update them if they exist.
   // e.g. Using resetCells() would remove all elements from the graph and add new ones.
   for (const newCell of cells) {
-    updateCell({ graph, newCell, newCellsMap, isLink });
+    updateCell({ graph, newCell, newCellsMap, isLink, isSilenced });
   }
 
   if (originalCells) {
