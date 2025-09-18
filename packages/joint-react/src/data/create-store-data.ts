@@ -1,96 +1,192 @@
+/* eslint-disable sonarjs/cognitive-complexity */
+/* eslint-disable unicorn/prevent-abbreviations */
 import type { dia } from '@joint/core';
 import { util } from '@joint/core';
 import { getElement, getLink } from '../utils/cell/get-cell';
-import { CellMap } from '../utils/cell/cell-map';
 import type { DiagramLink } from '../types/link-types';
 import type { DiagramElement } from '../types/element-types';
-import { diffUpdate } from '../utils/diff-update';
 
 export interface UpdateResult {
   readonly diffIds: Set<dia.Cell.ID>;
   readonly areElementsChanged: boolean;
   readonly areLinksChanged: boolean;
 }
+
 interface StoreData<
   Graph extends dia.Graph = dia.Graph,
   Element extends DiagramElement = DiagramElement,
 > {
+  /** Rebuilds arrays (and internal indices) from the graph, returns a diff summary */
   readonly updateStore: (graph: Graph) => UpdateResult;
+  /** Clear everything */
   readonly destroy: () => void;
-  elements: CellMap<Element>;
-  links: CellMap<DiagramLink>;
+
+  /** Public, array-first shape */
+  elements: Element[];
+  links: DiagramLink[];
+
+  /** O(1) helpers built on top of private indices */
+  readonly getElementById: (id: dia.Cell.ID) => Element | undefined;
+  readonly getLinkById: (id: dia.Cell.ID) => DiagramLink | undefined;
+}
+interface Options<Element extends DiagramElement> {
+  readonly elements?: Element[];
+  readonly links?: DiagramLink[];
 }
 /**
- * Main data structure for the graph store data.
- * We avoid using dia.elements and dia.link due to their mutable state.
+ * Array-first store with internal id->index maps.
+ * Keeps public API as arrays while preserving O(1) lookups.
+ * Arrays are rebuilt in graph order each update for stable determinism.
  * @group Data
- * @returns - The store data.
- * @description
- * This function is used to create a store data for the graph.
- * @internal
+ * @param options - Initial elements and links.
+ * @template Graph - The type of the graph, extending dia.Graph.
+ * @template Element - The type of elements in the store, extending DiagramElement.
+ * @returns - The store data containing elements, links, and utility methods.
  * @example
- * ```ts
- * const graph = new joint.dia.Graph();
- * const storeData = new GraphStoreData(graph);
- * storeData.update(graph);
- * ```
  */
 export function createStoreData<
   Graph extends dia.Graph = dia.Graph,
   Element extends DiagramElement = DiagramElement,
->(): StoreData<Graph, Element> {
+>(options: Options<Element> = {}): StoreData<Graph, Element> {
+  // Public arrays
+
+  const ref: {
+    elements: Element[];
+    links: DiagramLink[];
+  } = {
+    elements: options.elements ?? [],
+    links: options.links ?? [],
+  };
+
+  // Private indices (id -> array index)
+  let eIndex = new Map<dia.Cell.ID, number>();
+  let lIndex = new Map<dia.Cell.ID, number>();
+
   /**
-   * Update the store data with the graph data.
-   * @param graph - The graph to update the store data with..
-   * @returns A set of cell IDs that were updated.
-   * @description
+   * Retrieves an element by its ID.
+   * @param id - The ID of the element to retrieve.
+   * @returns The element if found, otherwise undefined.
+   */
+  function getElementById(id: dia.Cell.ID): Element | undefined {
+    const i = eIndex.get(id);
+    return i == null ? undefined : ref.elements[i];
+  }
+  /**
+   * Retrieves a link by its ID.
+   * @param id - The ID of the link to retrieve.
+   * @returns The link if found, otherwise undefined.
+   */
+  function getLinkById(id: dia.Cell.ID): DiagramLink | undefined {
+    const i = lIndex.get(id);
+    return i == null ? undefined : ref.links[i];
+  }
+
+  /**
+   * Rebuilds arrays (and internal indices) from the graph, returns a diff summary
+   * @param graph - The graph to update the store from.
+   * @returns - The update result containing diff information.
    */
   function updateStore(graph: Graph): UpdateResult {
     const cells = graph.get('cells');
-
     if (!cells) throw new Error('Graph cells are not initialized');
 
-    // New updates, if cell is inserted or updated, we track it inside this diff.
-    const elementsDiff = new CellMap<Element>();
-    const linkDiff = new CellMap<DiagramLink>();
+    const nextElements: Element[] = [];
+    const nextLinks: DiagramLink[] = [];
+    const nextEIndex = new Map<dia.Cell.ID, number>();
+    const nextLIndex = new Map<dia.Cell.ID, number>();
     const diffIds = new Set<dia.Cell.ID>();
+
+    let elementsChanged = false;
+    let linksChanged = false;
+
+    // Build new arrays in the same pass, while diffing per id
     for (const cell of cells) {
       if (cell.isElement()) {
-        const newElement = getElement<Element>(cell);
-        if (!util.isEqual(newElement, data.elements.get(cell.id))) {
-          elementsDiff.set(cell.id, newElement);
-          diffIds.add(cell.id);
+        const id = cell.id as dia.Cell.ID;
+        const next = getElement<Element>(cell);
+        const prev = getElementById(id);
+        if (!prev || !util.isEqual(prev, next)) {
+          diffIds.add(id);
+          elementsChanged = true;
         }
+        nextEIndex.set(id, nextElements.length);
+        nextElements.push(next);
       } else if (cell.isLink()) {
-        const newLink = getLink(cell);
-        if (!util.isEqual(newLink, data.links.get(cell.id))) {
-          linkDiff.set(cell.id, newLink);
-          diffIds.add(cell.id);
+        const id = cell.id as dia.Cell.ID;
+        const next = getLink(cell);
+        const prev = getLinkById(id);
+        if (!prev || !util.isEqual(prev, next)) {
+          diffIds.add(id);
+          linksChanged = true;
+        }
+        nextLIndex.set(id, nextLinks.length);
+        nextLinks.push(next);
+      }
+    }
+
+    // Deletions: if the new arrays are shorter than old or some ids disappeared,
+    // we’ve already “changed”. To catch pure deletions where values equal but gone:
+    if (!elementsChanged) {
+      elementsChanged = ref.elements.length !== nextElements.length;
+      if (!elementsChanged) {
+        // Cheap structural check: same length but different ids/order?
+        for (const [i, nextElement] of nextElements.entries()) {
+          const idNow = nextElement?.id as dia.Cell.ID | undefined;
+          const prevIdx = idNow ? eIndex.get(idNow) : undefined;
+          if (prevIdx !== i) {
+            elementsChanged = true;
+            break;
+          }
+        }
+      }
+    }
+    if (!linksChanged) {
+      linksChanged = ref.links.length !== nextLinks.length;
+      if (!linksChanged) {
+        for (const [i, nextLink] of nextLinks.entries()) {
+          const idNow = nextLink?.id as dia.Cell.ID | undefined;
+          const prevIdx = idNow ? lIndex.get(idNow) : undefined;
+          if (prevIdx !== i) {
+            linksChanged = true;
+            break;
+          }
         }
       }
     }
 
-    const oldElements = data.elements;
-    const oldLinks = data.links;
+    // Swap (immutably) only when changed to preserve referential equality
+    if (elementsChanged) {
+      ref.elements = nextElements;
+      eIndex = nextEIndex;
+    }
+    if (linksChanged) {
+      ref.links = nextLinks;
+      lIndex = nextLIndex;
+    }
 
-    data.elements = diffUpdate(data.elements, elementsDiff, (cellId) => cells.has(cellId));
-    data.links = diffUpdate(data.links, linkDiff, (cellId) => cells.has(cellId));
-
-    const areElementsChanged = data.elements !== oldElements;
-    const areLinksChanged = data.links !== oldLinks;
-
-    return { diffIds, areElementsChanged, areLinksChanged };
+    return {
+      diffIds,
+      areElementsChanged: elementsChanged,
+      areLinksChanged: linksChanged,
+    };
   }
 
-  const data: StoreData<Graph, Element> = {
-    updateStore,
-    elements: new CellMap(),
-    links: new CellMap(),
-    destroy: () => {
-      data.elements.clear();
-      data.links.clear();
-    },
-  };
+  /**
+   * Clears all elements and links from the store and resets internal indices.
+   */
+  function destroy() {
+    ref.elements = [];
+    ref.links = [];
+    eIndex.clear();
+    lIndex.clear();
+  }
 
-  return data;
+  return {
+    updateStore,
+    destroy,
+    getElementById,
+    getLinkById,
+    elements: ref.elements,
+    links: ref.links,
+  } as StoreData<Graph, Element>;
 }

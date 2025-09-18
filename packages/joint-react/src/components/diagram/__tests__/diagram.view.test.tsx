@@ -7,7 +7,8 @@ import { MeasuredNode } from '../../measured-node/measured-node';
 import { act, useEffect, useState, type RefObject } from 'react';
 import { useDiagramView } from '../../../hooks/use-diagram-view';
 import { Diagram } from '..';
-import type { ViewConfig } from '../diagram.view.types';
+import type { DiagramViewContext } from '../../../context';
+import { useGraph } from '../../../hooks';
 
 const elements = createElements([
   { id: '1', label: 'Node 1', width: 10, height: 10 },
@@ -270,7 +271,7 @@ describe('DiagramView Component', () => {
   });
   it('should access paper via ref and change scale', async () => {
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-    const ref: RefObject<ViewConfig | null> = { current: null };
+    const ref: RefObject<DiagramViewContext | null> = { current: null };
     function ChangeScale() {
       const { paper } = ref.current ?? {};
       useEffect(() => {
@@ -290,12 +291,12 @@ describe('DiagramView Component', () => {
   it('should set elements and positions via react state, when change it via paper api', async () => {
     // eslint-disable-next-line unicorn/consistent-function-scoping
     function UpdatePosition() {
-      const { paper } = useDiagramView() ?? {};
+      const graph = useGraph();
       useEffect(() => {
-        const element = paper?.model.getCell('1');
-        // @ts-expect-error we know it's element
-        element?.position(100, 100);
-      }, [paper]);
+        const element = graph.getCell('1');
+        console.log('CALLED');
+        element.set('position', { x: 100, y: 100 });
+      }, [graph]);
       return null;
     }
     let currentOutsideElements: Element[] = [];
@@ -363,17 +364,17 @@ describe('DiagramView Component', () => {
     });
   });
   it('should test two separate DiagramView with same diagram, and get their data via id and hooks', async () => {
-    let view1Ref: ViewConfig | null = null;
-    let view2Ref: ViewConfig | null = null;
+    let view1Ref: DiagramViewContext | null = null;
+    let view2Ref: DiagramViewContext | null = null;
 
     function UserPaper1() {
-      const viewConfig = useDiagramView('view1');
-      view1Ref = viewConfig ?? null;
+      const DiagramViewContext = useDiagramView('view1');
+      view1Ref = DiagramViewContext ?? null;
       return null;
     }
     function UserPaper2() {
-      const viewConfig = useDiagramView('view2');
-      view2Ref = viewConfig ?? null;
+      const DiagramViewContext = useDiagramView('view2');
+      view2Ref = DiagramViewContext ?? null;
       return null;
     }
 

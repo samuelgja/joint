@@ -83,7 +83,7 @@ function Main() {
     [makeLayoutWithGrid, gridXSize]
   );
 
-  const elementsLength = useElements((items) => items.size);
+  const elementsLength = useElements((items) => items.length);
   return (
     <div className="flex flex-col">
       <div className="mb-8 flex flex-row items-center">

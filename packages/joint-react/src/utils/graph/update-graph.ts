@@ -34,24 +34,17 @@ function getAttributes(cell: CellOrJsonCell) {
   return attributes;
 }
 
-interface Options {
+interface UpdateCellOptions {
   readonly graph: dia.Graph;
-  readonly cells: CellOrJsonCell[];
-  readonly isLink: boolean;
+  readonly newCell: CellOrJsonCell;
+  readonly newCellsMap?: Record<string, CellOrJsonCell>;
 }
-
 /**
  * Update a cell in the graph or add it if it does not exist.
- * @param graph - The graph to update.
- * @param newCell - The new cell to add or update.
- * @param isLink - Whether the cell is a link.
- * @param newCellsMap - A map of new cells by their IDs.
+ * @param options - The options for updating the cell.
  */
-export function updateCell(
-  graph: dia.Graph,
-  newCell: CellOrJsonCell,
-  newCellsMap: Record<string, CellOrJsonCell> = {}
-) {
+export function updateCell(options: UpdateCellOptions) {
+  const { graph, newCell, newCellsMap = {} } = options;
   const id = getCellId(newCell.id);
   if (!id) {
     return;
@@ -70,6 +63,13 @@ export function updateCell(
   originalCell.remove({ disconnectLinks: true });
   graph.addCell(newCell);
 }
+
+interface Options {
+  readonly graph: dia.Graph;
+  readonly cells: CellOrJsonCell[];
+  readonly isLink: boolean;
+}
+
 /**
  * Update the graph with new cells.
  * @param options - The options for updating the graph.
@@ -82,7 +82,7 @@ export function updateGraph(options: Options) {
   // Here we do not want to remove the existing elements but only update them if they exist.
   // e.g. Using resetCells() would remove all elements from the graph and add new ones.
   for (const newCell of cells) {
-    updateCell(graph, newCell, newCellsMap);
+    updateCell({ graph, newCell, newCellsMap });
   }
 
   if (originalCells) {

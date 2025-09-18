@@ -79,7 +79,10 @@ export function useCellActions<
         const cell = areAttributesLink
           ? processLink(attributes as dia.Link | DiagramLink<'standard.Link'>)
           : processElement(attributes);
-        updateCell(graph, cell);
+        updateCell({
+          graph,
+          newCell: cell,
+        });
       },
 
       remove(id) {

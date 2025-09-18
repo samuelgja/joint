@@ -1,5 +1,4 @@
 import type { dia } from '@joint/core';
-import type { PortsStore } from '../../data/create-ports-store';
 import type { DiagramElement } from '../../types/element-types';
 import type { OmitWithoutIndexSignature } from '../../types';
 import type { DiagramLink } from '../../types/link-types';
@@ -10,16 +9,6 @@ import type { PaperEvents } from '../../types/event.types';
 export interface OnLoadOptions {
   readonly paper: dia.Paper;
   readonly graph: dia.Graph;
-}
-
-export interface ViewConfig {
-  readonly id: string;
-  readonly paper: dia.Paper;
-  readonly portsStore: PortsStore;
-  readonly elementViews: Record<dia.Cell.ID, dia.ElementView>;
-  renderElement?: RenderElement<DiagramElement>;
-  renderPaper: (element: HTMLElement) => void;
-  readonly isReactId: boolean;
 }
 
 type ReactPaperOptionsBase = OmitWithoutIndexSignature<dia.Paper.Options, 'frozen' | 'defaultLink'>;

@@ -58,11 +58,11 @@ interface DiagramBaseProps<
  * in uncontrolled mode to avoid flicker.
  * @private
  */
-export function GraphProviderHandler(props: PropsWithChildren<DiagramBaseProps>) {
+export function DiagramProviderHandler(props: PropsWithChildren<DiagramBaseProps>) {
   const { elements, links, onElementsChange, onLinksChange, children } = props;
   const areElementsMeasured = useElements((items) => {
     let areMeasured = true;
-    for (const [, { width = 0, height = 0 }] of items) {
+    for (const { width = 0, height = 0 } of items) {
       if (width <= 1 || height <= 1) {
         areMeasured = false;
         break;
@@ -233,7 +233,7 @@ function DiagramBase<
 
   return (
     <DiagramContext.Provider value={ref.current}>
-      <GraphProviderHandler {...props}>{children}</GraphProviderHandler>
+      <DiagramProviderHandler {...props}>{children}</DiagramProviderHandler>
     </DiagramContext.Provider>
   );
 }

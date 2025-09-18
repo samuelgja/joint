@@ -8,3 +8,6 @@ export * from './use-cell-id';
 export * from './use-are-elements-measured';
 export * from './use-paper-events';
 export * from './use-imperative-api';
+export * from './use-cell-actions';
+export * from './use-diagram-store';
+export * from './use-diagram-view';

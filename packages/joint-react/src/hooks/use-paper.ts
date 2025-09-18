@@ -9,9 +9,10 @@ import { useDiagramView } from './use-diagram-view';
  * import { usePaper } from '@joint/react';
  * const paper = usePaper();
  * ```
+ * @param id - Optional ID of the Diagram.View to get the paper from. If not provided, it will return the paper from the nearest Diagram.View context.
  * @returns - The jointjs paper instance.
  */
-export function usePaper(): dia.Paper | undefined {
-  const viewConfig = useDiagramView();
+export function usePaper(id?: string): dia.Paper | undefined {
+  const viewConfig = useDiagramView(id);
   return viewConfig?.paper;
 }

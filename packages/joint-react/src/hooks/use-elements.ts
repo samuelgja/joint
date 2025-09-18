@@ -2,7 +2,6 @@ import { useDiagramStore } from './use-diagram-store';
 import { util } from '@joint/core';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
 import type { DiagramElement } from '../types/element-types';
-import type { CellMap } from '../utils/cell/cell-map';
 
 /**
  * Default selector function to return all elements.
@@ -10,7 +9,7 @@ import type { CellMap } from '../utils/cell/cell-map';
  * @returns - The selected items.
  */
 function defaultSelector<Elements extends DiagramElement = DiagramElement>(
-  items: CellMap<Elements>
+  items: Elements[]
 ): Elements[] {
   return items.map((item) => item) as Elements[];
 }
@@ -60,13 +59,11 @@ export function useElements<
   Elements extends DiagramElement = DiagramElement,
   SelectorReturnType = Elements[],
 >(
-  selector: (
-    items: CellMap<Elements>
-  ) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
+  selector: (items: Elements[]) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
   isEqual: (a: SelectorReturnType, b: SelectorReturnType) => boolean = util.isEqual
 ): SelectorReturnType {
   const { subscribe, getElements } = useDiagramStore();
-  const typedGetElements = getElements as () => CellMap<Elements>;
+  const typedGetElements = getElements as () => Elements[];
   const elements = useSyncExternalStoreWithSelector(
     subscribe,
     typedGetElements,

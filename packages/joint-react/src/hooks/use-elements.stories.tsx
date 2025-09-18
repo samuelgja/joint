@@ -87,7 +87,7 @@ function Component() {
 export const WithGetJustSize = makeStory<Story>({
   args: {
     useHook: useElements,
-    hookArgs: [(elements) => elements.size],
+    hookArgs: [(elements) => elements.length],
     render: (result) => (
       <div>
         <Diagram.View
@@ -105,7 +105,7 @@ export const WithGetJustSize = makeStory<Story>({
   code: `import { useElements } from '@joint/react'
 
 function Component() {
-  const size = useElements((elements) => elements.size);
+  const size = useElements((elements) => elements.length);
   return <div>size of elements is: {JSON.stringify(size)}</div>;
 }`,
   description: 'Get the size of the elements.',

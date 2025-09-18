@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useDiagramStore } from './use-diagram-store';
 import { useContext, useSyncExternalStore } from 'react';
-import type { ViewConfig } from '../components/diagram/diagram.view.types';
 import { DiagramViewContext } from '../context';
 
 /**
@@ -12,7 +11,7 @@ import { DiagramViewContext } from '../context';
  */
 export function useDiagramView<Id extends string | undefined = undefined>(
   id?: Id
-): ViewConfig | null {
+): DiagramViewContext | null {
   const ctx = useContext(DiagramViewContext);
   if (ctx) {
     return ctx;

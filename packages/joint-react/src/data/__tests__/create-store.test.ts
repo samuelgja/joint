@@ -6,8 +6,8 @@ describe('createStore', () => {
   it('should initialize with default options', () => {
     const store = createStore();
     expect(store.graph).toBeDefined();
-    expect(store.getElements().size).toBe(0);
-    expect(store.getLinks().size).toBe(0);
+    expect(store.getElements().length).toBe(0);
+    expect(store.getLinks().length).toBe(0);
   });
 
   it('should initialize with custom graph instance', () => {
@@ -23,7 +23,7 @@ describe('createStore', () => {
       elements: [element],
       links: [link],
     });
-    expect(store.getElements().size).toBe(1);
+    expect(store.getElements().length).toBe(1);
     expect(store.getElement('element1')).toBeDefined();
   });
 

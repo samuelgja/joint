@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-query-selector */
 import { dia, shapes } from '@joint/core';
 import { listenToCellChange } from '../utils/cell/listen-to-cell-change';
 import { ReactElement } from '../models/react-element';
@@ -6,10 +7,9 @@ import type { DiagramElement } from '../types/element-types';
 import type { DiagramLink } from '../types/link-types';
 import { subscribeHandler } from '../utils/subscriber-handler';
 import { createStoreData, type UpdateResult } from './create-store-data';
-import type { CellMap } from '../utils/cell/cell-map';
 import type { Dispatch, SetStateAction } from 'react';
 import { CONTROLLED_MODE_BATCH_NAME } from '../utils/graph/update-graph';
-import type { ViewConfig } from '../components/diagram/diagram.view.types';
+import type { DiagramViewContext } from '../context/diagram-context';
 
 export const DEFAULT_CELL_NAMESPACE: Record<string, unknown> = { ...shapes, ReactElement };
 
@@ -74,7 +74,7 @@ export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
   /**
    * Get elements
    */
-  readonly getElements: () => CellMap<DiagramElement>;
+  readonly getElements: () => DiagramElement[];
   /**
    * Get element by id
    */
@@ -82,7 +82,7 @@ export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
   /**
    *  Get links
    */
-  readonly getLinks: () => CellMap<DiagramLink>;
+  readonly getLinks: () => DiagramLink[];
   /**
    * Get link by id
    */
@@ -111,11 +111,11 @@ export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
    */
   readonly forceUpdateStore: () => UpdateResult;
 
-  readonly setView: (name: string, viewConfig: ViewConfig) => () => void;
-  readonly getView: (name?: string) => ViewConfig | undefined;
+  readonly setView: (name: string, DiagramViewContext: DiagramViewContext) => () => void;
+  readonly getView: (name?: string) => DiagramViewContext | undefined;
   readonly subscribeToView: (
     name: string | undefined,
-    onViewConfigChange: (viewConfig: ViewConfig | undefined) => void
+    onDiagramViewContextChange: (DiagramViewContext: DiagramViewContext | undefined) => void
   ) => () => void;
 }
 
@@ -228,6 +228,7 @@ export function createStoreWithGraph<
     }
 
     const updateResult = graphData.updateStore(graph);
+
     // Skip processing changes in controlled mode since they are already handled.
     // This prevents circular calls to `onElementsChange`.
     // For example, if a user manages elements via React state and updates the graph using setElements,
@@ -255,6 +256,7 @@ export function createStoreWithGraph<
       // Create a new graph instance or use the provided one
       throw new Error('Graph instance is required');
     }
+
     if (graph.hasActiveBatch()) {
       return;
     }
@@ -298,7 +300,7 @@ export function createStoreWithGraph<
   /**
    * Check function to ensure if we register two views with different ids, all be non react ids.
    * When user want to use two `Diagram.View` with single `Diagram`, he must provide `id` as prop to each of the view.
-   * @param viewConfig
+   * @param DiagramViewContext
    */
   function viewCheck() {
     if (views.size <= 1) {
@@ -318,10 +320,11 @@ export function createStoreWithGraph<
       );
     }
   }
-  const views = new Map<string, ViewConfig>();
+  const views = new Map<string, DiagramViewContext>();
+
   const store: DiagramStore<Graph> = {
-    setView(name: string, viewConfig: ViewConfig) {
-      views.set(name, viewConfig);
+    setView(name: string, DiagramViewContext: DiagramViewContext) {
+      views.set(name, DiagramViewContext);
       if (process.env.NODE_ENV !== 'production') {
         viewCheck();
       }
@@ -336,18 +339,23 @@ export function createStoreWithGraph<
       }
       return views.get(name);
     },
-    subscribeToView(name, onViewConfigChange) {
+    subscribeToView(name, onDiagramViewContextChange) {
       const callback = () => {
         if (!name) {
           // return first view if name is not provided
           const firstView = views.values().next().value;
-          onViewConfigChange(firstView);
+          onDiagramViewContextChange(firstView);
           return;
         }
-        onViewConfigChange(views.get(name));
+        onDiagramViewContextChange(views.get(name));
       };
       callback();
-      return elementsEvents.subscribe(callback);
+      return () => {
+        if (!name) {
+          return;
+        }
+        views.delete(name);
+      };
     },
     forceUpdateStore,
     destroy,
@@ -360,7 +368,7 @@ export function createStoreWithGraph<
       return graphData.links;
     },
     getElement<E extends DiagramElement>(id: dia.Cell.ID) {
-      const item = graphData.elements.get(id);
+      const item = graphData.getElementById(id);
 
       if (!item) {
         throw new Error(`Element with id ${id} not found`);
@@ -368,7 +376,7 @@ export function createStoreWithGraph<
       return item as E;
     },
     getLink(id) {
-      const item = graphData.links.get(id);
+      const item = graphData.getLinkById(id);
       if (!item) {
         throw new Error(`Link with id ${id} not found`);
       }

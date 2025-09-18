@@ -2,7 +2,6 @@ import { useDiagramStore } from './use-diagram-store';
 import { util } from '@joint/core';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
 import type { DiagramLink } from '../types/link-types';
-import type { CellMap } from '../utils/cell/cell-map';
 
 /**
  * Default selector function to return all links.
@@ -13,7 +12,7 @@ import type { CellMap } from '../utils/cell/cell-map';
  * @group utils
  * @description
  */
-function defaultSelector<Link extends DiagramLink = DiagramLink>(items: CellMap<Link>): Link[] {
+function defaultSelector<Link extends DiagramLink = DiagramLink>(items: Link[]): Link[] {
   return items.map((item) => item) as Link[];
 }
 /**
@@ -52,13 +51,11 @@ function defaultSelector<Link extends DiagramLink = DiagramLink>(items: CellMap<
  * @returns - The selected links.
  */
 export function useLinks<Link extends DiagramLink = DiagramLink, SelectorReturnType = Link[]>(
-  selector: (
-    items: CellMap<Link>
-  ) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
+  selector: (items: Link[]) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
   isEqual: (a: SelectorReturnType, b: SelectorReturnType) => boolean = util.isEqual
 ): SelectorReturnType {
   const { subscribe, getLinks } = useDiagramStore();
-  const typedGetLinks = getLinks as () => CellMap<Link>;
+  const typedGetLinks = getLinks as () => Link[];
   const elements = useSyncExternalStoreWithSelector(
     subscribe,
     typedGetLinks,

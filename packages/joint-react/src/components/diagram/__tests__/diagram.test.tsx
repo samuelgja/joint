@@ -49,9 +49,9 @@ describe('diagram', () => {
     let linkCount = 0;
     let elementCount = 0;
     function TestComponent() {
-      linkCount = useElements((items) => items.size);
+      linkCount = useElements((items) => items.length);
       elementCount = useLinks((items) => {
-        return items.size;
+        return items.length;
       });
       return null;
     }
@@ -73,9 +73,9 @@ describe('diagram', () => {
     let elementCount = 0;
     // eslint-disable-next-line sonarjs/no-identical-functions
     function TestComponent() {
-      linkCount = useElements((items) => items.size);
+      linkCount = useElements((items) => items.length);
       elementCount = useLinks((items) => {
-        return items.size;
+        return items.length;
       });
       return null;
     }
@@ -110,7 +110,7 @@ describe('diagram', () => {
     ]);
     let elementCount = 0;
     function TestComponent() {
-      elementCount = useElements((items) => items.size);
+      elementCount = useElements((items) => items.length);
       return null;
     }
     render(
@@ -243,9 +243,9 @@ describe('diagram', () => {
     let elementCount = 0;
     // eslint-disable-next-line sonarjs/no-identical-functions
     function TestComponent() {
-      linkCount = useElements((items) => items.size);
+      linkCount = useElements((items) => items.length);
       elementCount = useLinks((items) => {
-        return items.size;
+        return items.length;
       });
       return null;
     }
@@ -280,10 +280,10 @@ describe('diagram', () => {
     let elementCount = 0;
     function TestComponent() {
       linkCount = useLinks((items) => {
-        return items.size;
+        return items.length;
       });
       elementCount = useElements((items) => {
-        return items.size;
+        return items.length;
       });
       return null;
     }
