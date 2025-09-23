@@ -1,7 +1,7 @@
 import type { dia } from '@joint/core';
 import { REACT_TYPE } from '../../models/react-element';
-import type { DiagramLink } from '../../types/link-types';
-import type { DiagramElement } from '../../types/element-types';
+import type { GraphLink } from '../../types/link-types';
+import type { GraphElement } from '../../types/element-types';
 import { isCellInstance, isLinkInstance, isUnsized } from '../is';
 import { getTargetOrSource } from './get-link-targe-and-source-ids';
 import { isReactElement } from '../is-react-element';
@@ -18,7 +18,7 @@ export type CellOrJsonCell = dia.Cell | dia.Cell.JSON;
  * @returns
  * A standard JointJS link or a JSON representation of the link.
  */
-export function processLink(link: dia.Link | DiagramLink): CellOrJsonCell {
+export function processLink(link: dia.Link | GraphLink): CellOrJsonCell {
   if (isLinkInstance(link)) {
     const json = link.toJSON();
 
@@ -43,7 +43,7 @@ export function processLink(link: dia.Link | DiagramLink): CellOrJsonCell {
 
 export interface SetLinksOptions {
   readonly graph: dia.Graph;
-  readonly links?: Array<dia.Link | DiagramLink>;
+  readonly links?: Array<dia.Link | GraphLink>;
 }
 
 /**
@@ -86,7 +86,7 @@ export function setLinks(options: SetLinksOptions) {
  * If the element is a ReactElement and has no size, it adds its ID to the unsizedIds set.
  * @private
  */
-export function processElement<T extends dia.Element | DiagramElement>(
+export function processElement<T extends dia.Element | GraphElement>(
   element: T,
   unsizedIds?: Set<string>
 ): CellOrJsonCell {
@@ -113,7 +113,7 @@ export function processElement<T extends dia.Element | DiagramElement>(
 
 export interface SetElementsOptions {
   readonly graph: dia.Graph;
-  readonly elements?: Array<dia.Element | DiagramElement>;
+  readonly elements?: Array<dia.Element | GraphElement>;
 }
 
 /**

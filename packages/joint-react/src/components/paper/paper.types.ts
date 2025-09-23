@@ -1,7 +1,7 @@
 import type { dia } from '@joint/core';
-import type { DiagramElement } from '../../types/element-types';
+import type { GraphElement } from '../../types/element-types';
 import type { OmitWithoutIndexSignature } from '../../types';
-import type { DiagramLink } from '../../types/link-types';
+import type { GraphLink } from '../../types/link-types';
 import type { OnPaperRenderElement } from '../../hooks/use-element-views';
 import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
 import type { PaperEvents } from '../../types/event.types';
@@ -17,12 +17,12 @@ export interface ReactPaperOptions extends ReactPaperOptionsBase {
    * Default link for the paper - for example if there is new element added, this will be used as default.
    */
   readonly defaultLink?:
-    | ((cellView: dia.CellView, magnet: SVGElement) => dia.Link | DiagramLink)
+    | ((cellView: dia.CellView, magnet: SVGElement) => dia.Link | GraphLink)
     | dia.Link
-    | DiagramLink;
+    | GraphLink;
 }
 
-export type RenderElement<ElementItem extends DiagramElement = DiagramElement> = (
+export type RenderElement<ElementItem extends GraphElement = GraphElement> = (
   element: ElementItem
 ) => ReactNode;
 
@@ -31,7 +31,7 @@ export type RenderElement<ElementItem extends DiagramElement = DiagramElement> =
  * For more information, see the JointJS documentation.
  * @see https://docs.jointjs.com/api/dia/Paper
  */
-export interface DiagramViewProps<ElementItem extends DiagramElement = DiagramElement>
+export interface PaperProps<ElementItem extends GraphElement = GraphElement>
   extends ReactPaperOptions,
     PropsWithChildren,
     PaperEvents {
@@ -89,9 +89,9 @@ export interface DiagramViewProps<ElementItem extends DiagramElement = DiagramEl
    * A function that selects the elements to be rendered.
    * It defaults to the `GraphElement` elements because `dia.Element` is not a valid React element (it do not change reference after update).
    * @default (item: dia.Cell) => `BaseElement`
-   * @see DiagramElement
+   * @see GraphElement
    */
-  readonly elementSelector?: (item: DiagramElement) => ElementItem;
+  readonly elementSelector?: (item: GraphElement) => ElementItem;
   /**
    * The scale of the paper. It's useful to create for example a zoom feature or minimap Paper.
    */

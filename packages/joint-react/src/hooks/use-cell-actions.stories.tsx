@@ -19,7 +19,7 @@ const meta: Meta<typeof Hook> = {
   render: () => <RenderItemDecorator renderElement={Hook} />,
   parameters: makeRootDocumentation({
     apiURL: API_URL,
-    description: `\`useCellActions\` is a hook to set / insert / remove elements and links in the graph. It returns functions to update cells. Use it under \`Diagram\` (graph context).
+    description: `\`useCellActions\` is a hook to set / insert / remove elements and links in the graph. It returns functions to update cells. Use it under \`GraphProvider\` (graph context).
     `,
     code: `import { useCellActions } from '@joint/react'
 

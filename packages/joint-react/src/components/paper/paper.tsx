@@ -1,13 +1,12 @@
 import { dia, mvc, shapes } from '@joint/core';
 import { useElementViews } from '../../hooks/use-element-views';
-import { useDiagramStore } from '../../hooks/use-diagram-store';
+import { useGraphStore } from '../../hooks/use-graph-store';
 import {
   forwardRef,
   useCallback,
   useContext,
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -17,12 +16,17 @@ import {
 import { useAreElementMeasured, useElements, useImperativeApi } from '../../hooks';
 import { createPortsStore } from '../../data/create-ports-store';
 import type { PortElementsCacheEntry } from '../../data/create-ports-data';
-import type { DiagramElement } from '../../types/element-types';
-import type { DiagramViewProps } from './diagram.view.types';
+import type { GraphElement } from '../../types/element-types';
+import type { PaperProps } from './paper.types';
 import { assignOptions, dependencyExtract } from '../../utils/object-utilities';
 import { noopSelector } from '../../utils/noop-selector';
 import { PaperHTMLContainer } from './render-element/paper-html-container';
-import { CellIdContext, DiagramConfigContext, DiagramViewContext } from '../../context';
+import {
+  CellIdContext,
+  PaperConfigContext,
+  PaperContext,
+  type OverWriteResult,
+} from '../../context';
 import { HTMLElementItem, SVGElementItem } from './render-element/paper-element-item';
 import { REACT_TYPE } from '../../models/react-element';
 import { handlePaperEvents } from '../../utils/handle-paper-events';
@@ -32,37 +36,37 @@ const DEFAULT_CLICK_THRESHOLD = 10;
 const EMPTY_OBJECT = {} as Record<dia.Cell.ID, dia.ElementView>;
 
 /**
- * DiagramView component renders the visual representation of the graph using JointJS Paper.
+ * Paper component renders the visual representation of the graph using JointJS Paper.
  * This component is responsible for managing the rendering of elements and links, handling events, and providing customization options for the graph view.
- * @param props - The properties for the DiagramView component.
- * @param forwardedRef - A reference to the DiagramViewContext instance.
- * @returns The DiagramView component.
+ * @param props - The properties for the Paper component.
+ * @param forwardedRef - A reference to the PaperContext instance.
+ * @returns The Paper component.
  * @example
- * Using the DiagramView component:
+ * Using the Paper component:
  * ```tsx
- * import { DiagramView } from '@joint/react';
+ * import { Paper } from '@joint/react';
  * function App() {
  *   return (
- *     <DiagramView
+ *     <Paper
  *       renderElement={(element) => <rect width={element.width} height={element.height} />}
  *       defaultLink={(cellView, magnet) => new dia.Link()}
  *     >
  *       <MyGraph />
- *     </DiagramView>
+ *     </Paper>
  *   );
  * }
  * ```
  */
-function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
-  props: DiagramViewProps<DiagramElement>,
-  forwardedRef: React.ForwardedRef<DiagramViewContext | null>
+function PaperBase<ElementItem extends GraphElement = GraphElement>(
+  props: PaperProps<GraphElement>,
+  forwardedRef: React.ForwardedRef<PaperContext>
 ) {
   const {
     renderElement,
     defaultLink,
     style,
     className,
-    elementSelector = noopSelector as (item: DiagramElement) => ElementItem,
+    elementSelector = noopSelector as (item: GraphElement) => ElementItem,
     onElementsSizeReady,
     onElementsSizeChange,
     useHTMLOverlay,
@@ -71,19 +75,19 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
     ...paperOptions
   } = props;
 
-  const { graph, setView } = useDiagramStore();
+  const { graph, setView } = useGraphStore();
   const areElementsMeasured = useAreElementMeasured();
   const { onRenderElement, elementViews } = useElementViews();
   const elements = useElements((items) => items.map(elementSelector));
   const reactId = useId();
-  const { overWrite } = useContext(DiagramConfigContext) ?? {};
+  const { overWrite } = useContext(PaperConfigContext) ?? {};
 
   const paperHTMLElement = useRef<HTMLDivElement | null>(null);
   const measured = useRef(false);
   const previousSizesRef = useRef<number[][]>([]);
 
   const [HTMLRendererContainer, setHTMLRendererContainer] = useState<HTMLElement | null>(null);
-  const id = props.id ?? `diagram-${reactId}`;
+  const id = props.id ?? `paper-${reactId}`;
   const hasRenderElement = !!renderElement;
 
   const defaultLinkJointJS = useCallback(
@@ -101,8 +105,9 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
   );
   const isReactId = !props.id;
 
-  const { ref: DiagramViewContextRef, isReady } = useImperativeApi(
+  const { ref, isReady } = useImperativeApi(
     {
+      forwardedRef,
       onLoad() {
         const portsStore = createPortsStore();
         const elementView = dia.ElementView.extend({
@@ -143,17 +148,16 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
          * @param element - The HTML element to render the paper into
          * @returns - Context update if any
          */
-        function renderPaper(element: HTMLElement | SVGElement) {
+        function renderPaper(element: HTMLElement | SVGElement): OverWriteResult | undefined {
           if (!paper) {
             throw new Error('Paper is not created');
           }
 
           let elementToRender: HTMLElement | SVGElement = paper.el;
-          let contextUpdate: Record<string, unknown> | undefined;
+          let overWriteResult: OverWriteResult | undefined = undefined;
           if (overWrite) {
-            const result = overWrite(instance);
-            elementToRender = result.element;
-            contextUpdate = result.contextUpdate ?? undefined;
+            overWriteResult = overWrite(instance);
+            elementToRender = overWriteResult.element;
           }
 
           if (!elementToRender) {
@@ -162,7 +166,7 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
 
           element.replaceChildren(elementToRender);
           paper.unfreeze();
-          return contextUpdate;
+          return overWriteResult;
         }
         if (!paperHTMLElement.current) {
           throw new Error('Paper HTML element is not available');
@@ -172,7 +176,7 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
           paper.scale(scale);
         }
 
-        const instance: DiagramViewContext = {
+        const instance: PaperContext = {
           paper,
           portsStore,
           elementViews: EMPTY_OBJECT,
@@ -183,7 +187,7 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
 
         const contextUpdate = renderPaper(paperHTMLElement.current);
         if (contextUpdate) {
-          Object.assign(instance, contextUpdate);
+          Object.assign(instance, contextUpdate.contextUpdate);
         }
 
         const removeView = setView(id, instance);
@@ -194,6 +198,7 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
             paper.remove();
             removeView();
             portsStore.destroy();
+            contextUpdate?.cleanup?.();
           },
         };
       },
@@ -227,17 +232,10 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
     [defaultLinkJointJS, id, scale, isReactId, ...dependencyExtract(paperOptions)]
   );
 
-  useImperativeHandle(forwardedRef, () => {
-    if (!isReady) {
-      return null as unknown as DiagramViewContext;
-    }
-    return DiagramViewContextRef.current;
-  }, [isReady, DiagramViewContextRef]);
-
   useEffect(() => {
     if (!isReady) return;
     if (measured.current) return;
-    const { paper } = DiagramViewContextRef.current ?? {};
+    const { paper } = ref.current ?? {};
     if (!paper) return;
     if (areElementsMeasured) {
       measured.current = true;
@@ -258,14 +256,14 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
         clearTimeout(timeout);
       };
     }
-  }, [areElementsMeasured, isReady, onElementsSizeReady, DiagramViewContextRef]);
+  }, [areElementsMeasured, isReady, onElementsSizeReady, ref]);
 
   // Whenever elements change (or we’ve just become measured) compare old ↔ new
   useEffect(() => {
     if (!isReady) return;
     if (!onElementsSizeChange) return;
     if (!areElementsMeasured) return;
-    const { paper } = DiagramViewContextRef.current ?? {};
+    const { paper } = ref.current ?? {};
     if (!paper) return;
 
     // Build current list of [width, height]
@@ -295,12 +293,12 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
     // store for next time
     previousSizesRef.current = currentSizes;
     onElementsSizeChange({ paper, graph: paper.model });
-  }, [areElementsMeasured, elements, isReady, onElementsSizeChange, DiagramViewContextRef]);
+  }, [areElementsMeasured, elements, isReady, onElementsSizeChange, ref]);
 
   useLayoutEffect(() => {
     if (!isReady) return;
     if (measured.current) return;
-    const { paper } = DiagramViewContextRef.current ?? {};
+    const { paper } = ref.current ?? {};
     if (!paper) {
       return;
     }
@@ -323,7 +321,7 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
       stopListening();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, isReady, DiagramViewContextRef, ...dependencyExtract(paperOptions)]);
+  }, [graph, isReady, ref, ...dependencyExtract(paperOptions)]);
 
   const content = (
     <>
@@ -390,39 +388,39 @@ function DiagramViewBase<ElementItem extends DiagramElement = DiagramElement>(
   );
 
   return (
-    <DiagramViewContext.Provider value={DiagramViewContextRef.current}>
+    <PaperContext.Provider value={ref.current}>
       <div className={className} ref={paperHTMLElement} style={paperContainerStyle}>
         {isReady && content}
       </div>
       {isReady && children}
-    </DiagramViewContext.Provider>
+    </PaperContext.Provider>
   );
 }
 
 /**
- * DiagramView component renders the visual representation of the graph using JointJS Paper.
+ * Paper component renders the visual representation of the graph using JointJS Paper.
  * This component is responsible for managing the rendering of elements and links, handling events, and providing customization options for the graph view.
- * @param props - The properties for the DiagramView component.
- * @param forwardedRef - A reference to the DiagramViewContext instance.
- * @returns The DiagramView component.
+ * @param props - The properties for the Paper component.
+ * @param forwardedRef - A reference to the PaperContext instance.
+ * @returns The Paper component.
  * @example
- * Using the DiagramView component:
+ * Using the Paper component:
  * ```tsx
- * import { DiagramView } from '@joint/react';
+ * import { Paper } from '@joint/react';
  * function App() {
  *   return (
- *     <DiagramView
+ *     <Paper
  *       renderElement={(element) => <rect width={element.width} height={element.height} />}
  *       defaultLink={(cellView, magnet) => new dia.Link()}
  *     >
  *       <MyGraph />
- *     </DiagramView>
+ *     </Paper>
  *   );
  * }
  * ```
  */
-export const DiagramView = forwardRef(DiagramViewBase) as <
-  ElementItem extends DiagramElement = DiagramElement,
->(
-  props: Readonly<DiagramViewProps<ElementItem>> & { ref?: React.Ref<DiagramViewContext | null> }
-) => ReturnType<typeof DiagramViewBase>;
+export const Paper = forwardRef(PaperBase) as <ElementItem extends GraphElement = GraphElement>(
+  props: Readonly<PaperProps<ElementItem>> & {
+    ref?: React.Ref<PaperContext>;
+  }
+) => ReturnType<typeof PaperBase>;

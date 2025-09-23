@@ -9,36 +9,36 @@ import { getAPIDocumentationLink, getAPIPropsLink } from './utils/get-api-docume
 
 ## 📌 Core Components
 
-### 1. {getAPIDocumentationLink('Diagram')}
-The `Diagram` component provides a shared [JointJS Graph](https://docs.jointjs.com/api/dia/Graph/) context to its descendants. Wrap parts of your app that read or write graph state.
+### 1. {getAPIDocumentationLink('GraphProvider')}
+The `GraphProvider` component provides a shared [JointJS Graph](https://docs.jointjs.com/api/dia/Graph/) context to its descendants. Wrap parts of your app that read or write graph state.
 
 ```tsx
-import { Diagram } from '@joint/react';
+import { GraphProvider } from '@joint/react';
 
-<Diagram>
-  {/* Add Diagram.View or other components here */}
-</Diagram>
+<GraphProvider>
+  {/* Add Paper or other components here */}
+</GraphProvider>
 ```
 
-### 2. {getAPIDocumentationLink('Diagram.View')}
-`Diagram.View` renders nodes and links. It wraps the [JointJS Paper](https://docs.jointjs.com/learn/quickstart/paper/) and exposes props like {getAPIPropsLink('Diagram.View', 'renderElement')} to control rendering. You can use multiple views in the same `Diagram` (e.g., main canvas + minimap). When using multiple views in development, set a unique `id` for each view to avoid conflicts.
+### 2. {getAPIDocumentationLink('Paper')}
+`Paper` renders nodes and links. It wraps the [JointJS Paper](https://docs.jointjs.com/learn/quickstart/paper/) and exposes props like {getAPIPropsLink('Paper', 'renderElement')} to control rendering. You can use multiple views in the same `GraphProvider` (e.g., main canvas + minimap). When using multiple views in development, set a unique `id` for each view to avoid conflicts.
 
 ```tsx
-import { Diagram } from '@joint/react';
+import { GraphProvider } from '@joint/react';
 
 const renderElement = ({ width, height }) => (
   <rect width={width} height={height} fill="cyan" />
 );
 
-<Diagram>
-  <Diagram.View width={800} height={600} renderElement={renderElement} />
-</Diagram>
+<GraphProvider>
+  <Paper width={800} height={600} renderElement={renderElement} />
+</GraphProvider>
 ```
 
 ### 3. **Rendering HTML content**
 Because JointJS is SVG‑based, you have two options for HTML:
 - Use SVG `<foreignObject>` (simple, but with Safari caveats)
-- Use the experimental {getAPIPropsLink('Diagram.View', 'useHTMLOverlay')} prop to render real HTML outside the SVG
+- Use the experimental {getAPIPropsLink('Paper', 'useHTMLOverlay')} prop to render real HTML outside the SVG
 
 ```tsx
 const renderElement = ({ width, height }) => (
@@ -49,15 +49,15 @@ const renderElement = ({ width, height }) => (
   </foreignObject>
 );
 
-<Diagram>
-  <Diagram.View renderElement={renderElement} />
-</Diagram>
+<GraphProvider>
+  <Paper renderElement={renderElement} />
+</GraphProvider>
 ```
 
 ## 🛠️ Core Hooks and Utilities
 
 ### 🔹 Accessing Elements
-- {getAPIDocumentationLink('useElements')}: Retrieve all diagram elements (requires `Diagram` context).
+- {getAPIDocumentationLink('useElements')}: Retrieve all graph elements (requires `GraphProvider` context).
 - {getAPIDocumentationLink('useElement')}: Retrieve individual element data, typically used within `renderElement`.
 
 ### 🔹 Modifying Elements

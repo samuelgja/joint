@@ -1,12 +1,12 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`diagram should render children and match snapshot 1`] = `
+exports[`graph should render children and match snapshot 1`] = `
 <div>
   Child Content
 </div>
 `;
 
-exports[`diagram should render children and match snapshot 2`] = `
+exports[`graph should render children and match snapshot 2`] = `
 <DocumentFragment>
   <div>
     Child Content

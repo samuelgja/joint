@@ -3,20 +3,20 @@ import { dia, shapes } from '@joint/core';
 import { listenToCellChange } from '../utils/cell/listen-to-cell-change';
 import { ReactElement } from '../models/react-element';
 import { setElements } from '../utils/cell/cell-utilities';
-import type { DiagramElement } from '../types/element-types';
-import type { DiagramLink } from '../types/link-types';
+import type { GraphElement } from '../types/element-types';
+import type { GraphLink } from '../types/link-types';
 import { subscribeHandler } from '../utils/subscriber-handler';
 import { createStoreData, type UpdateResult } from './create-store-data';
 import type { Dispatch, SetStateAction } from 'react';
 import { CONTROLLED_MODE_BATCH_NAME } from '../utils/graph/update-graph';
-import type { DiagramViewContext } from '../context/diagram-context';
+import type { PaperContext } from '../context';
 
 export const DEFAULT_CELL_NAMESPACE: Record<string, unknown> = { ...shapes, ReactElement };
 
 export interface StoreOptions<
   Graph extends dia.Graph,
-  Element extends dia.Element | DiagramElement,
-  Link extends dia.Link | DiagramLink,
+  Element extends dia.Element | GraphElement,
+  Link extends dia.Link | GraphLink,
 > {
   /**
    * Graph instance to use. If not provided, a new graph instance will be created.
@@ -61,7 +61,7 @@ export interface StoreOptions<
   readonly onLinksChange?: Dispatch<SetStateAction<Link[]>>;
 }
 
-export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
+export interface GraphStore<Graph extends dia.Graph = dia.Graph> {
   /**
    * The JointJS graph instance.
    */
@@ -74,19 +74,19 @@ export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
   /**
    * Get elements
    */
-  readonly getElements: () => DiagramElement[];
+  readonly getElements: () => GraphElement[];
   /**
    * Get element by id
    */
-  readonly getElement: <Element extends DiagramElement>(id: dia.Cell.ID) => Element;
+  readonly getElement: <Element extends GraphElement>(id: dia.Cell.ID) => Element;
   /**
    *  Get links
    */
-  readonly getLinks: () => DiagramLink[];
+  readonly getLinks: () => GraphLink[];
   /**
    * Get link by id
    */
-  readonly getLink: (id: dia.Cell.ID) => DiagramLink;
+  readonly getLink: (id: dia.Cell.ID) => GraphLink;
   /**
    *  Remove all listeners and cleanup the graph.
    */
@@ -111,11 +111,11 @@ export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
    */
   readonly forceUpdateStore: () => UpdateResult;
 
-  readonly setView: (name: string, DiagramViewContext: DiagramViewContext) => () => void;
-  readonly getView: (name?: string) => DiagramViewContext | undefined;
+  readonly setView: (name: string, PaperContext: PaperContext) => () => void;
+  readonly getView: (name?: string) => PaperContext | undefined;
   readonly subscribeToView: (
     name: string | undefined,
-    onDiagramViewContextChange: (DiagramViewContext: DiagramViewContext | undefined) => void
+    onPaperContextChange: (PaperContext: PaperContext | undefined) => void
   ) => () => void;
 }
 
@@ -133,8 +133,8 @@ export interface DiagramStore<Graph extends dia.Graph = dia.Graph> {
  */
 function createGraph<
   Graph extends dia.Graph = dia.Graph,
-  Element extends dia.Element | DiagramElement = dia.Element | DiagramElement,
-  Link extends dia.Link | DiagramLink = dia.Link | DiagramLink,
+  Element extends dia.Element | GraphElement = dia.Element | GraphElement,
+  Link extends dia.Link | GraphLink = dia.Link | GraphLink,
 >(options: StoreOptions<Graph, Element, Link> = {}): Graph {
   const { cellModel, cellNamespace = DEFAULT_CELL_NAMESPACE, graph } = options;
   const newGraph =
@@ -185,9 +185,9 @@ function isBatchNameObject(value: unknown): value is { batchName: string } {
  */
 export function createStoreWithGraph<
   Graph extends dia.Graph,
-  Element extends dia.Element | DiagramElement,
-  Link extends dia.Link | DiagramLink,
->(options?: StoreOptions<Graph, Element, Link>): DiagramStore<Graph> {
+  Element extends dia.Element | GraphElement,
+  Link extends dia.Link | GraphLink,
+>(options?: StoreOptions<Graph, Element, Link>): GraphStore<Graph> {
   const { elements, graph, onElementsChange, onLinksChange } = options || {};
 
   if (!graph) {
@@ -298,7 +298,7 @@ export function createStoreWithGraph<
 
   /**
    * Check function to ensure if we register two views with different ids, all be non react ids.
-   * When user want to use two `Diagram.View` with single `Diagram`, he must provide `id` as prop to each of the view.
+   * When user want to use two `Graph.View` with single `Graph`, he must provide `id` as prop to each of the view.
    */
   function viewCheck() {
     if (views.size <= 1) {
@@ -314,16 +314,16 @@ export function createStoreWithGraph<
     }
     if (isThereReactId) {
       throw new Error(
-        'When using multiple `Diagram.View` with single `Diagram`, you must provide `id` property for each of the `Diagram.View` Component'
+        'When using multiple `Graph.View` with single `Graph`, you must provide `id` property for each of the `Graph.View` Component'
       );
     }
   }
-  const views = new Map<string, DiagramViewContext>();
+  const views = new Map<string, PaperContext>();
   const viewsListeners = new Map<string, Set<() => void>>();
 
-  const store: DiagramStore<Graph> = {
-    setView(name: string, DiagramViewContext: DiagramViewContext) {
-      views.set(name, DiagramViewContext);
+  const store: GraphStore<Graph> = {
+    setView(name: string, PaperContext: PaperContext) {
+      views.set(name, PaperContext);
       if (process.env.NODE_ENV !== 'production') {
         viewCheck();
       }
@@ -342,7 +342,7 @@ export function createStoreWithGraph<
       }
       return views.get(name);
     },
-    subscribeToView(name, onDiagramViewContextChange) {
+    subscribeToView(name, onPaperContextChange) {
       let listeners = viewsListeners.get(name || '');
       if (!listeners) {
         listeners = new Set<() => void>();
@@ -352,10 +352,10 @@ export function createStoreWithGraph<
         if (!name) {
           // return first view if name is not provided
           const firstView = views.values().next().value;
-          onDiagramViewContextChange(firstView);
+          onPaperContextChange(firstView);
           return;
         }
-        onDiagramViewContextChange(views.get(name));
+        onPaperContextChange(views.get(name));
       };
       listeners.add(callback);
       callback();
@@ -373,7 +373,7 @@ export function createStoreWithGraph<
     getLinks() {
       return graphData.links;
     },
-    getElement<E extends DiagramElement>(id: dia.Cell.ID) {
+    getElement<E extends GraphElement>(id: dia.Cell.ID) {
       const item = graphData.getElementById(id);
 
       if (!item) {
@@ -428,9 +428,9 @@ export function createStoreWithGraph<
  */
 export function createStore<
   Graph extends dia.Graph,
-  Element extends dia.Element | DiagramElement,
-  Link extends dia.Link | DiagramLink,
->(options?: StoreOptions<Graph, Element, Link>): DiagramStore<Graph> {
+  Element extends dia.Element | GraphElement,
+  Link extends dia.Link | GraphLink,
+>(options?: StoreOptions<Graph, Element, Link>): GraphStore<Graph> {
   const graph = createGraph<Graph, Element, Link>(options);
   return createStoreWithGraph<Graph, Element, Link>({
     ...options,

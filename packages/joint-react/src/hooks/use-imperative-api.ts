@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
@@ -25,6 +26,7 @@ export interface UseImperativeApiOptions<Instance> {
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   readonly onUpdate?: (instance: Instance, reset: () => void) => void | (() => void);
   readonly isDisabled?: boolean;
+  readonly forwardedRef?: React.Ref<Instance>;
 }
 
 interface ResultBase<Instance> {
@@ -59,7 +61,7 @@ export function useImperativeApi<Instance>(
   options: UseImperativeApiOptions<Instance>,
   dependencies: DependencyList
 ): ImperativeStateResult<Instance> {
-  const { onLoad, onUpdate, isDisabled } = options;
+  const { onLoad, onUpdate, isDisabled, forwardedRef } = options;
   const [isReady, setIsReady] = useState(false);
   const instanceRef = useRef<Instance | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -119,6 +121,10 @@ export function useImperativeApi<Instance>(
     // we update cache only by dependencies change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
+
+  // Expose the instance via the forwarded ref, if there is one
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useImperativeHandle(forwardedRef, () => instanceRef.current!, [instanceRef, isReady]);
 
   return { ref: instanceRef, isReady } as ImperativeStateResult<Instance>;
 }

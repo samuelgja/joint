@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 /* eslint-disable jsdoc/require-jsdoc */
 import { render } from '@testing-library/react';
-import { Diagram } from '../components';
+import { GraphProvider, Paper } from '../components';
 
 interface Options<StorybookOptions> {
   Component: React.ComponentType<StorybookOptions>;
@@ -42,9 +42,9 @@ export function runStorybookSnapshot<StorybookOptions>(options: Options<Storyboo
       if (withRenderElementWrapper) {
         wrapper = function ({ children }: { children: React.ReactNode }) {
           return (
-            <Diagram>
-              <Diagram.View renderElement={children as never} />
-            </Diagram>
+            <GraphProvider>
+              <Paper renderElement={children as never} />
+            </GraphProvider>
           );
         };
       }

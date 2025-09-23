@@ -14,7 +14,7 @@
 - **TypeScript by default** — Written in TypeScript with full type definitions
 - **Custom rendering** — SVG or real HTML with an overlay.
 - **Interactive** — Dragging, connecting, selection, events.
-- **Composable** — Multiple views per diagram (e.g., canvas + minimap).
+- **Composable** — Multiple views per diagram / graph (e.g., canvas + minimap).
 
 ---
 
@@ -43,7 +43,7 @@ bun add @joint/react
 
 - **Elements (nodes)** and **links (edges)** are plain objects.
 - Define **`id` explicitly** and mark it as a literal (`'foo' as const`) so TypeScript keeps it precise.
-- The **`Diagram`** component provides the graph context; **`Diagram.View`** renders it.
+- The **`GraphProvider`** component provides the graph context; **`Paper`** renders it.
 - Use hooks like `useElements`, `useLinks`, `useGraph`, `usePaper` for reading/updating state.
 
 ---
@@ -54,7 +54,7 @@ bun add @joint/react
 
 ```tsx
 import React from 'react'
-import { Diagram } from '@joint/react'
+import { GraphProvider } from '@joint/react'
 
 const elements = [
   { id: 'node1', label: 'Start', x: 100, y: 50, width: 120, height: 60 },
@@ -70,8 +70,8 @@ type Element = typeof elements[number]
 
 export default function App() {
   return (
-    <Diagram elements={elements} links={links}>
-      <Diagram.View
+    <GraphProvider elements={elements} links={links}>
+      <Paper
         width="100%"
         height={360}
         useHTMLOverlay
@@ -86,7 +86,7 @@ export default function App() {
           </div>
         )}
       />
-    </Diagram>
+    </GraphProvider>
   )
 }
 ```
@@ -100,7 +100,7 @@ Share one diagram across views. Give each view a stable `id`.
 
 ```tsx
 import React from 'react'
-import { Diagram } from '@joint/react'
+import { GraphProvider } from '@joint/react'
 
 const elements = [
   { id: 'a' as const, label: 'A', x: 40,  y: 60,  width: 80, height: 40 },
@@ -111,12 +111,12 @@ const links = [{ id: 'a-b' as const, source: 'a', target: 'b' }] as const
 
 export function MultiView() {
   return (
-    <Diagram elements={elements} links={links}>
-      <Diagram.View id="main" width="100%" height={420} />
+    <GraphProvider elements={elements} links={links}>
+      <Paper id="main" width="100%" height={420} />
       <div style={{ position: 'absolute', right: 16, bottom: 16 }}>
-        <Diagram.View id="mini" width={180} height={120} interactive={false} scale={0.25} />
+        <Paper id="mini" width={180} height={120} interactive={false} scale={0.25} />
       </div>
-    </Diagram>
+    </GraphProvider>
   )
 }
 ```
@@ -126,7 +126,7 @@ SVG with `<foreignObject>` keeps everything in one tree; `useHTMLOverlay` render
 
 ```tsx
 // ForeignObject (SVG)
-<Diagram.View
+<Paper
   renderElement={({ width, height, label }) => (
     <foreignObject width={width} height={height}>
       <div style={{ display: 'grid', placeItems: 'center', height: '100%', background: '#eee' }}>
@@ -137,7 +137,7 @@ SVG with `<foreignObject>` keeps everything in one tree; `useHTMLOverlay` render
 />
 
 // HTML overlay (React portal outside SVG)
-<Diagram.View
+<Paper
   useHTMLOverlay
   renderElement={({ label }) => (
     <div style={{ padding: 8, borderRadius: 8, background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>
@@ -151,7 +151,7 @@ SVG with `<foreignObject>` keeps everything in one tree; `useHTMLOverlay` render
 Subscribe to pointer events on elements/links.
 
 ```tsx
-<Diagram.View
+<Paper
   onElementPointerClick={(el) => console.log('Clicked:', el.id)}
   onBlankPointerDown={() => console.log('Canvas mousedown')}
 />
@@ -162,7 +162,7 @@ Pass `elements/links` + `onElementsChange/onLinksChange` to keep React in charge
 
 ```tsx
 import React, { useState } from 'react'
-import { Diagram } from '@joint/react'
+import { GraphProvider } from '@joint/react'
 
 const initialElements = [
   { id: 'n1' as const, label: 'Item', x: 60, y: 60, width: 100, height: 40 },
@@ -175,14 +175,14 @@ export function Controlled() {
   const [lns, setLns] = useState([...initialLinks])
 
   return (
-    <Diagram
+    <GraphProvider
       elements={els}
       links={lns}
       onElementsChange={setEls}
       onLinksChange={setLns}
     >
-      <Diagram.View height={320} />
-    </Diagram>
+      <Paper height={320} />
+    </GraphProvider>
   )
 }
 ```
@@ -201,9 +201,9 @@ export function FitOnMount() {
   }, [])
 
   return (
-    <Diagram elements={elements} links={links}>
-      <Diagram.View ref={ref} />
-    </Diagram>
+    <GraphProvider elements={elements} links={links}>
+      <Paper ref={ref} />
+    </GraphProvider>
   )
 }
 ```
@@ -216,7 +216,7 @@ export function FitOnMount() {
 - **Type elements from data**: `type Element = typeof elements[number]` — reuse data as your source of truth.
 - **Memoize renderers & handlers**: `useCallback` to minimize re-renders.
 - **Keep overlay HTML lightweight**: Prefer simple layout; avoid heavy transforms/animations in `<foreignObject>` (Safari can be picky).
-- **Give each view a stable `id`** when rendering multiple `Diagram.View` instances.
+- **Give each view a stable `id`** when rendering multiple `Paper` instances.
 - **Prefer declarative first**: Reach for hooks/props; use imperative APIs (refs/graph methods) for targeted operations only.
 - **Test in Safari early** when using `<foreignObject>`; fall back to `useHTMLOverlay` if needed.
 
@@ -225,8 +225,8 @@ export function FitOnMount() {
 ## ⚙️ API Surface (at a glance)
 
 - **Components**
-  - `Diagram` — provides the shared graph
-  - `Diagram.View` — renders the graph (Paper)
+  - `GraphProvider` — provides the shared graph
+  - `Paper` — renders the graph (Paper)
 
 - **Hooks**
   - `useElements()` / `useLinks()` — subscribe to data
@@ -236,7 +236,7 @@ export function FitOnMount() {
 - **Controlled mode props**
   - `elements`, `links`, `onElementsChange`, `onLinksChange`
 
-> Tip: You can pass an existing JointJS `dia.Graph` into `Diagram` if you need to integrate with external data lifecycles.
+> Tip: You can pass an existing JointJS `dia.Graph` into `GraphProvider` if you need to integrate with external data lifecycles.
 
 ---
 

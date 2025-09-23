@@ -5,13 +5,14 @@ import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import { shapes, util } from '@joint/core';
 import {
   createElements,
-  Diagram,
-  type DiagramProps,
+  GraphProvider,
+  type GraphProps,
   type InferElement,
   type RenderElement,
 } from '@joint/react';
 import { useCallback } from 'react';
 import { HTMLNode } from 'storybook-config/decorators/with-simple-data';
+import { Paper } from '../../../components/paper/paper';
 
 const initialElements = createElements([
   { id: '1', label: 'Node 1', x: 100, y: 0 },
@@ -42,7 +43,7 @@ function Main() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Diagram.View
+      <Paper
         defaultLink={() => new LinkModel()}
         width="100%"
         className={PAPER_CLASSNAME}
@@ -53,9 +54,9 @@ function Main() {
   );
 }
 
-export default function App(props: Readonly<DiagramProps>) {
+export default function App(props: Readonly<GraphProps>) {
   return (
-    <Diagram
+    <GraphProvider
       {...props}
       links={[
         {
@@ -70,6 +71,6 @@ export default function App(props: Readonly<DiagramProps>) {
       cellNamespace={{ LinkModel }}
     >
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

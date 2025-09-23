@@ -5,10 +5,10 @@ import '@testing-library/jest-dom';
 import { createElements, type InferElement } from '../../../utils/create';
 import { MeasuredNode } from '../../measured-node/measured-node';
 import { act, useEffect, useState, type RefObject } from 'react';
-import { useDiagramView } from '../../../hooks/use-diagram-view';
-import { Diagram } from '..';
-import type { DiagramViewContext } from '../../../context';
-import { useGraph } from '../../../hooks';
+import type { PaperContext } from '../../../context';
+import { useGraph, usePaperContext } from '../../../hooks';
+import { GraphProvider } from '../../graph/graph-provider';
+import { Paper } from '../paper';
 
 const elements = createElements([
   { id: '1', label: 'Node 1', width: 10, height: 10 },
@@ -34,7 +34,7 @@ jest.mock('../../../hooks/use-are-elements-measured', () => ({
   useAreElementMeasured: jest.fn(() => true),
 }));
 
-describe('DiagramView Component', () => {
+describe('Paper Component', () => {
   it('renders elements correctly with correct measured node and onMeasured event', async () => {
     const onMeasuredMock = jest.fn();
     let size = { width: 0, height: 0 };
@@ -51,14 +51,14 @@ describe('DiagramView Component', () => {
     };
 
     render(
-      <Diagram elements={elements}>
-        <Diagram.View
+      <GraphProvider elements={elements}>
+        <Paper
           width={WIDTH}
           height={150}
           onElementsSizeReady={onMeasuredMock}
           renderElement={renderElement}
         />
-      </Diagram>
+      </GraphProvider>
     );
     await waitFor(() => {
       expect(screen.getByText('Node 1')).toBeInTheDocument();
@@ -70,14 +70,14 @@ describe('DiagramView Component', () => {
 
   it('renders elements correctly with useHTMLOverlay enabled', async () => {
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element>
+      <GraphProvider elements={elements}>
+        <Paper<Element>
           useHTMLOverlay
           renderElement={({ label }) => {
             return <div className="html-node">{label}</div>;
           }}
         />
-      </Diagram>
+      </GraphProvider>
     );
     await waitFor(() => {
       expect(screen.getByText('Node 1')).toBeInTheDocument();
@@ -94,22 +94,22 @@ describe('DiagramView Component', () => {
     ]);
 
     const { rerender } = render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element>
+      <GraphProvider elements={elements}>
+        <Paper<Element>
           onElementsSizeChange={onElementsSizeChangeMock}
           renderElement={({ label }) => <div className="node">{label}</div>}
         />
-      </Diagram>
+      </GraphProvider>
     );
 
     // Simulate element size change by rerendering with updated elements
     rerender(
-      <Diagram elements={updatedElements}>
-        <Diagram.View<Element>
+      <GraphProvider elements={updatedElements}>
+        <Paper<Element>
           onElementsSizeChange={onElementsSizeChangeMock}
           renderElement={({ label }) => <div className="node">{label}</div>}
         />
-      </Diagram>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -117,12 +117,12 @@ describe('DiagramView Component', () => {
     });
   });
 
-  it('should fire custom event on the DiagramView', async () => {
+  it('should fire custom event on the Paper', async () => {
     const handleCustomEvent = jest.fn();
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
     function FireEvent() {
-      const { paper } = useDiagramView() ?? {};
+      const { paper } = usePaperContext() ?? {};
       useEffect(() => {
         paper?.trigger('MyCustomEventOnClick', { message: 'Hello from custom event!' });
       }, [paper]);
@@ -132,11 +132,11 @@ describe('DiagramView Component', () => {
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
     const customEvents = { MyCustomEventOnClick: handleCustomEvent };
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> customEvents={customEvents}>
+      <GraphProvider elements={elements}>
+        <Paper<Element> customEvents={customEvents}>
           <FireEvent />
-        </Diagram.View>
-      </Diagram>
+        </Paper>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -146,27 +146,27 @@ describe('DiagramView Component', () => {
 
   it('applies default clickThreshold and custom clickThreshold', () => {
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> />
-      </Diagram>
+      <GraphProvider elements={elements}>
+        <Paper<Element> />
+      </GraphProvider>
     );
-    const DiagramViewElement = document.querySelector('.joint-paper');
-    expect(DiagramViewElement).toBeInTheDocument();
+    const PaperElement = document.querySelector('.joint-paper');
+    expect(PaperElement).toBeInTheDocument();
 
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> clickThreshold={20} />
-      </Diagram>
+      <GraphProvider elements={elements}>
+        <Paper<Element> clickThreshold={20} />
+      </GraphProvider>
     );
     // Ensure no errors occur when custom clickThreshold is applied
-    expect(DiagramViewElement).toBeInTheDocument();
+    expect(PaperElement).toBeInTheDocument();
   });
 
-  it('applies scale to the DiagramView', async () => {
+  it('applies scale to the Paper', async () => {
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> scale={2} />
-      </Diagram>
+      <GraphProvider elements={elements}>
+        <Paper<Element> scale={2} />
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -182,9 +182,9 @@ describe('DiagramView Component', () => {
       return <rect id={custom ? 'isCustom' : 'nope'} width={50} height={50} fill="blue" />;
     }
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> elementSelector={customSelector} renderElement={RenderElement} />
-      </Diagram>
+      <GraphProvider elements={elements}>
+        <Paper<Element> elementSelector={customSelector} renderElement={RenderElement} />
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -198,9 +198,9 @@ describe('DiagramView Component', () => {
   it('calls onElementsSizeReady when elements are measured', async () => {
     const onElementsSizeReadyMock = jest.fn();
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> onElementsSizeReady={onElementsSizeReadyMock} />
-      </Diagram>
+      <GraphProvider elements={elements}>
+        <Paper<Element> onElementsSizeReady={onElementsSizeReadyMock} />
+      </GraphProvider>
     );
     await waitFor(() => {
       expect(onElementsSizeReadyMock).toHaveBeenCalledTimes(1);
@@ -218,14 +218,14 @@ describe('DiagramView Component', () => {
         }, 100);
       }, []);
       return (
-        <Diagram elements={elements}>
+        <GraphProvider elements={elements}>
           {isReady && (
-            <Diagram.View<Element>
+            <Paper<Element>
               renderElement={RenderElement}
               onElementsSizeReady={onElementsSizeReadyMock}
             />
           )}
-        </Diagram>
+        </GraphProvider>
       );
     }
     const onElementsSizeReadyMock = jest.fn();
@@ -236,21 +236,21 @@ describe('DiagramView Component', () => {
     });
   });
 
-  it('handles ref from DiagramView correctly', () => {
+  it('handles ref from Paper correctly', () => {
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
     const ref = { current: null };
 
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> ref={ref} />
-      </Diagram>
+      <GraphProvider elements={elements}>
+        <Paper<Element> ref={ref} />
+      </GraphProvider>
     );
     expect(ref.current).not.toBeNull();
   });
   it('should access paper via context and change scale', async () => {
     // eslint-disable-next-line unicorn/consistent-function-scoping
     function ChangeScale() {
-      const { paper } = useDiagramView() ?? {};
+      const { paper } = usePaperContext() ?? {};
       useEffect(() => {
         paper?.scale(2, 2);
       }, [paper]);
@@ -258,10 +258,10 @@ describe('DiagramView Component', () => {
     }
 
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> />
+      <GraphProvider elements={elements}>
+        <Paper<Element> />
         <ChangeScale />
-      </Diagram>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -271,7 +271,7 @@ describe('DiagramView Component', () => {
   });
   it('should access paper via ref and change scale', async () => {
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
-    const ref: RefObject<DiagramViewContext | null> = { current: null };
+    const ref: RefObject<PaperContext | null> = { current: null };
     function ChangeScale() {
       const { paper } = ref.current ?? {};
       useEffect(() => {
@@ -281,10 +281,10 @@ describe('DiagramView Component', () => {
     }
 
     render(
-      <Diagram elements={elements}>
-        <Diagram.View<Element> ref={ref} />
+      <GraphProvider elements={elements}>
+        <Paper<Element> ref={ref} />
         <ChangeScale />
-      </Diagram>
+      </GraphProvider>
     );
   });
 
@@ -306,10 +306,10 @@ describe('DiagramView Component', () => {
       const [currentElements, setCurrentElements] = useState(elements);
       currentOutsideElements = currentElements;
       return (
-        <Diagram elements={currentElements} onElementsChange={setCurrentElements}>
-          <Diagram.View<Element> />
+        <GraphProvider elements={currentElements} onElementsChange={setCurrentElements}>
+          <Paper<Element> />
           <UpdatePosition />
-        </Diagram>
+        </GraphProvider>
       );
     }
     render(<Content />);
@@ -327,8 +327,8 @@ describe('DiagramView Component', () => {
       const [currentElements, setCurrentElements] = useState(elements);
 
       return (
-        <Diagram elements={currentElements} onElementsChange={setCurrentElements}>
-          <Diagram.View<Element>
+        <GraphProvider elements={currentElements} onElementsChange={setCurrentElements}>
+          <Paper<Element>
             renderElement={({ width, height, id }) => {
               return (
                 // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
@@ -350,7 +350,7 @@ describe('DiagramView Component', () => {
           >
             Update Element 1
           </button>
-        </Diagram>
+        </GraphProvider>
       );
     }
     render(<Content />);
@@ -365,30 +365,30 @@ describe('DiagramView Component', () => {
       expect(element).toHaveStyle({ width: '200px', height: '200px' });
     });
   });
-  it('should test two separate DiagramView with same diagram, and get their data via id and hooks', async () => {
-    let view1Ref: DiagramViewContext | null = null;
-    let view2Ref: DiagramViewContext | null = null;
+  it('should test two separate Paper with same paper, and get their data via id and hooks', async () => {
+    let view1Ref: PaperContext | null = null;
+    let view2Ref: PaperContext | null = null;
 
     function UserPaper1() {
-      const DiagramViewContext = useDiagramView('view1');
-      view1Ref = DiagramViewContext ?? null;
+      const PaperContext = usePaperContext('view1');
+      view1Ref = PaperContext ?? null;
       return null;
     }
     function UserPaper2() {
-      const DiagramViewContext = useDiagramView('view2');
-      view2Ref = DiagramViewContext ?? null;
+      const PaperContext = usePaperContext('view2');
+      view2Ref = PaperContext ?? null;
       return null;
     }
 
     render(
-      <Diagram elements={elements}>
+      <GraphProvider elements={elements}>
         {/* We can use it above */}
         <UserPaper1 />
-        <Diagram.View<Element> id="view1" />
-        <Diagram.View<Element> id="view2" />
+        <Paper<Element> id="view1" />
+        <Paper<Element> id="view2" />
         {/* We can use it below */}
         <UserPaper2 />
-      </Diagram>
+      </GraphProvider>
     );
     await waitFor(() => {
       expect(view1Ref).not.toBeNull();

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable no-shadow */
 import { renderHook, waitFor } from '@testing-library/react';
-import { diagramProviderWrapper } from '../../utils/test-wrappers';
+import { graphProviderWrapper } from '../../utils/test-wrappers';
 import { useGraph } from '../use-graph';
 import { useCellActions } from '../use-cell-actions';
 import { useElements } from '../use-elements';
@@ -13,7 +13,7 @@ describe('useCellActions', () => {
   // @ts-expect-error - We setup in beforeEach
   let wrapper: ReducerType<React.JSX.Element, unknown>;
   beforeEach(() => {
-    wrapper = diagramProviderWrapper({
+    wrapper = graphProviderWrapper({
       elements: [
         {
           id: '1',

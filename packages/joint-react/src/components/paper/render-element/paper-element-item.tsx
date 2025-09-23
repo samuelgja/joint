@@ -1,11 +1,11 @@
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { CellWithId } from '../../../types/cell.types';
-import type { DiagramElement } from '../../../types/element-types';
 import typedMemo from '../../../utils/typed-memo';
 import { useElement } from '../../../hooks';
+import type { GraphElement } from '../../../types/element-types';
 
-export interface ElementItemProps<Data extends CellWithId = DiagramElement> {
+export interface ElementItemProps<Data extends CellWithId = GraphElement> {
   /**
    * A function that renders the element. It is called every time the element is rendered.
    */
@@ -17,7 +17,7 @@ export interface ElementItemProps<Data extends CellWithId = DiagramElement> {
 }
 
 // eslint-disable-next-line jsdoc/require-jsdoc
-function SVGElementItemComponent<Data extends CellWithId = DiagramElement>(
+function SVGElementItemComponent<Data extends CellWithId = GraphElement>(
   props: ElementItemProps<Data>
 ) {
   const { renderElement, portalElement, ...rest } = props;
@@ -56,7 +56,7 @@ export const SVGElementItem = typedMemo(SVGElementItemComponent);
  * @returns The rendered element inside the portal.
  * @internal
  */
-function HTMLElementItemComponent<Data extends CellWithId = DiagramElement>(
+function HTMLElementItemComponent<Data extends CellWithId = GraphElement>(
   props: ElementItemProps<Data>
 ) {
   const { renderElement, portalElement, ...rest } = props;

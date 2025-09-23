@@ -4,8 +4,9 @@ import { useCallback } from 'react';
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   MeasuredNode,
+  Paper,
   type InferElement,
   type RenderElement,
 } from '@joint/react';
@@ -40,7 +41,7 @@ function MiniMap() {
 
   return (
     <div className="absolute bottom-4 right-6 w-[200px] h-[150px] border border-[#dde6ed] rounded-lg overflow-hidden">
-      <Diagram.View
+      <Paper
         id="minimap"
         interactive={false}
         scale={0.4}
@@ -68,7 +69,7 @@ function RenderElement({ width, height, label, color }: Readonly<BaseElementWith
 function Main() {
   return (
     <div className="flex flex-row relative">
-      <Diagram.View
+      <Paper
         id="main-view"
         width="100%"
         className={PAPER_CLASSNAME}
@@ -82,8 +83,8 @@ function Main() {
 
 export default function App() {
   return (
-    <Diagram elements={initialElements} links={initialEdges}>
+    <GraphProvider elements={initialElements} links={initialEdges}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

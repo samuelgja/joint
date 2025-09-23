@@ -1,14 +1,14 @@
-import { useDiagramStore } from './use-diagram-store';
+import { useGraphStore } from './use-graph-store';
 import { util } from '@joint/core';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
-import type { DiagramElement } from '../types/element-types';
+import type { GraphElement } from '../types/element-types';
 
 /**
  * Default selector function to return all elements.
  * @param items - The items to select from.
  * @returns - The selected items.
  */
-function defaultSelector<Elements extends DiagramElement = DiagramElement>(
+function defaultSelector<Elements extends GraphElement = GraphElement>(
   items: Elements[]
 ): Elements[] {
   return items.map((item) => item) as Elements[];
@@ -56,13 +56,13 @@ function defaultSelector<Elements extends DiagramElement = DiagramElement>(
  * @returns - The selected elements.
  */
 export function useElements<
-  Elements extends DiagramElement = DiagramElement,
+  Elements extends GraphElement = GraphElement,
   SelectorReturnType = Elements[],
 >(
   selector: (items: Elements[]) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
   isEqual: (a: SelectorReturnType, b: SelectorReturnType) => boolean = util.isEqual
 ): SelectorReturnType {
-  const { subscribe, getElements } = useDiagramStore();
+  const { subscribe, getElements } = useGraphStore();
   const typedGetElements = getElements as () => Elements[];
   const elements = useSyncExternalStoreWithSelector(
     subscribe,

@@ -3,8 +3,9 @@ import '../index.css';
 
 import {
   createElements,
-  Diagram,
+  GraphProvider,
   MeasuredNode,
+  Paper,
   useGraph,
   type InferElement,
   type RenderElement,
@@ -53,19 +54,14 @@ function Main() {
     });
   }, [graph]);
   return (
-    <Diagram.View
-      width="100%"
-      className={PAPER_CLASSNAME}
-      height={280}
-      renderElement={RenderElement}
-    />
+    <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderElement} />
   );
 }
 
 export default function App() {
   return (
-    <Diagram>
+    <GraphProvider>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

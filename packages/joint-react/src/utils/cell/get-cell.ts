@@ -1,6 +1,6 @@
 import { type dia } from '@joint/core';
-import type { DiagramElement } from '../../types/element-types';
-import type { DiagramLink } from '../../types/link-types';
+import type { GraphElement } from '../../types/element-types';
+import type { GraphLink } from '../../types/link-types';
 
 export interface Ports {
   readonly groups?: Record<string, dia.Element.PortGroup>;
@@ -9,7 +9,7 @@ export interface Ports {
 
 export type JointAttributes = Omit<dia.Element.Attributes, 'size' | 'position'>;
 
-export type GraphCell<Element extends DiagramElement = DiagramElement> = Element | DiagramLink;
+export type GraphCell<Element extends GraphElement = GraphElement> = Element | GraphLink;
 
 /**
  * Get element via cell
@@ -27,7 +27,7 @@ export type GraphCell<Element extends DiagramElement = DiagramElement> = Element
  * console.log(element);
  * ```
  */
-export function getElement<Element extends DiagramElement = DiagramElement>(
+export function getElement<Element extends GraphElement = GraphElement>(
   cell: dia.Cell<JointAttributes>
 ): Element {
   const { size, position, ...attributes } = cell.attributes;
@@ -58,7 +58,7 @@ export function getElement<Element extends DiagramElement = DiagramElement>(
  * console.log(link);
  * ```
  */
-export function getLink(cell: dia.Cell<dia.Cell.Attributes>): DiagramLink {
+export function getLink(cell: dia.Cell<dia.Cell.Attributes>): GraphLink {
   return {
     ...cell.attributes,
     id: cell.id,
@@ -86,7 +86,7 @@ export function getLink(cell: dia.Cell<dia.Cell.Attributes>): DiagramLink {
  * console.log(cell);
  * ```
  */
-export function getCell<Element extends DiagramElement = DiagramElement>(
+export function getCell<Element extends GraphElement = GraphElement>(
   cell: dia.Cell<dia.Cell.Attributes>
 ): GraphCell<Element> {
   if (cell.isElement()) {

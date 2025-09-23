@@ -1,34 +1,34 @@
 import React, { createRef, useState } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
-import { DiagramContext } from '../../../context/diagram-context';
-import { createStore, type DiagramStore } from '../../../data/create-diagram-store';
+import { GraphStoreContext } from '../../../context';
+import { createStore, type GraphStore } from '../../../data/create-graph-store';
 import { dia } from '@joint/core';
 import { useElements, useLinks } from '../../../hooks';
 import { createElements } from '../../../utils/create';
-import type { DiagramElement } from '../../../types/element-types';
-import { Diagram } from '..';
+import type { GraphElement } from '../../../types/element-types';
+import { GraphProvider } from '../../graph/graph-provider';
 
-describe('diagram', () => {
+describe('graph', () => {
   it('should render children and match snapshot', () => {
     const { asFragment, getByText } = render(
-      <Diagram>
+      <GraphProvider>
         <div>Child Content</div>
-      </Diagram>
+      </GraphProvider>
     );
     expect(getByText('Child Content')).toMatchSnapshot();
     expect(asFragment()).toMatchSnapshot();
   });
 
   it('should provide a graph instance in context', () => {
-    let contextGraph: DiagramStore | null = null;
+    let contextGraph: GraphStore | null = null;
     function TestComponent() {
-      contextGraph = React.useContext(DiagramContext);
+      contextGraph = React.useContext(GraphStoreContext);
       return null;
     }
     render(
-      <Diagram>
+      <GraphProvider>
         <TestComponent />
-      </Diagram>
+      </GraphProvider>
     );
 
     if (!contextGraph) {
@@ -57,9 +57,9 @@ describe('diagram', () => {
     }
     render(
       // eslint-disable-next-line react-perf/jsx-no-new-array-as-prop
-      <Diagram elements={elements} links={[link]}>
+      <GraphProvider elements={elements} links={[link]}>
         <TestComponent />
-      </Diagram>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -80,9 +80,9 @@ describe('diagram', () => {
       return null;
     }
     render(
-      <Diagram graph={graph}>
+      <GraphProvider graph={graph}>
         <TestComponent />
-      </Diagram>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -114,9 +114,9 @@ describe('diagram', () => {
       return null;
     }
     render(
-      <Diagram elements={elements}>
+      <GraphProvider elements={elements}>
         <TestComponent />
-      </Diagram>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -131,9 +131,9 @@ describe('diagram', () => {
     mockStore.destroy = mockDestroy;
 
     const { unmount } = render(
-      <Diagram store={mockStore}>
+      <GraphProvider store={mockStore}>
         <div>Test</div>
-      </Diagram>
+      </GraphProvider>
     );
 
     expect(mockDestroy).not.toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe('diagram', () => {
     const graph = new dia.Graph();
     const cell = new dia.Element({ id: 'element1', type: 'standard.Rectangle' });
     graph.addCell(cell);
-    let currentElements: DiagramElement[] = [];
+    let currentElements: GraphElement[] = [];
     function Elements() {
       const elements = useElements();
       currentElements = elements;
@@ -153,10 +153,10 @@ describe('diagram', () => {
     }
 
     const { unmount } = render(
-      <Diagram graph={graph}>
+      <GraphProvider graph={graph}>
         <Elements />
         <div>Test</div>
-      </Diagram>
+      </GraphProvider>
     );
 
     expect(graph.getCell('element1')).toBe(cell);
@@ -189,7 +189,7 @@ describe('diagram', () => {
     const store = createStore({ graph });
     const cell = new dia.Element({ id: 'element1', type: 'standard.Rectangle' });
     graph.addCell(cell);
-    let currentElements: DiagramElement[] = [];
+    let currentElements: GraphElement[] = [];
     // eslint-disable-next-line sonarjs/no-identical-functions
     function Elements() {
       const elements = useElements();
@@ -198,10 +198,10 @@ describe('diagram', () => {
     }
 
     const { unmount } = render(
-      <Diagram store={store}>
+      <GraphProvider store={store}>
         <Elements />
         <div>Test</div>
-      </Diagram>
+      </GraphProvider>
     );
 
     expect(graph.getCell('element1')).toBe(cell);
@@ -251,9 +251,9 @@ describe('diagram', () => {
     }
     render(
       // eslint-disable-next-line react-perf/jsx-no-new-array-as-prop
-      <Diagram elements={elements} links={[link]}>
+      <GraphProvider elements={elements} links={[link]}>
         <TestComponent />
-      </Diagram>
+      </GraphProvider>
     );
 
     await waitFor(() => {
@@ -289,23 +289,23 @@ describe('diagram', () => {
     }
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
-    let setElementsOutside = (_: DiagramElement[]) => {};
+    let setElementsOutside = (_: GraphElement[]) => {};
     let setLinksOutside = (_: dia.Link[]) => {};
 
     function Graph() {
       const [elements, setElements] = useState(initialElements);
       const [links, setLinks] = useState([initialLink]);
-      setElementsOutside = setElements as unknown as (elements: DiagramElement[]) => void;
+      setElementsOutside = setElements as unknown as (elements: GraphElement[]) => void;
       setLinksOutside = setLinks as unknown as (links: dia.Link[]) => void;
       return (
-        <Diagram
+        <GraphProvider
           elements={elements}
           onElementsChange={setElements}
           links={links}
           onLinksChange={setLinks}
         >
           <TestComponent />
-        </Diagram>
+        </GraphProvider>
       );
     }
     render(<Graph />);
@@ -363,11 +363,11 @@ describe('diagram', () => {
     });
   });
 
-  it('should pass ref instance to the Diagram component', () => {
+  it('should pass ref instance to the GraphProvider component', () => {
     // eslint-disable-next-line @eslint-react/no-create-ref
-    const diagramRef = createRef<DiagramStore>();
-    render(<Diagram ref={diagramRef} />);
-    expect(diagramRef.current).not.toBeNull();
-    expect(diagramRef.current?.destroy).toBeDefined();
+    const graphRef = createRef<GraphStore>();
+    render(<GraphProvider ref={graphRef} />);
+    expect(graphRef.current).not.toBeNull();
+    expect(graphRef.current?.destroy).toBeDefined();
   });
 });

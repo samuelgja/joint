@@ -1,27 +1,26 @@
 import type { dia } from '@joint/core';
-import type { DiagramLink } from '../../types/link-types';
-import { DiagramAreElementsMeasuredContext, DiagramContext } from '../../context/diagram-context';
+import type { GraphLink } from '../../types/link-types';
 import {
   forwardRef,
-  useImperativeHandle,
   useLayoutEffect,
   type Dispatch,
   type PropsWithChildren,
   type SetStateAction,
 } from 'react';
-import { createStore, type DiagramStore } from '../../data/create-diagram-store';
+import { createStore, type GraphStore } from '../../data/create-graph-store';
 import { useElements } from '../../hooks/use-elements';
 import { useGraph } from '../../hooks';
 import { setElements, setLinks } from '../../utils/cell/cell-utilities';
-import type { DiagramElement } from '../../types/element-types';
+import type { GraphElement } from '../../types/element-types';
 import { CONTROLLED_MODE_BATCH_NAME } from '../../utils/graph/update-graph';
 import { useImperativeApi } from '../../hooks/use-imperative-api';
+import { GraphAreElementsMeasuredContext, GraphStoreContext } from '../../context';
 
-interface DiagramBaseProps<
+interface GraphProviderBaseProps<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Element extends dia.Element | DiagramElement = any,
+  Element extends dia.Element | GraphElement = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Link extends dia.Link | DiagramLink = any,
+  Link extends dia.Link | GraphLink = any,
 > {
   /**
    * Elements (nodes) to be added to graph.
@@ -56,11 +55,11 @@ interface DiagramBaseProps<
  * Internal handler coordinating initial population and controlled-mode mirroring
  * for elements and links. Also delays link creation until elements are measured
  * in uncontrolled mode to avoid flicker.
- * @param props - The properties for the DiagramProviderHandler, including elements, links, and callbacks.
+ * @param props - The properties for the GraphProviderHandler, including elements, links, and callbacks.
  * @returns A context provider for the measured state of elements.
  * @private
  */
-export function DiagramProviderHandler(props: PropsWithChildren<DiagramBaseProps>) {
+export function GraphProviderHandler(props: PropsWithChildren<GraphProviderBaseProps>) {
   const { elements, links, onElementsChange, onLinksChange, children } = props;
   const areElementsMeasured = useElements((items) => {
     let areMeasured = true;
@@ -112,19 +111,19 @@ export function DiagramProviderHandler(props: PropsWithChildren<DiagramBaseProps
   }, [areElementsMeasured, isControlledMode]);
 
   return (
-    <DiagramAreElementsMeasuredContext.Provider value={areElementsMeasured}>
+    <GraphAreElementsMeasuredContext.Provider value={areElementsMeasured}>
       {children}
-    </DiagramAreElementsMeasuredContext.Provider>
+    </GraphAreElementsMeasuredContext.Provider>
   );
 }
 
-export interface DiagramProps<
+export interface GraphProps<
   Graph extends dia.Graph = dia.Graph,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Element extends dia.Element | DiagramElement = any,
+  Element extends dia.Element | GraphElement = any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Link extends dia.Link | DiagramLink = any,
-> extends DiagramBaseProps<Element, Link> {
+  Link extends dia.Link | GraphLink = any,
+> extends GraphProviderBaseProps<Element, Link> {
   /**
    * Graph instance to use. If not provided, a new graph instance will be created.
    * @see https://docs.jointjs.com/api/dia/Graph
@@ -155,46 +154,43 @@ export interface DiagramProps<
    * Store is build around graph, it handles react updates and states, it can be created separately and passed to the provider via `createStore` function.
    * @see `createStore`
    */
-  readonly store?: DiagramStore<Graph>;
+  readonly store?: GraphStore<Graph>;
 }
 
 /**
- * Diagram component creates a graph instance and provides `dia.graph` to its children.
+ * Graph component creates a graph instance and provides `dia.graph` to its children.
  * This component is essential for the library to function correctly. It manages the graph instance and supports controlled and uncontrolled modes for elements and links.
- * @param props - The properties for the Diagram component.
- * @param forwardedRef - A reference to the DiagramStore instance.
- * @returns The Diagram component.
+ * @param props - The properties for the Graph component.
+ * @param forwardedRef - A reference to the GraphStore instance.
+ * @returns The Graph component.
  * @example
- * Using the Diagram component:
+ * Using the Graph component:
  * ```tsx
- * import { Diagram } from '@joint/react';
+ * import { Graph } from '@joint/react';
  * function App() {
  *   return (
- *     <Diagram>
+ *     <Graph>
  *       <MyApp />
- *     </Diagram>
+ *     </Graph>
  *   );
  * }
  * ```
  * @example
- * Using the Diagram component with default elements and links:
+ * Using the Graph component with default elements and links:
  * ```tsx
- * import { Diagram } from '@joint/react';
+ * import { Graph } from '@joint/react';
  * function App() {
  *   return (
- *     <Diagram elements={[]} links={[]}>
+ *     <Graph elements={[]} links={[]}>
  *       <MyApp />
- *     </Diagram>
+ *     </Graph>
  *   );
  * }
  * ```
  */
-function DiagramBase<
-  Element extends dia.Element | DiagramElement,
-  Link extends dia.Link | DiagramLink,
->(
-  props: Readonly<DiagramProps<dia.Graph, Element, Link>>,
-  forwardedRef: React.Ref<DiagramStore | null>
+function GraphBase<Element extends dia.Element | GraphElement, Link extends dia.Link | GraphLink>(
+  props: Readonly<GraphProps<dia.Graph, Element, Link>>,
+  forwardedRef: React.Ref<GraphStore>
 ) {
   const { children, store, ...rest } = props;
   /**
@@ -202,8 +198,9 @@ function DiagramBase<
    * @returns - The graph store instance.
    */
 
-  const { isReady, ref } = useImperativeApi(
+  const { isReady, ref } = useImperativeApi<GraphStore>(
     {
+      forwardedRef,
       onLoad() {
         const newStore = store ?? createStore({ ...rest });
         // We must use state initialization for the store, because it can be used in the same component.
@@ -221,22 +218,14 @@ function DiagramBase<
     []
   );
 
-  useImperativeHandle(forwardedRef, () => {
-    if (!isReady || !ref.current) {
-      // Return a default value or throw an error to ensure non-nullable type.
-      return null as unknown as DiagramStore<dia.Graph>;
-    }
-    return ref.current;
-  }, [isReady, ref]);
-
   if (!isReady) {
     return null;
   }
 
   return (
-    <DiagramContext.Provider value={ref.current}>
-      <DiagramProviderHandler {...props}>{children}</DiagramProviderHandler>
-    </DiagramContext.Provider>
+    <GraphStoreContext.Provider value={ref.current}>
+      <GraphProviderHandler {...props}>{children}</GraphProviderHandler>
+    </GraphStoreContext.Provider>
   );
 }
 
@@ -247,9 +236,11 @@ function DiagramBase<
  * @param props - {GraphProviderHandler} props
  * @private
  */
-export const Diagram = forwardRef(DiagramBase) as <
-  Element extends dia.Element | DiagramElement = dia.Element,
-  Link extends dia.Link | DiagramLink = dia.Link,
+export const GraphProvider = forwardRef(GraphBase) as <
+  Element extends dia.Element | GraphElement = dia.Element,
+  Link extends dia.Link | GraphLink = dia.Link,
 >(
-  props: Readonly<DiagramProps<dia.Graph, Element, Link>> & { ref?: React.Ref<DiagramStore | null> }
-) => ReturnType<typeof DiagramBase>;
+  props: Readonly<GraphProps<dia.Graph, Element, Link>> & {
+    ref?: React.Ref<GraphStore>;
+  }
+) => ReturnType<typeof GraphBase>;

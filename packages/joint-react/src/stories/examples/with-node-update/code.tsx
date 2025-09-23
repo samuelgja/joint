@@ -3,8 +3,9 @@
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   MeasuredNode,
+  Paper,
   useElements,
   type InferElement,
 } from '@joint/react';
@@ -57,12 +58,7 @@ function Main() {
   const elements = useElements<BaseElementWithData>();
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Diagram.View
-        width="100%"
-        className={PAPER_CLASSNAME}
-        height={280}
-        renderElement={RenderElement}
-      />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderElement} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {elements.map((item) => {
           return <ElementInput key={item.id} {...item} />;
@@ -74,8 +70,8 @@ function Main() {
 
 export default function App() {
   return (
-    <Diagram elements={initialElements} links={initialEdges}>
+    <GraphProvider elements={initialElements} links={initialEdges}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

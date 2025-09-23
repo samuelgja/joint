@@ -2,10 +2,10 @@
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 import { dia } from '@joint/core';
 import '../../stories/examples/index.css';
-import { Diagram, jsx } from '@joint/react';
+import { GraphProvider, jsx, Paper } from '@joint/react';
 import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import type { Meta, StoryObj } from '@storybook/react';
-import { SimpleDiagramDecorator } from 'storybook-config/decorators/with-simple-data';
+import { SimpleGraphDecorator } from 'storybook-config/decorators/with-simple-data';
 import { getAPILink } from '../../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation } from '../../stories/utils/make-story';
 
@@ -51,9 +51,9 @@ const initialElements = [
 
 function App() {
   return (
-    <Diagram cellNamespace={{ CustomRect }} elements={initialElements} links={[]}>
-      <Diagram.View width={320} height={220} className={PAPER_CLASSNAME} />
-    </Diagram>
+    <GraphProvider cellNamespace={{ CustomRect }} elements={initialElements} links={[]}>
+      <Paper width={320} height={220} className={PAPER_CLASSNAME} />
+    </GraphProvider>
   );
 }
 
@@ -62,7 +62,7 @@ export type Story = StoryObj<typeof App>;
 const meta: Meta<typeof App> = {
   title: 'Utils/JSX',
   component: App,
-  decorators: [SimpleDiagramDecorator],
+  decorators: [SimpleGraphDecorator],
   parameters: makeRootDocumentation({
     apiURL: API_URL,
     code: `import { dia } from '@joint/core';

@@ -1,12 +1,12 @@
 import { util } from '@joint/core';
 import { useCellId } from './use-cell-id';
-import { useDiagramStore } from './use-diagram-store';
+import { useGraphStore } from './use-graph-store';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
-import type { DiagramElement } from '../types/element-types';
+import type { GraphElement } from '../types/element-types';
 import { useCallback } from 'react';
 
 /**
- * A hook to access a specific graph element from the current `Diagram.View` context.
+ * A hook to access a specific graph element from the current `Paper` context.
  * Use it only inside `renderElement` or components rendered from within.
  * This hook returns the selected element based on its cell id. It accepts:
  * - a selector function, which extracts the desired part from the element.
@@ -33,12 +33,12 @@ import { useCallback } from 'react';
  * @param isEqual The function used to check equality. @default util.isEqual
  * @returns The selected element based on the current cell id.
  */
-export function useElement<Element extends DiagramElement, ReturnedElements = Element>(
+export function useElement<Element extends GraphElement, ReturnedElements = Element>(
   selector: (item: Element) => ReturnedElements = (item) => item as unknown as ReturnedElements,
   isEqual: (a: ReturnedElements, b: ReturnedElements) => boolean = util.isEqual
 ): ReturnedElements {
   const id = useCellId();
-  const { subscribe, getElement } = useDiagramStore();
+  const { subscribe, getElement } = useGraphStore();
 
   const subscribeForElement = useCallback(
     (subscribeCallback: () => void) => {

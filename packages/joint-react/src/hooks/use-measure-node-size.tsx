@@ -5,7 +5,7 @@ import {
   type SizeObserver,
 } from '../utils/create-element-size-observer';
 import type { dia } from '@joint/core';
-import { useDiagramStore } from './use-diagram-store';
+import { useGraphStore } from './use-graph-store';
 
 export interface OnSetOptions {
   readonly element: dia.Element;
@@ -34,7 +34,7 @@ export function useMeasureNodeSize<AnyHTMLOrSVGElement extends HTMLElement | SVG
   options?: MeasureNodeOptions
 ) {
   const { setSize } = options ?? EMPTY_OBJECT;
-  const { graph, setMeasuredNode, hasMeasuredNode } = useDiagramStore();
+  const { graph, setMeasuredNode, hasMeasuredNode } = useGraphStore();
   const id = useCellId();
 
   const onSetSizeRef = useRef(setSize);

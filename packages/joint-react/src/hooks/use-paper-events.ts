@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, type DependencyList } from 'react';
 import { usePaper } from './use-paper';
 import type { PaperEvents } from '../types/event.types';
 import { handlePaperEvents } from '../utils/handle-paper-events';
@@ -7,6 +7,7 @@ import { useGraph } from './use-graph';
 /**
  * A hook that listens to view (Paper) events and triggers the corresponding callbacks.
  * @param events - An object where keys are event names and values are callback functions.
+ * @param dependencies - An optional array of dependencies that, when changed, will re-register the event listeners.
  * @group Hooks
  * @example
  * ```tsx
@@ -17,7 +18,7 @@ import { useGraph } from './use-graph';
  * });
  * ```
  */
-export function usePaperEvents(events: PaperEvents) {
+export function usePaperEvents(events: PaperEvents, dependencies: DependencyList = []) {
   const paper = usePaper();
   const graph = useGraph();
   useLayoutEffect(() => {
@@ -29,5 +30,6 @@ export function usePaperEvents(events: PaperEvents) {
     return () => {
       stopListening();
     };
-  }, [events, graph, paper]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, graph, paper, ...dependencies]);
 }

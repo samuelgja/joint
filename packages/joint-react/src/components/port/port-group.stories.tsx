@@ -2,11 +2,19 @@
 /* eslint-disable sonarjs/prefer-read-only-props */
 import type { Meta, StoryObj } from '@storybook/react';
 import '../../stories/examples/index.css';
-import { createElements, createLinks, Diagram, MeasuredNode, Port, useElement } from '@joint/react';
+import {
+  createElements,
+  createLinks,
+  GraphProvider,
+  MeasuredNode,
+  Port,
+  useElement,
+} from '@joint/react';
 import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import { PortGroup } from './port-group';
 import { getAPILink } from '../../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation, makeStory } from '../../stories/utils/make-story';
+import { Paper } from '../paper/paper';
 
 const initialElements = createElements([
   {
@@ -64,15 +72,15 @@ function RenderItem(Story: React.FC) {
 function PaperDecorator(Story: React.FC) {
   const renderItem = () => RenderItem(Story);
   return (
-    <Diagram elements={initialElements} links={initialLinks}>
-      <Diagram.View
+    <GraphProvider elements={initialElements} links={initialLinks}>
+      <Paper
         className={PAPER_CLASSNAME}
         width={'100%'}
         height={350}
         renderElement={renderItem}
         linkPinning={false}
       />
-    </Diagram>
+    </GraphProvider>
   );
 }
 

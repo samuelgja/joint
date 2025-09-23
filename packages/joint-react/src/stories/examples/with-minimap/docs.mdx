@@ -5,7 +5,7 @@ import Code from './code?raw';
 <Meta of={Stories} />
 
 # Example: Rendering with a Minimap
-The minimap uses a second `Diagram.View` to render a scaled-down view of the graph. Internally it wraps the [JointJS Paper](https://docs.jointjs.com/learn/quickstart/paper) and syncs position/scale with the main view.
+The minimap uses a second `Paper` to render a scaled-down view of the graph. Internally it wraps the [JointJS Paper](https://docs.jointjs.com/learn/quickstart/paper) and syncs position/scale with the main view.
 
 ### Demo
 Below is a live demo of the minimap in action:
@@ -13,7 +13,7 @@ Below is a live demo of the minimap in action:
 <Canvas of={Stories.Default} />
 
 ### Code
-The minimap is implemented as a separate `Diagram.View` and is rendered inside the `Diagram` component. It uses properties like `scale` and `interactive` to synchronize and lock interactions.
+The minimap is implemented as a separate `Paper` and is rendered inside the `GraphProvider` component. It uses properties like `scale` and `interactive` to synchronize and lock interactions.
 
 <Markdown>
 {`\`\`\`tsx

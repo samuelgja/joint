@@ -3,18 +3,18 @@
 
 // @ts-expect-error do not provide typings.
 import JsonViewer from '@andypf/json-viewer/dist/esm/react/JsonViewer';
-
 import { useCallback, type HTMLProps, type JSX, type PropsWithChildren } from 'react';
 import {
   createElements,
   createLinks,
+  GraphProvider,
   MeasuredNode,
   useElement,
   type InferElement,
 } from '@joint/react';
 import { PAPER_CLASSNAME, PRIMARY } from '../theme';
 import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
-import { Diagram } from '../../src/components/diagram';
+import { Paper } from '../../src/components/paper/paper';
 
 export type StoryFunction = PartialStoryFn<any, any>;
 export type StoryCtx = StoryContext<any, any>;
@@ -54,19 +54,19 @@ export const testLinks = createLinks([
   },
 ]);
 
-export function SimpleDiagramProviderDecorator({ children }: Readonly<PropsWithChildren>) {
+export function SimpleGraphProviderDecorator({ children }: Readonly<PropsWithChildren>) {
   return (
-    <Diagram elements={testElements} links={testLinks}>
+    <GraphProvider elements={testElements} links={testLinks}>
       {children}
-    </Diagram>
+    </GraphProvider>
   );
 }
 
-export function SimpleDiagramDecorator(Story: StoryFunction, { args }: StoryCtx) {
+export function SimpleGraphDecorator(Story: StoryFunction, { args }: StoryCtx) {
   return (
-    <SimpleDiagramProviderDecorator>
+    <SimpleGraphProviderDecorator>
       <Story {...args} />
-    </SimpleDiagramProviderDecorator>
+    </SimpleGraphProviderDecorator>
   );
 }
 
@@ -77,15 +77,15 @@ export function RenderItemDecorator(
 ) {
   return (
     <div style={{ width: '100%', height: 450 }}>
-      <SimpleDiagramProviderDecorator>
-        <Diagram.View
+      <SimpleGraphProviderDecorator>
+        <Paper
           width="100%"
           height={450}
           className={PAPER_CLASSNAME}
           renderElement={properties.renderElement}
           linkPinning={false}
         />
-      </SimpleDiagramProviderDecorator>
+      </SimpleGraphProviderDecorator>
     </div>
   );
 }
@@ -95,19 +95,19 @@ function RenderSimpleRectElement(properties: SimpleElement) {
   return <rect width={width} height={height} fill={color} />;
 }
 
-export function RenderDiagramViewWithChildren(properties: Readonly<{ children: JSX.Element }>) {
+export function RenderGraphViewWithChildren(properties: Readonly<{ children: JSX.Element }>) {
   return (
     <div style={{ width: '100%', height: 350 }}>
-      <SimpleDiagramProviderDecorator>
-        <Diagram.View
+      <SimpleGraphProviderDecorator>
+        <Paper
           width="100%"
           height={350}
           className={PAPER_CLASSNAME}
           renderElement={RenderSimpleRectElement}
         >
           {properties.children}
-        </Diagram.View>
-      </SimpleDiagramProviderDecorator>
+        </Paper>
+      </SimpleGraphProviderDecorator>
     </div>
   );
 }

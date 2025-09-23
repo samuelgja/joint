@@ -1,6 +1,6 @@
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
-import { createElements, createLinks, Diagram, type InferElement } from '@joint/react';
+import { createElements, createLinks, GraphProvider, Paper, type InferElement } from '@joint/react';
 import '../index.css';
 import { PRIMARY, LIGHT, PAPER_CLASSNAME } from 'storybook-config/theme';
 import { HTMLNode } from 'storybook-config/decorators/with-simple-data';
@@ -51,20 +51,15 @@ function RenderElement({ color, id }: BaseElementWithData) {
 function Main() {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Diagram.View
-        width="100%"
-        className={PAPER_CLASSNAME}
-        height={280}
-        renderElement={RenderElement}
-      />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderElement} />
     </div>
   );
 }
 
 export default function WithColor() {
   return (
-    <Diagram elements={initialElements} links={initialEdges}>
+    <GraphProvider elements={initialElements} links={initialEdges}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

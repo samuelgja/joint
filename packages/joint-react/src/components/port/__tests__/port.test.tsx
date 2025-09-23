@@ -8,7 +8,7 @@ describe('port', () => {
   it('should check if the port is created on the graph instance properly', async () => {
     const graph = new dia.Graph({}, { cellNamespace: { ReactElement } });
     const wrapper = paperRenderElementWrapper({
-      diagramProps: {
+      graphProviderProps: {
         graph,
         elements: [
           {
@@ -47,7 +47,7 @@ describe('port', () => {
   it('should check if the group with port is created on the graph instance properly', async () => {
     const graph = new dia.Graph({}, { cellNamespace: { ReactElement } });
     const wrapper = paperRenderElementWrapper({
-      diagramProps: {
+      graphProviderProps: {
         graph,
         elements: [
           {

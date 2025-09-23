@@ -5,12 +5,13 @@
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   useGraph,
   setElements as setElementsViaGraph,
   setLinks as setLinksViaGraph,
-  type DiagramProps,
+  type GraphProps,
   type InferElement,
+  Paper,
 } from '@joint/react';
 import '../../examples/index.css'; // Import custom styles
 import { BUTTON_CLASSNAME, PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme'; // Storybook-specific styles
@@ -145,12 +146,7 @@ function PaperApp() {
   return (
     <div className="flex flex-col ">
       {/* Render the Paper component */}
-      <Diagram.View
-        width="100%"
-        className={PAPER_CLASSNAME}
-        height={280}
-        renderElement={RenderItem}
-      />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RenderItem} />
       {/* Button to add a new element directly via the graph */}
       <div className="flex flex-row">
         <button
@@ -252,8 +248,8 @@ function PaperApp() {
   );
 }
 
-// Main component that connects the Redux store to the Diagram
-function Main(props: Readonly<DiagramProps>) {
+// Main component that connects the Redux store to the GraphProvider
+function Main(props: Readonly<GraphProps>) {
   // Select links and elements from the Redux store
   const links = useSelector((state: RootState) => state.links);
   const elements = useSelector((state: RootState) => state.elements);
@@ -261,7 +257,7 @@ function Main(props: Readonly<DiagramProps>) {
   return (
     <>
       {/* Provide the graph context with initial elements and links */}
-      <Diagram
+      <GraphProvider
         {...props}
         links={links}
         elements={elements}
@@ -274,7 +270,7 @@ function Main(props: Readonly<DiagramProps>) {
         }}
       >
         <PaperApp />
-      </Diagram>
+      </GraphProvider>
     </>
   );
 }

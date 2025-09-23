@@ -3,8 +3,8 @@
 import type { dia } from '@joint/core';
 import { util } from '@joint/core';
 import { getElement, getLink } from '../utils/cell/get-cell';
-import type { DiagramLink } from '../types/link-types';
-import type { DiagramElement } from '../types/element-types';
+import type { GraphLink } from '../types/link-types';
+import type { GraphElement } from '../types/element-types';
 
 export interface UpdateResult {
   readonly diffIds: Set<dia.Cell.ID>;
@@ -14,7 +14,7 @@ export interface UpdateResult {
 
 interface StoreData<
   Graph extends dia.Graph = dia.Graph,
-  Element extends DiagramElement = DiagramElement,
+  Element extends GraphElement = GraphElement,
 > {
   /** Rebuilds arrays (and internal indices) from the graph, returns a diff summary */
   readonly updateStore: (graph: Graph) => UpdateResult;
@@ -23,15 +23,15 @@ interface StoreData<
 
   /** Public, array-first shape */
   elements: Element[];
-  links: DiagramLink[];
+  links: GraphLink[];
 
   /** O(1) helpers built on top of private indices */
   readonly getElementById: (id: dia.Cell.ID) => Element | undefined;
-  readonly getLinkById: (id: dia.Cell.ID) => DiagramLink | undefined;
+  readonly getLinkById: (id: dia.Cell.ID) => GraphLink | undefined;
 }
-interface Options<Element extends DiagramElement> {
+interface Options<Element extends GraphElement> {
   readonly elements?: Element[];
-  readonly links?: DiagramLink[];
+  readonly links?: GraphLink[];
 }
 /**
  * Array-first store with internal id->index maps.
@@ -40,19 +40,19 @@ interface Options<Element extends DiagramElement> {
  * @group Data
  * @param options - Initial elements and links.
  * @template Graph - The type of the graph, extending dia.Graph.
- * @template Element - The type of elements in the store, extending DiagramElement.
+ * @template Element - The type of elements in the store, extending GraphElement.
  * @returns - The store data containing elements, links, and utility methods.
  * @example
  */
 export function createStoreData<
   Graph extends dia.Graph = dia.Graph,
-  Element extends DiagramElement = DiagramElement,
+  Element extends GraphElement = GraphElement,
 >(options: Options<Element> = {}): StoreData<Graph, Element> {
   // Public arrays
 
   const ref: {
     elements: Element[];
-    links: DiagramLink[];
+    links: GraphLink[];
   } = {
     elements: options.elements ?? [],
     links: options.links ?? [],
@@ -76,7 +76,7 @@ export function createStoreData<
    * @param id - The ID of the link to retrieve.
    * @returns The link if found, otherwise undefined.
    */
-  function getLinkById(id: dia.Cell.ID): DiagramLink | undefined {
+  function getLinkById(id: dia.Cell.ID): GraphLink | undefined {
     const i = lIndex.get(id);
     return i == null ? undefined : ref.links[i];
   }
@@ -91,7 +91,7 @@ export function createStoreData<
     if (!cells) throw new Error('Graph cells are not initialized');
 
     const nextElements: Element[] = [];
-    const nextLinks: DiagramLink[] = [];
+    const nextLinks: GraphLink[] = [];
     const nextEIndex = new Map<dia.Cell.ID, number>();
     const nextLIndex = new Map<dia.Cell.ID, number>();
     const diffIds = new Set<dia.Cell.ID>();
@@ -196,7 +196,7 @@ export function createStoreData<
     get links() {
       return ref.links;
     },
-    set links(_value: DiagramLink[]) {
+    set links(_value: GraphLink[]) {
       throw new Error('links is read-only; call updateStore(graph) instead.');
     },
   } as StoreData<Graph, Element>;

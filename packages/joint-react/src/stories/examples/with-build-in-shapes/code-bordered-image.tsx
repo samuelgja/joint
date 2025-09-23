@@ -1,6 +1,6 @@
 import { PAPER_CLASSNAME } from 'storybook-config/theme';
 import '../index.css';
-import { createElements, Diagram } from '@joint/react';
+import { createElements, GraphProvider, Paper } from '@joint/react';
 
 const initialElements = createElements([
   {
@@ -28,15 +28,15 @@ function Main() {
   return (
     // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Diagram.View width="100%" className={PAPER_CLASSNAME} height={100} />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={100} />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <Diagram elements={initialElements}>
+    <GraphProvider elements={initialElements}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

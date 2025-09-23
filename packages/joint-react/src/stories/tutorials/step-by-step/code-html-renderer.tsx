@@ -2,10 +2,11 @@ import { useCallback, useState } from 'react';
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   MeasuredNode,
+  Paper,
   usePaper,
-  type DiagramProps,
+  type GraphProps,
   type InferElement,
 } from '@joint/react';
 import '../../examples/index.css';
@@ -90,12 +91,7 @@ function Main() {
   );
 
   return (
-    <Diagram.View
-      useHTMLOverlay={isHTMLEnabled}
-      width={400}
-      height={400}
-      renderElement={renderItem}
-    >
+    <Paper useHTMLOverlay={isHTMLEnabled} width={400} height={400} renderElement={renderItem}>
       <Controls />
       <button
         type="button"
@@ -107,14 +103,14 @@ function Main() {
       >
         is HTML Overlay enabled: {isHTMLEnabled ? 'true' : 'false'}
       </button>
-    </Diagram.View>
+    </Paper>
   );
 }
 
-export default function App(props: Readonly<DiagramProps>) {
+export default function App(props: Readonly<GraphProps>) {
   return (
-    <Diagram {...props} links={initialEdges} elements={initialElements}>
+    <GraphProvider {...props} links={initialEdges} elements={initialElements}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

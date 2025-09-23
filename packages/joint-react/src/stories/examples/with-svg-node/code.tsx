@@ -4,8 +4,9 @@ import '../index.css';
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   MeasuredNode,
+  Paper,
   type InferElement,
   type RenderElement,
 } from '@joint/react';
@@ -67,12 +68,7 @@ function Main() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'row', position: 'relative' }}>
-      <Diagram.View
-        width="100%"
-        className={PAPER_CLASSNAME}
-        height={280}
-        renderElement={renderElement}
-      />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={renderElement} />
       <div
         style={{
           position: 'absolute',
@@ -86,8 +82,8 @@ function Main() {
 
 export default function App() {
   return (
-    <Diagram elements={initialElements} links={initialEdges}>
+    <GraphProvider elements={initialElements} links={initialEdges}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

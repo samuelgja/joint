@@ -10,17 +10,18 @@ import './index.css';
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   Highlighter,
   MeasuredNode,
+  Paper,
   Port,
   useCellId,
   useElements,
   useGraph,
   useLinks,
   usePaper,
-  type DiagramElement,
-  type DiagramViewProps,
+  type GraphElement,
+  type PaperProps,
   type RenderElement,
 } from '@joint/react';
 import { useCallback, useState } from 'react';
@@ -28,7 +29,7 @@ import { ShowJson } from 'storybook-config/decorators/with-simple-data';
 import { useCellActions } from '../../../hooks/use-cell-actions';
 
 // Define types for the elements
-interface ElementBase extends DiagramElement {
+interface ElementBase extends GraphElement {
   readonly elementType: 'alert' | 'info' | 'table';
 }
 
@@ -53,7 +54,7 @@ const BUTTON_CLASSNAME =
   'bg-blue-500 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm flex items-center';
 
 // Define static properties for the view's Paper - used by minimap and main view
-const PAPER_PROPS: DiagramViewProps<Element> = {
+const PAPER_PROPS: PaperProps<Element> = {
   defaultRouter: {
     name: 'rightAngle',
     args: {
@@ -293,7 +294,7 @@ function MiniMap() {
 
   return (
     <div className="absolute bg-black bottom-6 right-6 w-[200px] h-[150px] border border-[#dde6ed] rounded-lg overflow-hidden">
-      <Diagram.View
+      <Paper
         {...PAPER_PROPS}
         interactive={false}
         width={'100%'}
@@ -483,7 +484,7 @@ function Main() {
           showElementsInfo={showElementsInfo}
           setShowElementsInfo={setShowElementsInfo}
         />
-        <Diagram.View
+        <Paper
           {...PAPER_PROPS}
           defaultLink={new shapes.standard.Link(links[0])}
           width="100%"
@@ -510,8 +511,8 @@ function Main() {
 
 export default function App() {
   return (
-    <Diagram elements={elements} links={links}>
+    <GraphProvider elements={elements} links={links}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

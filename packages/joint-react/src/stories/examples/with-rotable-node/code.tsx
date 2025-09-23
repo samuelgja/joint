@@ -2,8 +2,9 @@
 import {
   createElements,
   createLinks,
-  Diagram,
+  GraphProvider,
   MeasuredNode,
+  Paper,
   useElements,
   usePaper,
   type InferElement,
@@ -98,12 +99,7 @@ function Main() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row', position: 'relative' }}>
-      <Diagram.View
-        width="100%"
-        className={PAPER_CLASSNAME}
-        height={280}
-        renderElement={RotatableNode}
-      />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={RotatableNode} />
       <div>
         <u>angle</u>
         {elementRotation.map((rotation, index) => (
@@ -119,8 +115,8 @@ function Main() {
 
 export default function App() {
   return (
-    <Diagram elements={initialElements} links={initialEdges}>
+    <GraphProvider elements={initialElements} links={initialEdges}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

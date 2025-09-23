@@ -1,19 +1,19 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
-import { DataRenderer, SimpleDiagramDecorator } from '../../.storybook/decorators/with-simple-data';
+import { DataRenderer, SimpleGraphDecorator } from '../../.storybook/decorators/with-simple-data';
 import type { Meta } from '@storybook/react';
 import { HookTester, type TesterHookStory } from '../stories/utils/hook-tester';
 import { useElements } from './use-elements';
 import { PAPER_CLASSNAME, PRIMARY } from 'storybook-config/theme';
 import { getAPILink } from '../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation, makeStory } from '../stories/utils/make-story';
-import { Diagram } from '../components';
+import { Paper } from '../components/paper/paper';
 
 const API_URL = getAPILink('useElements');
 
 const meta: Meta<typeof HookTester> = {
   title: 'Hooks/useElements useLinks',
   component: HookTester,
-  decorators: [SimpleDiagramDecorator],
+  decorators: [SimpleGraphDecorator],
   parameters: makeRootDocumentation({
     apiURL: API_URL,
     description: `\`useElements\` is a hook that returns the elements of the current graph. It supports selector functions to get specific properties of the elements and re-renders the component only when selected properties are changed.`,
@@ -36,7 +36,7 @@ export const Default = makeStory<Story>({
     hookArgs: [],
     render: (result) => (
       <div>
-        <Diagram.View
+        <Paper
           width="100%"
           className={PAPER_CLASSNAME}
           renderElement={({ width, height }) => {
@@ -63,7 +63,7 @@ export const WithSelectedJustIds = makeStory<Story>({
     hookArgs: [(elements) => elements.map((element) => element.id)],
     render: (result) => (
       <span>
-        <Diagram.View
+        <Paper
           width="100%"
           className={PAPER_CLASSNAME}
           renderElement={({ width, height }) => {
@@ -90,7 +90,7 @@ export const WithGetJustSize = makeStory<Story>({
     hookArgs: [(elements) => elements.length],
     render: (result) => (
       <div>
-        <Diagram.View
+        <Paper
           width="100%"
           className={PAPER_CLASSNAME}
           renderElement={({ width, height }) => {
@@ -123,7 +123,7 @@ export const WithJustPosition = makeStory<Story>({
     ],
     render: (result) => (
       <div>
-        <Diagram.View
+        <Paper
           width="100%"
           className={PAPER_CLASSNAME}
           renderElement={({ width, height }) => {
@@ -159,7 +159,7 @@ export const WithJustPositionButNotReRenderBecauseCompareFN = makeStory<Story>({
     ],
     render: (result) => (
       <div>
-        <Diagram.View
+        <Paper
           width="100%"
           className={PAPER_CLASSNAME}
           renderElement={({ width, height }) => {
@@ -193,7 +193,7 @@ export const WithAdditionalData = makeStory<Story>({
     ],
     render: (result) => (
       <div>
-        <Diagram.View
+        <Paper
           width="100%"
           className={PAPER_CLASSNAME}
           renderElement={({ width, height }) => {

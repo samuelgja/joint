@@ -1,7 +1,14 @@
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
 // We have pre-loaded tailwind css
-import { createElements, createLinks, Diagram, Port, type InferElement } from '@joint/react';
+import {
+  createElements,
+  createLinks,
+  GraphProvider,
+  Paper,
+  Port,
+  type InferElement,
+} from '@joint/react';
 import type { dia } from '@joint/core';
 import { util } from '@joint/core';
 import { useCallback, useState } from 'react';
@@ -210,7 +217,7 @@ function RenderElement({ title, description, nodeType }: NodeType) {
 
 function Main() {
   return (
-    <Diagram.View
+    <Paper
       className="bg-gray-100"
       gridSize={5}
       height={670}
@@ -251,8 +258,8 @@ function Main() {
 
 export default function App() {
   return (
-    <Diagram elements={nodes} links={links}>
+    <GraphProvider elements={nodes} links={links}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

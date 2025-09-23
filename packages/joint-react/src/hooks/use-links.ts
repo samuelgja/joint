@@ -1,7 +1,7 @@
-import { useDiagramStore } from './use-diagram-store';
+import { useGraphStore } from './use-graph-store';
 import { util } from '@joint/core';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector';
-import type { DiagramLink } from '../types/link-types';
+import type { GraphLink } from '../types/link-types';
 
 /**
  * Default selector function to return all links.
@@ -12,7 +12,7 @@ import type { DiagramLink } from '../types/link-types';
  * @group utils
  * @description
  */
-function defaultSelector<Link extends DiagramLink = DiagramLink>(items: Link[]): Link[] {
+function defaultSelector<Link extends GraphLink = GraphLink>(items: Link[]): Link[] {
   return items.map((item) => item) as Link[];
 }
 /**
@@ -50,11 +50,11 @@ function defaultSelector<Link extends DiagramLink = DiagramLink>(items: Link[]):
  * @param isEqual - A function to compare the previous and new values.
  * @returns - The selected links.
  */
-export function useLinks<Link extends DiagramLink = DiagramLink, SelectorReturnType = Link[]>(
+export function useLinks<Link extends GraphLink = GraphLink, SelectorReturnType = Link[]>(
   selector: (items: Link[]) => SelectorReturnType = defaultSelector as () => SelectorReturnType,
   isEqual: (a: SelectorReturnType, b: SelectorReturnType) => boolean = util.isEqual
 ): SelectorReturnType {
-  const { subscribe, getLinks } = useDiagramStore();
+  const { subscribe, getLinks } = useGraphStore();
   const typedGetLinks = getLinks as () => Link[];
   const elements = useSyncExternalStoreWithSelector(
     subscribe,

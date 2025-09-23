@@ -1,5 +1,5 @@
-import type { DiagramElement, StandardShapesTypeMapper } from '../types/element-types';
-import type { DiagramLink, StandardLinkShapesType } from '../types/link-types';
+import type { GraphElement, StandardShapesTypeMapper } from '../types/element-types';
+import type { GraphLink, StandardLinkShapesType } from '../types/link-types';
 
 type RequiredElementProps = {
   width: number;
@@ -44,7 +44,7 @@ type ElementWithAttributes<T extends string | undefined = undefined> =
  * ```
  */
 export function createElementItem<
-  Element extends DiagramElement,
+  Element extends GraphElement,
   Type extends string | undefined = 'ReactElement',
 >(item: Element & ElementWithAttributes<Type>): Element & RequiredElementProps {
   return { ...item } as Element & RequiredElementProps;
@@ -73,7 +73,7 @@ export function createElementItem<
  * ```
  */
 export function createElements<
-  Element extends DiagramElement,
+  Element extends GraphElement,
   Type extends string | undefined = 'ReactElement',
 >(items: Array<Element & ElementWithAttributes<Type>>): Array<Element & RequiredElementProps> {
   return items.map((item) => ({ ...item })) as Array<Element & RequiredElementProps>;
@@ -108,9 +108,9 @@ export type InferElement<T extends Array<Record<string, unknown>>> = T[number];
  * ```
  */
 export function createLinks<
-  Link extends DiagramLink<Type>,
+  Link extends GraphLink<Type>,
   Type extends StandardLinkShapesType | string = 'standard.Link',
->(data: Array<Link & DiagramLink<Type>>): Array<Link & DiagramLink> {
+>(data: Array<Link & GraphLink<Type>>): Array<Link & GraphLink> {
   return data.map((link) => ({ ...link, isElement: false, isLink: true }));
 }
 
@@ -125,8 +125,8 @@ export function createLinks<
  * ```
  */
 export function createLinkItem<
-  Link extends DiagramLink<Type>,
+  Link extends GraphLink<Type>,
   Type extends StandardLinkShapesType | string = 'standard.Link',
->(link: Link & DiagramLink<Type>): Link & DiagramLink {
+>(link: Link & GraphLink<Type>): Link & GraphLink {
   return { ...link, isElement: false, isLink: true };
 }

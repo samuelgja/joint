@@ -11,26 +11,27 @@ import { MeasuredNode } from '../measured-node/measured-node';
 import { useEffect, useState } from 'react';
 import { getAPILink } from '../../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation } from '../../stories/utils/make-story';
-import { Diagram } from '.';
+import { GraphProvider } from './graph-provider';
+import { Paper } from '../paper/paper';
 
-export type Story = StoryObj<typeof Diagram>;
+export type Story = StoryObj<typeof GraphProvider>;
 
-const API_URL = getAPILink('Diagram', 'variables');
-const meta: Meta<typeof Diagram> = {
-  title: 'Components/Diagram',
-  component: Diagram,
+const API_URL = getAPILink('GraphProvider', 'variables');
+const meta: Meta<typeof GraphProvider> = {
+  title: 'Components/GraphProvider',
+  component: GraphProvider,
   parameters: makeRootDocumentation({
     description: `
-Diagram provides a shared Graph context for its descendants. Use it to scope any components that read or write the diagram state. You can render one or multiple Diagram.View instances inside.
+GraphProvider provides a shared Graph context for its descendants. Use it to scope any components that read or write the graph state. You can render one or multiple Paper instances inside.
     `,
     apiURL: API_URL,
-    code: `import { Diagram } from '@joint/react'
+    code: `import { GraphProvider } from '@joint/react'
 function Render({ width, height }) {
   return <rect rx={10} ry={10} width={width} height={height} fill="blue" />
 }
-<Diagram>
-  <Diagram.View className={PAPER_CLASSNAME} renderElement={Render} />
-</Diagram>
+<GraphProvider>
+  <Paper className={PAPER_CLASSNAME} renderElement={Render} />
+</GraphProvider>
     `,
   }),
 };
@@ -64,7 +65,7 @@ export const Default: Story = {
   args: {
     elements: testElements,
     links: testLinks,
-    children: <Diagram.View className={PAPER_CLASSNAME} renderElement={RenderHTMLElement} />,
+    children: <Paper className={PAPER_CLASSNAME} renderElement={RenderHTMLElement} />,
   },
 };
 function Component() {
@@ -77,11 +78,7 @@ function Component() {
   }, []);
   return (
     isReady && (
-      <Diagram.View
-        interactive={false}
-        className={PAPER_CLASSNAME}
-        renderElement={RenderHTMLElement}
-      />
+      <Paper interactive={false} className={PAPER_CLASSNAME} renderElement={RenderHTMLElement} />
     )
   );
 }

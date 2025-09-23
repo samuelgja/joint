@@ -5,7 +5,7 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import {
-  SimpleDiagramDecorator,
+  SimpleGraphDecorator,
   type SimpleElement,
 } from '../../../.storybook/decorators/with-simple-data';
 import { action } from '@storybook/addon-actions';
@@ -16,26 +16,28 @@ import { getAPILink } from '../../stories/utils/get-api-documentation-link';
 import { makeRootDocumentation } from '../../stories/utils/make-story';
 import { jsx } from '../../utils/joint-jsx/jsx-to-markup';
 import { useCellActions } from '../../hooks/use-cell-actions';
-import { Diagram, type RenderElement } from '.';
+import { Paper } from './paper';
+import type { RenderElement } from './paper.types';
+import { GraphProvider } from '../graph/graph-provider';
 
-export type Story = StoryObj<typeof Diagram.View>;
+export type Story = StoryObj<typeof Paper>;
 
-const API_URL = getAPILink('Diagram.View', 'variables');
-const meta: Meta<typeof Diagram.View> = {
-  title: 'Components/Diagram.View',
-  component: Diagram.View,
-  decorators: [SimpleDiagramDecorator],
+const API_URL = getAPILink('Paper', 'variables');
+const meta: Meta<typeof Paper> = {
+  title: 'Components/Paper',
+  component: Paper,
+  decorators: [SimpleGraphDecorator],
   parameters: makeRootDocumentation({
     description: `
-Diagram.View renders nodes and links using the JointJS Paper under the hood. Compose it inside a Diagram. Define node UI via the renderElement prop, and use useHTMLOverlay or <foreignObject> for HTML content.
+Paper renders nodes and links using the JointJS Paper under the hood. Compose it inside a GraphProvider. Define node UI via the renderElement prop, and use useHTMLOverlay or <foreignObject> for HTML content.
     `,
     apiURL: API_URL,
-    code: `import { Diagram } from '@joint/react'
-<Diagram>
-  <Diagram.View renderElement={({ width, height }) => (
+    code: `import { GraphProvider } from '@joint/react'
+<GraphProvider>
+  <Paper renderElement={({ width, height }) => (
     <rect rx={10} ry={10} width={width} height={height} fill={"blue"} />
   )} />
-</Diagram>
+</GraphProvider>
     `,
   }),
 };
@@ -249,7 +251,7 @@ export const WithElementsHover: Story = {
       );
     };
     return (
-      <Diagram
+      <GraphProvider
         elements={[
           { width: 100, height: 40, id: '1', label: 'Element 1', x: 50, y: 50, hoverColor: 'red' },
           {
@@ -275,14 +277,14 @@ export const WithElementsHover: Story = {
           },
         ]}
       >
-        <Diagram.View
+        <Paper
           useHTMLOverlay
           className={PAPER_CLASSNAME}
           width="100%"
           height={400}
           renderElement={renderElement}
         />
-      </Diagram>
+      </GraphProvider>
     );
   },
 };

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { DataRenderer, SimpleDiagramDecorator } from '../../.storybook/decorators/with-simple-data';
+import { DataRenderer, SimpleGraphDecorator } from '../../.storybook/decorators/with-simple-data';
 import { useLinks } from './use-links';
 import { getAPILink } from '../stories/utils/get-api-documentation-link';
 import { HookTester } from '../stories/utils/hook-tester';
@@ -12,7 +12,7 @@ export type Story = StoryObj<typeof HookTester>;
 const meta: Meta<typeof HookTester> = {
   title: 'Hooks/useLinks',
   component: HookTester,
-  decorators: [SimpleDiagramDecorator],
+  decorators: [SimpleGraphDecorator],
   parameters: makeRootDocumentation({
     apiURL: API_URL,
     description: `\`useLinks\` is a hook that returns the links of the current graph. It supports selector functions to get specific properties of the links and re-renders the component only when selected properties are changed.`,

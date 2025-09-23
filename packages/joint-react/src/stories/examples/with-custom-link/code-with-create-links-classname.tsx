@@ -3,8 +3,9 @@
 import {
   createElements,
   createLinks,
-  Diagram,
-  type DiagramProps,
+  GraphProvider,
+  Paper,
+  type GraphProps,
   type InferElement,
   type RenderElement,
 } from '@joint/react';
@@ -40,20 +41,15 @@ function Main() {
   );
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <Diagram.View
-        width="100%"
-        className={PAPER_CLASSNAME}
-        height={280}
-        renderElement={renderElement}
-      />
+      <Paper width="100%" className={PAPER_CLASSNAME} height={280} renderElement={renderElement} />
     </div>
   );
 }
 
-export default function App(props: Readonly<DiagramProps>) {
+export default function App(props: Readonly<GraphProps>) {
   return (
-    <Diagram {...props} links={initialEdges} elements={initialElements}>
+    <GraphProvider {...props} links={initialEdges} elements={initialElements}>
       <Main />
-    </Diagram>
+    </GraphProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { dia } from '@joint/core';
-import { createStore } from '../create-diagram-store';
+import { createStore } from '../create-graph-store';
 import { waitFor } from '@testing-library/react';
 
 describe('createStore', () => {

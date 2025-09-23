@@ -13,7 +13,7 @@ export type StandardLinkShapesType = keyof StandardLinkShapesTypeMapper;
  * @group Graph
  * @see @see https://docs.jointjs.com/learn/features/shapes/links/#dialink
  */
-export interface DiagramLink<Type extends StandardLinkShapesType | string = string>
+export interface GraphLink<Type extends StandardLinkShapesType | string = string>
   extends dia.Link.EndJSON,
     Record<string, unknown> {
   /**
