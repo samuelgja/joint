@@ -33,6 +33,7 @@ export function processLink(link: dia.Link | GraphLink): CellOrJsonCell {
 
   const source = getTargetOrSource(link.source);
   const target = getTargetOrSource(link.target);
+
   return {
     ...link,
     type: link.type ?? 'standard.Link',

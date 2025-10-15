@@ -2,14 +2,13 @@
 import { dia, shapes } from '@joint/core';
 import { listenToCellChange } from '../utils/cell/listen-to-cell-change';
 import { ReactElement } from '../models/react-element';
-import { setElements } from '../utils/cell/cell-utilities';
+import { setElements, setLinks } from '../utils/cell/cell-utilities';
 import type { GraphElement } from '../types/element-types';
 import type { GraphLink } from '../types/link-types';
 import { subscribeHandler } from '../utils/subscriber-handler';
 import { createStoreData, type UpdateResult } from './create-store-data';
 import type { Dispatch, SetStateAction } from 'react';
 import { CONTROLLED_MODE_BATCH_NAME } from '../utils/graph/update-graph';
-import type { PaperContext } from '../context';
 
 export const DEFAULT_CELL_NAMESPACE: Record<string, unknown> = { ...shapes, ReactElement };
 
@@ -110,13 +109,6 @@ export interface GraphStore<Graph extends dia.Graph = dia.Graph> {
    * This will trigger a re-render of all components that are subscribed to the store.
    */
   readonly forceUpdateStore: () => UpdateResult;
-
-  readonly setView: (name: string, PaperContext: PaperContext) => () => void;
-  readonly getView: (name?: string) => PaperContext | undefined;
-  readonly subscribeToView: (
-    name: string | undefined,
-    onPaperContextChange: (PaperContext: PaperContext | undefined) => void
-  ) => () => void;
 }
 
 /**
@@ -188,7 +180,7 @@ export function createStoreWithGraph<
   Element extends dia.Element | GraphElement,
   Link extends dia.Link | GraphLink,
 >(options?: StoreOptions<Graph, Element, Link>): GraphStore<Graph> {
-  const { elements, graph, onElementsChange, onLinksChange } = options || {};
+  const { elements, links, graph, onElementsChange, onLinksChange } = options || {};
 
   if (!graph) {
     // Create a new graph instance or use the provided one
@@ -200,6 +192,11 @@ export function createStoreWithGraph<
     elements,
   });
 
+  setLinks({
+    graph,
+    links,
+  });
+
   // create store data - caching the elements and links for the react
   const graphData = createStoreData();
   // listen to dia.graph cell changes and trigger `onCellChange` where there is change occurs in graph
@@ -209,6 +206,7 @@ export function createStoreWithGraph<
 
   // Notify subscribers of initial elements
   graphData.updateStore(graph);
+
   // add method to handle batch stop, so then we can also notify all react components
   graph.on('batch:stop', onBatchStop);
 
@@ -239,8 +237,8 @@ export function createStoreWithGraph<
         onElementsChange(mappedElements as SetStateAction<Element[]>);
       }
       if (onLinksChange && updateResult.areLinksChanged) {
-        const links = graphData.links.map((link) => link);
-        onLinksChange(links as SetStateAction<Link[]>);
+        const changedLinks = graphData.links.map((link) => link);
+        onLinksChange(changedLinks as SetStateAction<Link[]>);
       }
     }
     return updateResult;
@@ -291,78 +289,11 @@ export function createStoreWithGraph<
       return;
     }
     graph.clear();
-    views.clear();
   }
   // Force update the graph to ensure it's in sync with the store.
   forceUpdateStore();
 
-  /**
-   * Check function to ensure if we register two views with different ids, all be non react ids.
-   * When user want to use two `Graph.View` with single `Graph`, he must provide `id` as prop to each of the view.
-   */
-  function viewCheck() {
-    if (views.size <= 1) {
-      return;
-    }
-
-    let isThereReactId = false;
-    for (const [, existingView] of views) {
-      if (existingView.isReactId) {
-        isThereReactId = true;
-        break;
-      }
-    }
-    if (isThereReactId) {
-      throw new Error(
-        'When using multiple `Graph.View` with single `Graph`, you must provide `id` property for each of the `Graph.View` Component'
-      );
-    }
-  }
-  const views = new Map<string, PaperContext>();
-  const viewsListeners = new Map<string, Set<() => void>>();
-
   const store: GraphStore<Graph> = {
-    setView(name: string, PaperContext: PaperContext) {
-      views.set(name, PaperContext);
-      if (process.env.NODE_ENV !== 'production') {
-        viewCheck();
-      }
-      const listeners = viewsListeners.get(name);
-      if (listeners) {
-        for (const listener of listeners) listener();
-      }
-      return () => {
-        views.delete(name);
-      };
-    },
-    getView(name) {
-      if (!name) {
-        // return first view if name is not provided
-        return views.values().next().value;
-      }
-      return views.get(name);
-    },
-    subscribeToView(name, onPaperContextChange) {
-      let listeners = viewsListeners.get(name || '');
-      if (!listeners) {
-        listeners = new Set<() => void>();
-        viewsListeners.set(name || '', listeners);
-      }
-      const callback = () => {
-        if (!name) {
-          // return first view if name is not provided
-          const firstView = views.values().next().value;
-          onPaperContextChange(firstView);
-          return;
-        }
-        onPaperContextChange(views.get(name));
-      };
-      listeners.add(callback);
-      callback();
-      return () => {
-        listeners?.delete(callback);
-      };
-    },
     forceUpdateStore,
     destroy,
     graph,

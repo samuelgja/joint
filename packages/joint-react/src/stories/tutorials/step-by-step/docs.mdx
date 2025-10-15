@@ -263,6 +263,7 @@ Tips:
 
 ---
 
+
 ## 12. Accessing a view via hook or ref
 
 There are two ergonomic ways to reach the underlying Paper/Graph of a view for imperative needs.
@@ -293,24 +294,27 @@ export function WithHook() {
 }
 ```
 
-### b. Via ref
+### b. Via ref (accessing paperCtx)
 
-Attach a `ref` directly to `Paper` to get `paper`/`graph` from the resolved config.
+Any component that accepts a `ref` (such as `Paper` or `GraphProvider`) exposes its instance/context via the ref. For `Paper`, the instance (including the underlying JointJS Paper) can be accessed via the `paperCtx` property on the ref object.
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import type { ViewConfig } from '@joint/react';
+import type { PaperContext } from '@joint/react';
 
 export function WithRef() {
-  const viewRef = useRef<ViewConfig | null>(null);
+  const paperRef = useRef<PaperContext | null>(null);
   useEffect(() => {
-    const paper = viewRef.current?.paper;
+    // Access the Paper context (paperCtx) from the ref
+    const paperCtx = paperRef.current?.paperCtx;
+    // You can also access the JointJS Paper instance directly
+    const paper = paperCtx?.paper;
     paper?.scale(2, 2);
   }, []);
 
   return (
     <GraphProvider elements={elements}>
-      <Paper id="zoomed" ref={viewRef} />
+      <Paper id="zoomed" ref={paperRef} />
     </GraphProvider>
   );
 }

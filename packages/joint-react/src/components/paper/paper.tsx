@@ -29,7 +29,7 @@ import {
 } from '../../context';
 import { HTMLElementItem, SVGElementItem } from './render-element/paper-element-item';
 import { REACT_TYPE } from '../../models/react-element';
-import { handlePaperEvents } from '../../utils/handle-paper-events';
+import { handlePaperEvents, PAPER_EVENT_KEYS } from '../../utils/handle-paper-events';
 
 const DEFAULT_CLICK_THRESHOLD = 10;
 
@@ -75,7 +75,7 @@ function PaperBase<ElementItem extends GraphElement = GraphElement>(
     ...paperOptions
   } = props;
 
-  const { graph, setView } = useGraphStore();
+  const { graph } = useGraphStore();
   const areElementsMeasured = useAreElementMeasured();
   const { onRenderElement, elementViews } = useElementViews();
   const elements = useElements((items) => items.map(elementSelector));
@@ -137,9 +137,15 @@ function PaperBase<ElementItem extends GraphElement = GraphElement>(
           preventDefaultBlankAction: false,
           frozen: true,
           defaultLink: defaultLinkJointJS,
+
           model: graph,
           elementView,
           ...paperOptions,
+          // 👇 override to always allow connection
+          validateConnection: () => true,
+
+          // 👇 also, allow links to start or end on empty space
+          validateMagnet: () => true,
           clickThreshold: paperOptions.clickThreshold ?? DEFAULT_CLICK_THRESHOLD,
         });
 
@@ -189,14 +195,10 @@ function PaperBase<ElementItem extends GraphElement = GraphElement>(
         if (contextUpdate) {
           Object.assign(instance, contextUpdate.contextUpdate);
         }
-
-        const removeView = setView(id, instance);
-
         return {
           instance,
           cleanup() {
             paper.remove();
-            removeView();
             portsStore.destroy();
             contextUpdate?.cleanup?.();
           },
@@ -296,8 +298,6 @@ function PaperBase<ElementItem extends GraphElement = GraphElement>(
   }, [areElementsMeasured, elements, isReady, onElementsSizeChange, ref]);
 
   useLayoutEffect(() => {
-    if (!isReady) return;
-    if (measured.current) return;
     const { paper } = ref.current ?? {};
     if (!paper) {
       return;
@@ -321,7 +321,7 @@ function PaperBase<ElementItem extends GraphElement = GraphElement>(
       stopListening();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, isReady, ref, ...dependencyExtract(paperOptions)]);
+  }, [graph, isReady, ref, ...dependencyExtract(paperOptions, PAPER_EVENT_KEYS)]);
 
   const content = (
     <>
@@ -380,7 +380,6 @@ function PaperBase<ElementItem extends GraphElement = GraphElement>(
   const paperContainerStyle = useMemo(
     (): CSSProperties => ({
       opacity: areElementsMeasured ? 1 : 0,
-      pointerEvents: areElementsMeasured ? 'all' : 'none',
       position: 'relative',
       ...defaultStyle,
     }),

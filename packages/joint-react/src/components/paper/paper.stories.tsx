@@ -236,17 +236,18 @@ export const WithDrawGrid: Story = {
   },
 };
 
-export const WithElementsHover: Story = {
+export const WithOnClickColorChange: Story = {
   args: {},
   render: () => {
-    const renderElement: RenderElement = ({ width, height }) => {
+    const renderElement: RenderElement = ({ width, height, hoverColor, id }) => {
       const { set } = useCellActions();
       return (
         <div
+          className="node"
           onClick={() => {
-            set('l1', (previous) => ({ ...previous, hoverColor: 'blue' }));
+            set(id, (previous) => ({ ...previous, hoverColor: 'blue' }));
           }}
-          style={{ width, height, backgroundColor: 'lightgray' }}
+          style={{ width, height, backgroundColor: hoverColor }}
         ></div>
       );
     };
@@ -278,6 +279,7 @@ export const WithElementsHover: Story = {
         ]}
       >
         <Paper
+          id="main"
           useHTMLOverlay
           className={PAPER_CLASSNAME}
           width="100%"

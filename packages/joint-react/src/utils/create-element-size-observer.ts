@@ -39,8 +39,10 @@ export function createElementSizeObserver<AnyHTMLOrSVGElement extends HTMLElemen
   });
 
   // trigger the observer immediately
-  const { width, height } = element.getBoundingClientRect();
-  onResize({ width, height });
+  requestAnimationFrame(() => {
+    const { width, height } = element.getBoundingClientRect();
+    if (width > 0 && height > 0) onResize({ width, height });
+  });
 
   // Start observing the HTML element.
   observer.observe(element, { box: 'border-box' });

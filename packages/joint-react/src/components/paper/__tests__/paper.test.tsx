@@ -1,10 +1,12 @@
+/* eslint-disable @eslint-react/web-api/no-leaked-timeout */
+/* eslint-disable react-perf/jsx-no-new-object-as-prop */
 /* eslint-disable sonarjs/no-nested-functions */
 /* eslint-disable react-perf/jsx-no-new-function-as-prop */
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { createElements, type InferElement } from '../../../utils/create';
 import { MeasuredNode } from '../../measured-node/measured-node';
-import { act, useEffect, useState, type RefObject } from 'react';
+import { act, useEffect, useRef, useState, type RefObject } from 'react';
 import type { PaperContext } from '../../../context';
 import { useGraph, usePaperContext } from '../../../hooks';
 import { GraphProvider } from '../../graph/graph-provider';
@@ -129,7 +131,6 @@ describe('Paper Component', () => {
       return null;
     }
 
-    // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
     const customEvents = { MyCustomEventOnClick: handleCustomEvent };
     render(
       <GraphProvider elements={elements}>
@@ -212,7 +213,6 @@ describe('Paper Component', () => {
     function Content() {
       const [isReady, setIsReady] = useState(false);
       useEffect(() => {
-        // eslint-disable-next-line @eslint-react/web-api/no-leaked-timeout, sonarjs/no-nested-functions
         setTimeout(() => {
           setIsReady(true);
         }, 100);
@@ -237,7 +237,6 @@ describe('Paper Component', () => {
   });
 
   it('handles ref from Paper correctly', () => {
-    // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
     const ref = { current: null };
 
     render(
@@ -249,20 +248,25 @@ describe('Paper Component', () => {
   });
   it('should access paper via context and change scale', async () => {
     // eslint-disable-next-line unicorn/consistent-function-scoping
-    function ChangeScale() {
-      const { paper } = usePaperContext() ?? {};
+    function ChangeScale({ paperRef }: { paperRef: RefObject<PaperContext | null> }) {
       useEffect(() => {
+        const { paper } = paperRef.current ?? {};
         paper?.scale(2, 2);
-      }, [paper]);
+      }, [paperRef]);
       return null;
     }
 
-    render(
-      <GraphProvider elements={elements}>
-        <Paper<Element> />
-        <ChangeScale />
-      </GraphProvider>
-    );
+    function Component() {
+      const ref = useRef<PaperContext | null>(null);
+      return (
+        <GraphProvider elements={elements}>
+          <Paper<Element> ref={ref} />
+          <ChangeScale paperRef={ref} />
+        </GraphProvider>
+      );
+    }
+
+    render(<Component />);
 
     await waitFor(() => {
       const layersGroup = document.querySelector('.joint-layers');
@@ -270,7 +274,6 @@ describe('Paper Component', () => {
     });
   });
   it('should access paper via ref and change scale', async () => {
-    // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
     const ref: RefObject<PaperContext | null> = { current: null };
     function ChangeScale() {
       const { paper } = ref.current ?? {};
@@ -293,7 +296,6 @@ describe('Paper Component', () => {
     function UpdatePosition() {
       const graph = useGraph();
       useEffect(() => {
-        // eslint-disable-next-line @eslint-react/web-api/no-leaked-timeout
         setTimeout(() => {
           const element = graph.getCell('1');
           element.set('position', { x: 100, y: 100 });
@@ -331,7 +333,6 @@ describe('Paper Component', () => {
           <Paper<Element>
             renderElement={({ width, height, id }) => {
               return (
-                // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop
                 <div id={`node-${id}`} style={{ width, height }} className="test-node">
                   {id}
                 </div>
@@ -365,36 +366,22 @@ describe('Paper Component', () => {
       expect(element).toHaveStyle({ width: '200px', height: '200px' });
     });
   });
-  it('should test two separate Paper with same paper, and get their data via id and hooks', async () => {
-    let view1Ref: PaperContext | null = null;
-    let view2Ref: PaperContext | null = null;
-
-    function UserPaper1() {
-      const PaperContext = usePaperContext('view1');
-      view1Ref = PaperContext ?? null;
-      return null;
-    }
-    function UserPaper2() {
-      const PaperContext = usePaperContext('view2');
-      view2Ref = PaperContext ?? null;
-      return null;
-    }
+  it('should test two separate Paper with same paper, and get their data via ref', async () => {
+    const view1Ref: RefObject<PaperContext | null> = { current: null };
+    const view2Ref: RefObject<PaperContext | null> = { current: null };
 
     render(
       <GraphProvider elements={elements}>
-        {/* We can use it above */}
-        <UserPaper1 />
-        <Paper<Element> id="view1" />
-        <Paper<Element> id="view2" />
-        {/* We can use it below */}
-        <UserPaper2 />
+        <Paper<Element> ref={view1Ref} />
+        <Paper<Element> ref={view2Ref} />
       </GraphProvider>
     );
+
     await waitFor(() => {
-      expect(view1Ref).not.toBeNull();
-      expect(view2Ref).not.toBeNull();
-      expect(view1Ref).not.toBe(view2Ref);
-      expect(view1Ref?.paper).not.toBe(view2Ref?.paper);
+      expect(view1Ref.current).not.toBeNull();
+      expect(view2Ref.current).not.toBeNull();
+      expect(view1Ref.current).not.toBe(view2Ref.current);
+      expect(view1Ref.current?.paper).not.toBe(view2Ref.current?.paper);
     });
   });
 });

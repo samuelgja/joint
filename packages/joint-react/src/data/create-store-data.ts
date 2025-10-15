@@ -96,8 +96,8 @@ export function createStoreData<
     const nextLIndex = new Map<dia.Cell.ID, number>();
     const diffIds = new Set<dia.Cell.ID>();
 
-    let elementsChanged = false;
-    let linksChanged = false;
+    let areElementsChanged = false;
+    let areLinksChanged = false;
 
     // Build new arrays in the same pass, while diffing per id
     for (const cell of cells) {
@@ -107,7 +107,7 @@ export function createStoreData<
         const prev = getElementById(id);
         if (!prev || !util.isEqual(prev, next)) {
           diffIds.add(id);
-          elementsChanged = true;
+          areElementsChanged = true;
         }
         nextEIndex.set(id, nextElements.length);
         nextElements.push(next);
@@ -117,7 +117,7 @@ export function createStoreData<
         const prev = getLinkById(id);
         if (!prev || !util.isEqual(prev, next)) {
           diffIds.add(id);
-          linksChanged = true;
+          areLinksChanged = true;
         }
         nextLIndex.set(id, nextLinks.length);
         nextLinks.push(next);
@@ -126,28 +126,28 @@ export function createStoreData<
 
     // Deletions: if the new arrays are shorter than old or some ids disappeared,
     // we’ve already “changed”. To catch pure deletions where values equal but gone:
-    if (!elementsChanged) {
-      elementsChanged = ref.elements.length !== nextElements.length;
-      if (!elementsChanged) {
+    if (!areElementsChanged) {
+      areElementsChanged = ref.elements.length !== nextElements.length;
+      if (!areElementsChanged) {
         // Cheap structural check: same length but different ids/order?
         for (const [i, nextElement] of nextElements.entries()) {
           const idNow = nextElement?.id as dia.Cell.ID | undefined;
           const prevIdx = idNow ? eIndex.get(idNow) : undefined;
           if (prevIdx !== i) {
-            elementsChanged = true;
+            areElementsChanged = true;
             break;
           }
         }
       }
     }
-    if (!linksChanged) {
-      linksChanged = ref.links.length !== nextLinks.length;
-      if (!linksChanged) {
+    if (!areLinksChanged) {
+      areLinksChanged = ref.links.length !== nextLinks.length;
+      if (!areLinksChanged) {
         for (const [i, nextLink] of nextLinks.entries()) {
           const idNow = nextLink?.id as dia.Cell.ID | undefined;
           const prevIdx = idNow ? lIndex.get(idNow) : undefined;
           if (prevIdx !== i) {
-            linksChanged = true;
+            areLinksChanged = true;
             break;
           }
         }
@@ -155,19 +155,20 @@ export function createStoreData<
     }
 
     // Swap (immutably) only when changed to preserve referential equality
-    if (elementsChanged) {
+    if (areElementsChanged) {
       ref.elements = nextElements;
       eIndex = nextEIndex;
     }
-    if (linksChanged) {
+
+    if (areLinksChanged) {
       ref.links = nextLinks;
       lIndex = nextLIndex;
     }
 
     return {
       diffIds,
-      areElementsChanged: elementsChanged,
-      areLinksChanged: linksChanged,
+      areElementsChanged,
+      areLinksChanged,
     };
   }
 

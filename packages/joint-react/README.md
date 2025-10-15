@@ -192,10 +192,10 @@ Useful for `fitToContent`, scaling, exporting.
 
 ```tsx
 import React, { useEffect, useRef } from 'react'
-import type { ViewConfig } from '@joint/react'
+import type { PaperContext } from '@joint/react'
 
 export function FitOnMount() {
-  const ref = useRef<ViewConfig | null>(null)
+  const ref = useRef<PaperContext | null>(null)
   useEffect(() => {
     ref.current?.paper.fitToContent({ padding: 20 })
   }, [])
@@ -210,6 +210,7 @@ export function FitOnMount() {
 
 ---
 
+
 ## 🧠 Best Practices
 
 - **Define ids as literals**: `id: 'node1' as const` — enables exact typing and prevents mismatches.
@@ -219,6 +220,7 @@ export function FitOnMount() {
 - **Give each view a stable `id`** when rendering multiple `Paper` instances.
 - **Prefer declarative first**: Reach for hooks/props; use imperative APIs (refs/graph methods) for targeted operations only.
 - **Test in Safari early** when using `<foreignObject>`; fall back to `useHTMLOverlay` if needed.
+- **Accessing component instances via refs**: Any component that accepts a `ref` (such as `Paper` or `GraphProvider`) exposes its instance/context via the ref. For `Paper`, the instance (including the underlying JointJS Paper) can be accessed via the `paperCtx` property on the ref object.
 
 ---
 

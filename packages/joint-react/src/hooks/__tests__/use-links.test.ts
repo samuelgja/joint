@@ -25,7 +25,7 @@ describe('use-links', () => {
     ],
   });
 
-  it('should get elements properly without selector', async () => {
+  it('should get links properly without selector', async () => {
     const renders = jest.fn();
     const { result } = renderHook(
       () => {
@@ -38,13 +38,13 @@ describe('use-links', () => {
     );
 
     await waitFor(() => {
-      expect(renders).toHaveBeenCalledTimes(2);
+      expect(renders).toHaveBeenCalledTimes(1);
       expect(result.current.length).toBe(1);
       expect(result.current[0].id).toBe('3');
     });
   });
 
-  it('should get elements properly with selector', async () => {
+  it('should get links properly with selector', async () => {
     const renders = jest.fn();
     const { result } = renderHook(
       () => {
@@ -59,7 +59,7 @@ describe('use-links', () => {
     );
 
     await waitFor(() => {
-      expect(renders).toHaveBeenCalledTimes(2);
+      expect(renders).toHaveBeenCalledTimes(1);
       expect(result.current.length).toBe(1);
       expect(result.current[0]).toBe('1');
     });

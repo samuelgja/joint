@@ -19,12 +19,12 @@ import {
   useElements,
   useGraph,
   useLinks,
-  usePaper,
   type GraphElement,
+  type PaperContext,
   type PaperProps,
   type RenderElement,
 } from '@joint/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ShowJson } from 'storybook-config/decorators/with-simple-data';
 import { useCellActions } from '../../../hooks/use-cell-actions';
 
@@ -325,6 +325,7 @@ interface ToolbarProps {
   readonly setSelectedId: (id: dia.Cell.ID | null) => void;
   readonly showElementsInfo: boolean;
   readonly setShowElementsInfo: (show: boolean) => void;
+  readonly paperCtxRef: React.RefObject<PaperContext | null>;
 }
 // Toolbar component with some actions
 function ToolBar(props: Readonly<ToolbarProps>) {
@@ -335,9 +336,10 @@ function ToolBar(props: Readonly<ToolbarProps>) {
     setSelectedId,
     setShowElementsInfo,
     showElementsInfo,
+    paperCtxRef,
   } = props;
   const graph = useGraph();
-  const paper = usePaper();
+  const { paper } = paperCtxRef.current ?? {};
   return (
     <div className="flex flex-row absolute top-2 left-2 z-10 bg-gray-900  rounded-lg p-2 shadow-md gap-2">
       <button
@@ -455,6 +457,7 @@ function Main() {
   const [isMinimapVisible, setIsMinimapVisible] = useState(false);
   const [selectedElement, setSelectedElement] = useState<dia.Cell.ID | null>(null);
   const [showElementsInfo, setShowElementsInfo] = useState(false);
+  const paperCtxRef = useRef<PaperContext | null>(null);
 
   const renderElement = useCallback(
     (element: Element) => {
@@ -473,6 +476,7 @@ function Main() {
     },
     [selectedElement]
   );
+
   return (
     <div className="flex flex-col relative">
       <div className="flex flex-col relative">
@@ -483,8 +487,10 @@ function Main() {
           setSelectedId={setSelectedElement}
           showElementsInfo={showElementsInfo}
           setShowElementsInfo={setShowElementsInfo}
+          paperCtxRef={paperCtxRef}
         />
         <Paper
+          ref={paperCtxRef}
           {...PAPER_PROPS}
           defaultLink={new shapes.standard.Link(links[0])}
           width="100%"

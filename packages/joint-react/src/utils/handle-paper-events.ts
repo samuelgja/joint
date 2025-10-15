@@ -807,6 +807,10 @@ export const PAPER_EVENTS_MAPPER: {
   },
 };
 
+export const PAPER_EVENT_KEYS: Set<keyof PaperEvents> = new Set(
+  Object.keys(PAPER_EVENTS_MAPPER) as Array<keyof PaperEvents>
+);
+
 /**
  * Handles paper events by listening to the specified event types and invoking the corresponding handlers.
  * @param graph - The graph instance associated with the paper.

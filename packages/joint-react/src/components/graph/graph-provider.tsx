@@ -15,6 +15,7 @@ import type { GraphElement } from '../../types/element-types';
 import { CONTROLLED_MODE_BATCH_NAME } from '../../utils/graph/update-graph';
 import { useImperativeApi } from '../../hooks/use-imperative-api';
 import { GraphAreElementsMeasuredContext, GraphStoreContext } from '../../context';
+import { getTargetOrSource } from '../../utils/cell/get-link-targe-and-source-ids';
 
 interface GraphProviderBaseProps<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,6 +107,14 @@ export function GraphProviderHandler(props: PropsWithChildren<GraphProviderBaseP
     // It fixes issue with a flickering of un-measured react elements.
     if (isControlledMode) return;
     if (!areElementsMeasured) return;
+
+    const hasSomePort = links?.some((link) => {
+      const { source, target } = link;
+      const sourceObject = getTargetOrSource(source);
+      const targetObject = getTargetOrSource(target);
+      return sourceObject.port || targetObject.port;
+    });
+    if (!hasSomePort) return;
     setLinks({ graph, links });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [areElementsMeasured, isControlledMode]);

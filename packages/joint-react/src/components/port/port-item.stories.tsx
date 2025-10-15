@@ -80,7 +80,13 @@ function PaperDecorator(Story: React.FC) {
   const renderItem = () => RenderItem(Story);
   return (
     <GraphProvider elements={initialElements} links={initialLinks}>
-      <Paper className={PAPER_CLASSNAME} width={'100%'} height={350} renderElement={renderItem} />
+      <Paper
+        defaultLink={initialLinks[0]}
+        className={PAPER_CLASSNAME}
+        width={'100%'}
+        height={350}
+        renderElement={renderItem}
+      />
     </GraphProvider>
   );
 }
