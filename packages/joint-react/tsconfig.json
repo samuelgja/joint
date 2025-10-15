@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",                          // stable JS output
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",                          // let Vite handle bundling
+    "moduleResolution": "bundler",               // <- **important**
+    "jsx": "react-jsx",                          // modern JSX transform
+    "declaration": true,                         // emit types for consumers
+    "declarationMap": true,                      // useful if publishing
+    "emitDeclarationOnly": false,
+    "outDir": "lib",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,                     // good for Vite
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    // For modern TS + Vite
+    "types": ["vite/client", "jest", "node"],
+
+    // Optional path aliases
+    "paths": {
+      "@joint/react": ["./src/index.ts"],
+      "storybook-config/*": ["./.storybook/*"]
+    }
+  },
+  "include": ["src", ".storybook/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "lib"]
+}

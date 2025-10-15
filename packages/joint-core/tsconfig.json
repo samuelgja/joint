@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "ES2022",
+            "DOM"
+        ],
+        "types": [],
+        "noEmit": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "files": [
+        "./types/index.d.ts"
+    ]
+}
