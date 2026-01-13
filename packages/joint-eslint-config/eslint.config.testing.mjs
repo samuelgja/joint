@@ -7,7 +7,7 @@ import globals from 'globals';
 export const testingConfig = defineConfig([
     {
         // add globals for tests
-        files: ['**/test/**', '**/__tests__/**', '**/demo/**', '**/*.test.(js|jsx|ts|tsx)'],
+        files: ['**/test/**', '**/__tests__/**', '**/*.test.(js|jsx|ts|tsx)'],
         languageOptions: {
             globals: {
                 ...globals.mocha,
