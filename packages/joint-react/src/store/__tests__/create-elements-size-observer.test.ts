@@ -127,6 +127,7 @@ describe('createElementsSizeObserver', () => {
       onBatchUpdate: mockOnBatchUpdate,
       getCellTransform: mockGetCellTransform,
       getPublicSnapshot: mockGetPublicSnapshot,
+      onObservedElementChange: jest.fn(),
     });
   });
 

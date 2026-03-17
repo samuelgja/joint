@@ -29,6 +29,12 @@ export type OnTransformElement = (options: TransformOptions) => ElementLayoutOpt
 /**
  * Options for registering an element to be measured for size changes.
  */
+
+interface OnObservedElementChangeOptions {
+  readonly id: CellId;
+  readonly isRemove: boolean;
+  readonly observedElementsCount: number;
+}
 export interface SetMeasuredNodeOptions {
   /** The DOM node (HTML or SVG) to observe for size changes */
   readonly node: HTMLElement | SVGElement;
@@ -72,6 +78,7 @@ interface Options {
   readonly getPublicSnapshot: () => GraphStoreSnapshot;
   /** Callback function called when a batch of elements needs to be updated */
   readonly onBatchUpdate: (data: Record<CellId, FlatElementData>) => void;
+  readonly onObservedElementChange: (options: OnObservedElementChangeOptions) => void;
 }
 
 /**
@@ -189,6 +196,7 @@ export function createElementsSizeObserver(options: Options): GraphStoreObserver
     getCellTransform,
     onBatchUpdate,
     getPublicSnapshot,
+    onObservedElementChange,
   } = options;
   const observedElementsByCellId = new Map<CellId, ObservedElement>();
   const observedElementsByDomElement = new WeakMap<HTMLElement | SVGElement, ObservedElement>();
@@ -259,10 +267,21 @@ export function createElementsSizeObserver(options: Options): GraphStoreObserver
       observedElementsByCellId.set(id, observedElement);
       observedElementsByDomElement.set(node, observedElement);
 
+      onObservedElementChange({
+        id,
+        isRemove: false,
+        observedElementsCount: observedElementsByCellId.size,
+      });
+
       return () => {
         observer.unobserve(node);
         observedElementsByCellId.delete(id);
         observedElementsByDomElement.delete(node);
+        onObservedElementChange({
+          id,
+          isRemove: true,
+          observedElementsCount: observedElementsByCellId.size,
+        });
       };
     },
     clean() {

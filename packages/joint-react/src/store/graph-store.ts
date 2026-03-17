@@ -12,7 +12,10 @@ import {
 } from './create-elements-size-observer';
 import { PortalElement } from '../models/portal-element';
 import { PortalLink } from '../models/portal-link';
-import type { ElementToGraphOptions, GraphToElementOptions } from '../state/data-mapping/element-mapper';
+import type {
+  ElementToGraphOptions,
+  GraphToElementOptions,
+} from '../state/data-mapping/element-mapper';
 import type { LinkToGraphOptions, GraphToLinkOptions } from '../state/data-mapping/link-mapper';
 import {
   defaultMapDataToElementAttributes,
@@ -89,8 +92,10 @@ export interface ElementsLayoutSnapshot {
   readonly angles: Record<CellId, number>;
   /** Total number of elements in the graph. */
   readonly count: number;
-  /** Number of elements whose width and height are both > 1 (considered measured). */
-  readonly measuredElements: number;
+  /** Number of elements currently observed by the ResizeObserver. */
+  readonly observedElementsCount: number;
+  /** Number of observed elements that have received at least one valid size measurement. */
+  readonly measuredObservedElementsCount: number;
 }
 
 /**
@@ -218,12 +223,27 @@ export class GraphStore {
     this.dataState = this.graphState.dataState;
     this.layoutState = this.graphState.layoutState;
 
+    const measuredElementIds = new Set<CellId>();
     this.observer = createElementsSizeObserver({
+      onObservedElementChange: ({ id, isRemove, observedElementsCount }) => {
+        if (isRemove) {
+          measuredElementIds.delete(id);
+        }
+        this.graphState.layoutState.setState((previous) => ({
+          ...previous,
+          elements: {
+            ...previous.elements,
+            observedElementsCount,
+            measuredObservedElementsCount: measuredElementIds.size,
+          },
+        }));
+      },
       getPublicSnapshot: () => this.dataState.getSnapshot(),
       onBatchUpdate: (updatedElements) => {
         this.graph.startBatch('resize');
         for (const [id, data] of Object.entries(updatedElements)) {
           const cell = this.graph.getCell(id);
+          measuredElementIds.add(id);
           if (cell?.isElement()) {
             cell.set('size', { width: data.width, height: data.height });
             if (data.x !== undefined && data.y !== undefined) {
@@ -232,6 +252,13 @@ export class GraphStore {
           }
         }
         this.graph.stopBatch('resize');
+        this.graphState.layoutState.setState((previous) => ({
+          ...previous,
+          elements: {
+            ...previous.elements,
+            measuredObservedElementsCount: measuredElementIds.size,
+          },
+        }));
       },
       getCellTransform: (id) => {
         const cell = this.graph.getCell(id);

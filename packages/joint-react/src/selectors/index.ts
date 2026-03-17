@@ -6,7 +6,9 @@ const EMPTY_VIEW_ID_RECORD: Record<CellId, true> = {};
 // ── Element layout selectors ────────────────────────────────────────────────
 
 export const selectAreElementsMeasured = (snapshot: ElementsLayoutSnapshot): boolean =>
-  snapshot.count > 0 && snapshot.measuredElements === snapshot.count;
+  snapshot.count > 0 &&
+  (snapshot.observedElementsCount === 0 ||
+    snapshot.observedElementsCount === snapshot.measuredObservedElementsCount);
 
 export const selectElementSizes = (snapshot: ElementsLayoutSnapshot) =>
   snapshot.sizes;

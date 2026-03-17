@@ -3469,6 +3469,7 @@ __metadata:
     "@types/react": "npm:19.1.12"
     "@types/react-dom": "npm:19.1.9"
     "@types/react-test-renderer": "npm:19.1.0"
+    "@types/scheduler": "npm:^0"
     "@types/use-sync-external-store": "npm:1.5.0"
     "@vitejs/plugin-react": "npm:^5.0.2"
     canvas: "npm:^3.1.0"
@@ -3493,6 +3494,7 @@ __metadata:
     resize-observer-polyfill: "npm:^1.5.1"
     rollup: "npm:^4.50.0"
     rollup-plugin-esbuild: "npm:^6.2.1"
+    scheduler: "npm:^0.27.0"
     storybook: "npm:^10.2.3"
     storybook-multilevel-sort: "npm:^2.1.0"
     ts-node: "npm:^10.9.2"
@@ -6148,6 +6150,13 @@ __metadata:
   version: 0.12.2
   resolution: "@types/retry@npm:0.12.2"
   checksum: 10/e5675035717b39ce4f42f339657cae9637cf0c0051cf54314a6a2c44d38d91f6544be9ddc0280587789b6afd056be5d99dbe3e9f4df68c286c36321579b1bf4a
+  languageName: node
+  linkType: hard
+
+"@types/scheduler@npm:^0":
+  version: 0.26.0
+  resolution: "@types/scheduler@npm:0.26.0"
+  checksum: 10/295ede5e7f991c7c52f9ed8e58d3076526be9a560e59ae11bf1c1414f9755a17bd750f3bfed4657b118283d1eb082bb27dcbe2eadf335a982b0c3b6a562771c2
   languageName: node
   linkType: hard
 

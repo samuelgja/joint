@@ -1,4 +1,3 @@
- 
 /* eslint-disable no-shadow */
 /* eslint-disable @typescript-eslint/no-shadow */
 import { dia } from '@joint/core';
@@ -289,15 +288,20 @@ export function useCreatePortalPaper(
     }
   }, [defaultLinkJointJS, paper, paperOptions, paperStore, scale]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!paper) return;
-    if (!areElementsMeasured) return;
+
+    if (!areElementsMeasured) {
+      previousResetVersionRef.current = -1;
+      return;
+    }
 
     let isInitial = false;
     if (resetVersion !== previousResetVersionRef.current) {
       isInitial = true;
       previousResetVersionRef.current = resetVersion;
     }
+
     const event: ElementsMeasuredEvent = {
       paper,
       graph: paper.model,
