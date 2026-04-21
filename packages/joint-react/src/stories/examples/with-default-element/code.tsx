@@ -1,5 +1,13 @@
 import { useState, useCallback, useMemo, useRef, memo } from 'react';
-import { GraphProvider, Paper, HTMLBox, type ElementRecord, type LinkRecord, type LinkMarkerName } from '@joint/react';
+import type { RenderElement as RenderElementProperty } from '@joint/react';
+import {
+  GraphProvider,
+  Paper,
+  HTMLBox,
+  type ElementRecord,
+  type LinkRecord,
+  type LinkMarkerName,
+} from '@joint/react';
 import { PAPER_CLASSNAME } from 'storybook-config/theme';
 
 // Base theme — provides --jj-* CSS variable defaults (including element styles)
@@ -56,13 +64,12 @@ const initialElements: Record<string, ElementRecord<Data>> = {
       height: 120,
     },
     position: { x: 620, y: 60 },
-    portMap: { in: { cx: 0, cy: 'calc(0.5 * h)', passive: true }},
+    portMap: { in: { cx: 0, cy: 'calc(0.5 * h)', passive: true } },
   },
 };
 
 const TOOLBAR_STYLE = { marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' } as const;
 const DEFAULT_LINK = { style: { targetMarker: 'arrow' as LinkMarkerName } };
-
 
 const initialLinks: Record<string, LinkRecord> = {
   'a-b': {
@@ -82,14 +89,12 @@ const initialLinks: Record<string, LinkRecord> = {
   },
 };
 
-const RenderElement = memo(function RenderElement({ label, width, height }: Readonly<Data>) {
+function ElementBox({ label, width, height }: Readonly<Data>) {
   const boxStyle = useMemo(() => ({ width, height }), [width, height]);
-  return (
-    <HTMLBox style={boxStyle}>
-      {label}
-    </HTMLBox>
-  );
-});
+  return <HTMLBox style={boxStyle}>{label}</HTMLBox>;
+}
+
+const renderElement: RenderElementProperty<Data> = memo((data) => <ElementBox {...data} />);
 
 export default function App() {
   const [isDark, setIsDark] = useState(false);
@@ -132,7 +137,7 @@ export default function App() {
         <Paper
           className={PAPER_CLASSNAME}
           height={240}
-          renderElement={RenderElement}
+          renderElement={renderElement}
           defaultLink={DEFAULT_LINK}
         />
       </GraphProvider>
