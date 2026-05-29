@@ -176,15 +176,17 @@ export function useMeasureNode(
     // Hide the element view's until the element view is updated by the paper's
     // update cycle. This prevents flashes of incorrect position when the element
     // is measured, but waits for the paper to apply the new position.
-    const view = paper?.findViewByModel(id);
-    if (view && paper) {
-      view.el.classList.add(MEASURING_CLASS_NAME);
-      // Request a view update to remove the measuring class as part of its
-      // next update cycle.
-      // Note: the class will be removed even if the size will not change
-      // after the measurement (e.g. if the transform returns the same size
-      // or if the measured size is the same as the current model size).
-      paper.requestViewUpdate(view, paper.FLAG_MEASURE, view.UPDATE_PRIORITY);
+    if (paper) {
+      const view = paper.findViewByModel(id);
+      if (view) {
+        view.el.classList.add(MEASURING_CLASS_NAME);
+        // Request a view update to remove the measuring class as part of its
+        // next update cycle.
+        // Note: the class will be removed even if the size will not change
+        // after the measurement (e.g. if the transform returns the same size
+        // or if the measured size is the same as the current model size).
+        paper.requestViewUpdate(view, paper.FLAG_MEASURE, view.UPDATE_PRIORITY);
+      }
     }
 
     const clean = setMeasuredNode({ id, node: nodeRef.current, transform });
