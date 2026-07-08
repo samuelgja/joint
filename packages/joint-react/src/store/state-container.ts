@@ -1,10 +1,6 @@
-import { isUpdater } from '../utils/is';
 import { simpleScheduler } from '../utils/scheduler';
 import { isStrictEqual } from '../utils/selector-utils';
 import type { CellId, AnyCellRecord } from '../types/cell.types';
-
-/** Update payload accepted by container setters: a new value or a previous-state updater. */
-export type Update<T> = ((previous: T | undefined) => T | undefined) | T;
 
 /**
  * Update payload for array-shaped state, replace or transform-from-previous.
@@ -16,37 +12,46 @@ export type ArrayUpdate<T, Input = T> =
   | ((previous: readonly T[]) => readonly Input[]);
 
 /**
- * Resolves an update value by applying it if it is a function, or returning it directly.
- * @param previous
- * @param updater
+ * A batch of container changes applied in one shot by {@link Container.batchSet}.
+ *
+ * Mirrors the incremental-change shape delivered to `onIncrementalCellsChange`,
+ * so the graph projection can build a single change set and feed it to both the
+ * container and the incremental callback. All three collections are keyed by
+ * cell id; the same id never appears in more than one of them.
  */
-export function getValue<T>(previous: T | undefined, updater: Update<T>): T | undefined {
-  return isUpdater(updater) ? updater(previous) : updater;
+export interface ContainerChangeSet<Cell extends AnyCellRecord> {
+  /** Cells new to the container, in insertion order (appended to the snapshot). */
+  readonly added: ReadonlyMap<CellId, Cell>;
+  /** Cells already in the container whose record reference changed (patched in place). */
+  readonly changed: ReadonlyMap<CellId, Cell>;
+  /** Ids of cells to drop from the container. */
+  readonly removed: ReadonlySet<CellId>;
 }
 
 /** Read-only view of a cell container, supports reads, lookups, and subscriptions. */
 export interface ReadonlyContainer<Cell extends AnyCellRecord> {
-  getVersion: () => number;
-  getAll: () => readonly Cell[];
+  /**
+   * The current immutable snapshot array. The reference is stable between
+   * commits and changes only when {@link Container.batchSet} applies a
+   * non-empty change set, so it doubles as a `useSyncExternalStore` token.
+   */
+  getSnapshot: () => readonly Cell[];
   get: (id: CellId) => Cell | undefined;
   has: (id: CellId) => boolean;
-  getSize: () => number;
-  subscribe: (id: CellId, listener: () => void) => () => void;
-  subscribeToSize: (listener: () => void) => () => void;
-  subscribeToAll: (listener: () => void) => () => void;
+  /** Subscribe to changes of a single cell by id (the fast per-cell path). */
+  subscribeById: (id: CellId, listener: () => void) => () => void;
+  /** Subscribe to every commit (the snapshot reference changed). */
+  subscribe: (listener: () => void) => () => void;
 }
 
-/** Mutable cell container, extends {@link ReadonlyContainer} with set/delete/reset operations. */
+/** Mutable cell container, extends {@link ReadonlyContainer} with the batch writer. */
 export interface Container<Cell extends AnyCellRecord> extends ReadonlyContainer<Cell> {
-  set: (id: CellId, update: Update<Cell>) => void;
-  delete: (id: CellId) => void;
-  reset: (next: readonly Cell[]) => void;
-  commitChanges: () => void;
+  batchSet: (changeSet: ContainerChangeSet<Cell>) => void;
 }
 
 /**
  * Wraps a container to expose only read and subscribe operations.
- * @param container
+ * @param container - the mutable container to expose read-only.
  */
 export function asReadonlyContainer<Cell extends AnyCellRecord>(
   container: Container<Cell>
@@ -54,37 +59,87 @@ export function asReadonlyContainer<Cell extends AnyCellRecord>(
   return {
     get: container.get,
     has: container.has,
-    getVersion: container.getVersion,
-    getAll: container.getAll,
-    getSize: container.getSize,
+    getSnapshot: container.getSnapshot,
+    subscribeById: container.subscribeById,
     subscribe: container.subscribe,
-    subscribeToSize: container.subscribeToSize,
-    subscribeToAll: container.subscribeToAll,
   };
 }
 
 /**
- * Creates a keyed container with per-id subscriptions and batched change notifications.
+ * Patch one slot of the next snapshot: overwrite in place when the id is known,
+ * otherwise append and record its index. Shared by the changed/added passes.
+ */
+function patchSlot<Cell extends AnyCellRecord>(
+  next: Cell[],
+  indexById: Map<CellId, number>,
+  id: CellId,
+  record: Cell
+): void {
+  const index = indexById.get(id);
+  if (index === undefined) {
+    indexById.set(id, next.length);
+    next.push(record);
+  } else {
+    next[index] = record;
+  }
+}
+
+/**
+ * Rebuild the snapshot without the removed ids in one filter pass, refreshing
+ * the index map (a removal shifts every later index, so the map is rebuilt).
+ * Changed/added slots are applied by the caller afterwards, uniformly with the
+ * no-removals path.
+ */
+function dropRemoved<Cell extends AnyCellRecord>(
+  items: readonly Cell[],
+  removed: ReadonlySet<CellId>,
+  indexById: Map<CellId, number>
+): Cell[] {
+  const next: Cell[] = [];
+  indexById.clear();
+  for (const item of items) {
+    const id = item.id as CellId;
+    if (removed.has(id)) continue;
+    indexById.set(id, next.length);
+    next.push(item);
+  }
+  return next;
+}
+
+/**
+ * Creates a keyed container backed by an **immutable snapshot array**.
  *
- * Backed by a mutable `items: T[]` array + `indexById: Map<id, number>` + a
- * monotonic `version` counter. Every mutation is O(1); `reset` is O(n) and is
- * a cold path. Delete uses swap-pop (unstable array order), callers must
- * not rely on insertion order for identity.
+ * The snapshot (`items`) is never mutated in place: every {@link Container.batchSet}
+ * produces a new array and swaps it in, so `getSnapshot()` is a stable
+ * reference that consumers can hand straight to React state without copying.
+ * An `indexById` map keeps `get(id)` at O(1).
+ *
+ * `batchSet` rebuilds the snapshot once per commit: a native `slice()` (or a
+ * single filter pass when removals are present) plus an index-patch of only the
+ * changed/added slots — O(n + change-set), one array copy for the whole batch.
+ * Applying each change with `Array.prototype.with`/`toSpliced` instead would be
+ * O(k·n) for a scattered change set (k separate full copies) — measured up to
+ * ~65× slower at k=100; see the immutable-batch bench. Notification is
+ * O(change-set), never O(n): only the touched ids' listeners fire, then the
+ * all-listeners once.
  */
 export function createContainer<Cell extends AnyCellRecord>(): Container<Cell> {
-  const items: Cell[] = [];
+  let items: readonly Cell[] = [];
   const indexById = new Map<CellId, number>();
   const listeners = new Map<CellId, Set<() => void>>();
-  const sizeListeners = new Set<() => void>();
-  const fullListeners = new Set<() => void>();
-  // Array for O(1) insertion — dedup happens on commit via the `fired` Set.
-  // A Set-based `changes` was tried but regressed hot insert loops by 15-20%
-  // because `Set.add` is measurably slower than `Array.push` when many
-  // unique ids accumulate between commits (each add does a hash lookup).
-  let changes: CellId[] = [];
-  let previousSize = 0;
-  let version = 0;
+  const allListeners = new Set<() => void>();
+
+  /** Fire the per-id listeners registered for `id` (no-op when none). */
+  function fireId(id: CellId): void {
+    const listenersForId = listeners.get(id);
+    if (!listenersForId) return;
+    for (const listener of listenersForId) listener();
+  }
+
   return {
+    getSnapshot(): readonly Cell[] {
+      return items;
+    },
     get(id: CellId): Cell | undefined {
       const index = indexById.get(id);
       return index === undefined ? undefined : items[index];
@@ -92,94 +147,26 @@ export function createContainer<Cell extends AnyCellRecord>(): Container<Cell> {
     has(id: CellId): boolean {
       return indexById.has(id);
     },
-    getAll(): readonly Cell[] {
-      return items;
-    },
-    set(id: CellId, update: Update<Cell>) {
-      const index = indexById.get(id);
-      const previous = index === undefined ? undefined : items[index];
-      const value = getValue(previous, update);
-      if (!value) {
-        return;
-      }
-      if (isStrictEqual(previous, value)) {
-        return;
-      }
-      if (index === undefined) {
-        indexById.set(id, items.length);
-        items.push(value);
-      } else {
-        items[index] = value;
-      }
-      changes.push(id);
-      version++;
-    },
-    delete(id: CellId) {
-      const index = indexById.get(id);
-      if (index === undefined) {
-        return;
-      }
-      const lastIndex = items.length - 1;
-      if (index !== lastIndex) {
-        const last = items[lastIndex];
-        items[index] = last;
-        // Stored items are always keyed by id; the optional `id` is for
-        // input shapes only.
-        indexById.set(last.id as CellId, index);
-      }
-      items.pop();
-      indexById.delete(id);
-      changes.push(id);
-      version++;
-    },
-    reset(next: readonly Cell[]) {
-      // Stored items are always keyed by id; the optional `id` is for input
-      // shapes only.
-      for (const previous of items) changes.push(previous.id as CellId);
-      items.length = 0;
-      indexById.clear();
-      let index = 0;
-      for (const item of next) {
-        items.push(item);
-        indexById.set(item.id as CellId, index);
-        changes.push(item.id as CellId);
-        index++;
-      }
-      version++;
-    },
-    getVersion() {
-      return version;
-    },
-    getSize() {
-      return items.length;
-    },
-    commitChanges() {
-      if (changes.length === 0) {
-        return;
-      }
-      const fired = new Set<CellId>();
-      for (const id of changes) {
-        if (fired.has(id)) continue;
-        fired.add(id);
-        const listenersForId = listeners.get(id);
-        if (!listenersForId) {
-          continue;
-        }
-        for (const listener of listenersForId) {
-          listener();
-        }
-      }
-      if (previousSize !== items.length) {
-        previousSize = items.length;
-        for (const listener of sizeListeners) {
-          listener();
-        }
-      }
-      for (const listener of fullListeners) listener();
+    batchSet({ added, changed, removed }: ContainerChangeSet<Cell>): void {
+      if (changed.size === 0 && added.size === 0 && removed.size === 0) return;
+      // Slice is faster than [...spread]
+      // eslint-disable-next-line unicorn/prefer-spread
+      const next = removed.size > 0 ? dropRemoved(items, removed, indexById) : items.slice();
+      // Apply changed then added through the same `patchSlot`: a known id
+      // overwrites its slot in place, an unknown id is appended. Keeping both
+      // rebuild paths symmetric here avoids the two diverging on edge cases.
+      for (const [id, record] of changed) patchSlot(next, indexById, id, record);
+      for (const [id, record] of added) patchSlot(next, indexById, id, record);
+      items = next;
 
-      changes = [];
+      // Wake only the touched ids' subscribers, then the all-subscribers once.
+      // The buckets are disjoint (an id lands in exactly one), so no dedup.
+      for (const id of changed.keys()) fireId(id);
+      for (const id of added.keys()) fireId(id);
+      for (const id of removed) fireId(id);
+      for (const listener of allListeners) listener();
     },
-    subscribe(id: CellId, listener: () => void) {
+    subscribeById(id: CellId, listener: () => void) {
       let listenersForId = listeners.get(id);
       if (!listenersForId) {
         listenersForId = new Set();
@@ -188,21 +175,17 @@ export function createContainer<Cell extends AnyCellRecord>(): Container<Cell> {
       listenersForId.add(listener);
       return () => {
         listenersForId?.delete(listener);
-        if (listenersForId?.size === 0) {
+        // Guard the map delete against a re-subscribe replacing this id's Set
+        // between the first and a repeated unsubscribe call.
+        if (listenersForId?.size === 0 && listeners.get(id) === listenersForId) {
           listeners.delete(id);
         }
       };
     },
-    subscribeToAll(listener: () => void) {
-      fullListeners.add(listener);
+    subscribe(listener: () => void) {
+      allListeners.add(listener);
       return () => {
-        fullListeners.delete(listener);
-      };
-    },
-    subscribeToSize(listener: () => void) {
-      sizeListeners.add(listener);
-      return () => {
-        sizeListeners.delete(listener);
+        allListeners.delete(listener);
       };
     },
   };
