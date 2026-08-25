@@ -75,6 +75,15 @@ function makeDragState(
   };
 }
 
+/** Seeds a drag for `cell-1` on a fresh mock paper and renders `useCellDrag` for it. */
+function renderDraggingCell(overrides: Partial<CellDragState>) {
+  const paper = createMockPaper();
+  getCellDragState(paper).set(makeDragState(paper, 'cell-1', overrides));
+  return renderHook(() => useCellDrag(), {
+    wrapper: createWrapper({ cellId: 'cell-1', paper }),
+  });
+}
+
 describe('useCellDrag', () => {
   it('returns idle state without PaperStoreContext', () => {
     const { result } = renderHook(() => useCellDrag(), {
@@ -170,33 +179,17 @@ describe('useCellDrag', () => {
   });
 
   it('reports canDrop true when snapshot canDrop is true', async () => {
-    const paper = createMockPaper();
-    const atom = getCellDragState(paper);
-    atom.set(
-      makeDragState(paper, 'cell-1', {
-        canDrop: true,
-        dropArea: new g.Rect(10, 10, 50, 50),
-      })
-    );
-
-    const { result } = renderHook(() => useCellDrag(), {
-      wrapper: createWrapper({ cellId: 'cell-1', paper }),
+    const { result } = renderDraggingCell({
+      canDrop: true,
+      dropArea: new g.Rect(10, 10, 50, 50),
     });
 
     expect(result.current.canDrop).toBe(true);
   });
 
   it('reports canDrop true during any drag', async () => {
-    const paper = createMockPaper();
-    const atom = getCellDragState(paper);
-    atom.set(
-      makeDragState(paper, 'cell-1', {
-        dropArea: new g.Rect(-100, -100, 50, 50),
-      })
-    );
-
-    const { result } = renderHook(() => useCellDrag(), {
-      wrapper: createWrapper({ cellId: 'cell-1', paper }),
+    const { result } = renderDraggingCell({
+      dropArea: new g.Rect(-100, -100, 50, 50),
     });
 
     expect(result.current.canDrop).toBe(true);

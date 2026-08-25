@@ -16,6 +16,39 @@ async function flushMicrotasks(): Promise<void> {
   await Promise.resolve();
 }
 
+interface LinkedPair {
+  element1: dia.Element;
+  element2: dia.Element;
+  link: dia.Link;
+}
+
+type PositionedElementConstructor = new (attributes: {
+  position: dia.Point;
+  size: dia.Size;
+}) => dia.Element;
+
+/**
+ * Add two side-by-side elements connected by a link to the graph.
+ * Pass `ElementModel` for elements with empty markup (like real React usage),
+ * or `shapes.standard.Rectangle` for elements with default markup children.
+ */
+function addLinkedPair(graph: dia.Graph, ElementClass: PositionedElementConstructor): LinkedPair {
+  const element1 = new ElementClass({
+    position: { x: 0, y: 0 },
+    size: { width: 100, height: 100 },
+  });
+  const element2 = new ElementClass({
+    position: { x: 200, y: 0 },
+    size: { width: 100, height: 100 },
+  });
+  const link = new shapes.standard.Link({
+    source: { id: element1.id },
+    target: { id: element2.id },
+  });
+  graph.addCells([element1, element2, link]);
+  return { element1, element2, link };
+}
+
 describe('PaperView', () => {
   let graphStore: GraphStore;
   let paper: PaperView;
@@ -93,6 +126,17 @@ describe('PaperView', () => {
     return view;
   }
 
+  /**
+   * Simulate React rendering a child into the element view's portal node.
+   */
+  function appendPortalChild(elementId: dia.Cell.ID): void {
+    const portalNode = paper.getCellViewPortalNode(getElementViewOrThrow(elementId));
+    if (!portalNode) {
+      throw new Error(`Expected portal node for element ${String(elementId)}`);
+    }
+    portalNode.append(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));
+  }
+
   describe('constructor', () => {
     it('should create a paper instance', () => {
       paper = createPaper();
@@ -157,19 +201,7 @@ describe('PaperView', () => {
     it('should expose link view through getLinkView when inserted', () => {
       paper = createPaper();
 
-      const element1 = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, shapes.standard.Rectangle);
 
       expect(paper.getLinkView(toCellId(link.id))).toBeDefined();
       expect(getLinkViewOrThrow(link.id).model).toBe(link);
@@ -178,19 +210,7 @@ describe('PaperView', () => {
     it('should NOT set magnet=false on link views', () => {
       paper = createPaper();
 
-      const element1 = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, shapes.standard.Rectangle);
 
       const linkView = getLinkViewOrThrow(link.id);
       expect(linkView.el.getAttribute('magnet')).not.toBe('false');
@@ -238,19 +258,7 @@ describe('PaperView', () => {
     it('should remove link view from getLinkView when link is removed', () => {
       paper = createPaper();
 
-      const element1 = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, shapes.standard.Rectangle);
       expect(paper.getLinkView(toCellId(link.id))).toBeDefined();
 
       graphStore.graph.removeCells([link]);
@@ -322,28 +330,14 @@ describe('PaperView', () => {
     it('should remove link from pendingLinks when hidden', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup (like real React usage)
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
-
+      const { link } = addLinkedPair(graphStore.graph, ElementModel);
+      const linkView = findViewOrThrow(link);
       const pendingLinks = getPendingLinks(paper);
 
       // Link should be in pending (source/target have no children - ElementModel has empty markup)
       expect(pendingLinks.has(link.id as string)).toBe(true);
 
       // Hide the link
-      const linkView = findViewOrThrow(link);
       paper._hideCellView(linkView);
 
       // Should be removed from pending
@@ -355,20 +349,7 @@ describe('PaperView', () => {
     it('should hide link when source element has no children (ElementModel)', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup (like real React usage)
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const linkView = getLinkViewOrThrow(link.id);
 
@@ -380,19 +361,7 @@ describe('PaperView', () => {
       paper = createPaper();
 
       // Standard shapes have default markup with children
-      const element1 = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, shapes.standard.Rectangle);
 
       const linkView = getLinkViewOrThrow(link.id);
       const pendingLinks = getPendingLinks(paper);
@@ -405,20 +374,7 @@ describe('PaperView', () => {
     it('should add link to pendingLinks when source/target not ready (ElementModel)', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const pendingLinks = getPendingLinks(paper);
 
@@ -448,33 +404,15 @@ describe('PaperView', () => {
     it('should show link when source and target elements have children', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { element1, element2, link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const linkView = getLinkViewOrThrow(link.id);
-      const element1View = getElementViewOrThrow(element1.id);
-      const element2View = getElementViewOrThrow(element2.id);
 
       // Initially hidden
       expect(linkView.el.style.visibility).toBe('hidden');
 
-      // Simulate React rendering children by adding child elements to portal nodes
-      const child1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      const child2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      paper.getCellViewPortalNode(element1View)!.append(child1);
-      paper.getCellViewPortalNode(element2View)!.append(child2);
+      appendPortalChild(element1.id);
+      appendPortalChild(element2.id);
 
       // Call checkPendingLinks to process
       paper.checkPendingLinks();
@@ -486,31 +424,15 @@ describe('PaperView', () => {
     it('should remove link from pendingLinks after showing', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { element1, element2, link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const pendingLinks = getPendingLinks(paper);
-      const element1View = getElementViewOrThrow(element1.id);
-      const element2View = getElementViewOrThrow(element2.id);
 
       // Initially in pending
       expect(pendingLinks.has(link.id as string)).toBe(true);
 
-      // Simulate React rendering children into portal nodes
-      paper.getCellViewPortalNode(element1View)!.append(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));
-      paper.getCellViewPortalNode(element2View)!.append(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));
+      appendPortalChild(element1.id);
+      appendPortalChild(element2.id);
 
       paper.checkPendingLinks();
 
@@ -521,26 +443,12 @@ describe('PaperView', () => {
     it('should not show link if only source is ready', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { element1, link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const linkView = getLinkViewOrThrow(link.id);
-      const element1View = getElementViewOrThrow(element1.id);
 
       // Only add children to source element's portal node
-      paper.getCellViewPortalNode(element1View)!.append(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));
+      appendPortalChild(element1.id);
 
       paper.checkPendingLinks();
 
@@ -551,20 +459,7 @@ describe('PaperView', () => {
     it('should clean up pendingLinks when link is removed', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const pendingLinks = getPendingLinks(paper);
 
@@ -581,20 +476,7 @@ describe('PaperView', () => {
     it('should handle checkPendingLinks when link view was removed', () => {
       paper = createPaper();
 
-      // Use ElementModel which has empty markup
-      const element1 = new ElementModel({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const element2 = new ElementModel({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: element1.id },
-        target: { id: element2.id },
-      });
-      graphStore.graph.addCells([element1, element2, link]);
+      const { link } = addLinkedPair(graphStore.graph, ElementModel);
 
       const pendingLinks = getPendingLinks(paper);
       const linkId = link.id as string;

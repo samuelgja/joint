@@ -1,64 +1,36 @@
-import React, { useContext, useState } from 'react';
-import { act, render, waitFor } from '@testing-library/react';
-import { GraphProvider } from '../graph-provider';
-import { GraphStoreContext } from '../../../context';
-import type { GraphStore } from '../../../store';
-import type { CellRecord } from '../../../types/cell.types';
+import { act, waitFor } from '@testing-library/react';
 import { ELEMENT_MODEL_TYPE } from '../../../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../../../mvc/link-model';
+import {
+  renderControlledGraphProvider,
+  type Cells,
+} from './__helpers__/render-graph-provider';
 
-type Cells = ReadonlyArray<CellRecord<Record<string, unknown>, Record<string, unknown>>>;
+function labeledElementCell(id: string, x: number, y: number, label: string): Cells[number] {
+  return {
+    id,
+    type: ELEMENT_MODEL_TYPE,
+    position: { x, y },
+    data: { label },
+  } as Cells[number];
+}
 
 const INITIAL_CELLS: Cells = [
-  {
-    id: 'a',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 60, y: 60 },
-    data: { label: 'A' },
-  } as CellRecord<Record<string, unknown>, Record<string, unknown>>,
-  {
-    id: 'b',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 240, y: 60 },
-    data: { label: 'B' },
-  } as CellRecord<Record<string, unknown>, Record<string, unknown>>,
+  labeledElementCell('a', 60, 60, 'A'),
+  labeledElementCell('b', 240, 60, 'B'),
   {
     id: 'a-b',
     type: LINK_MODEL_TYPE,
     source: { id: 'a' },
     target: { id: 'b' },
-  } as CellRecord<Record<string, unknown>, Record<string, unknown>>,
+  } as Cells[number],
 ];
 
 describe('controlled GraphProvider: reset preserves measured size', () => {
-  let storeRef!: GraphStore;
-  function Probe() {
-    const store = useContext(GraphStoreContext);
-    if (store) storeRef = store as GraphStore;
-    return null;
-  }
-
   it('does not collapse element size to 0x0 when reset cells omit size', async () => {
-    let externalSetCells!: (next: Cells) => void;
+    const { store, setCells } = await renderControlledGraphProvider(INITIAL_CELLS, 3);
 
-    function App() {
-      const [cells, setCells] = useState<Cells>(INITIAL_CELLS);
-      externalSetCells = setCells;
-      return (
-        <GraphProvider
-          cells={cells}
-          onCellsChange={setCells as React.Dispatch<React.SetStateAction<Cells>>}
-        >
-          <Probe />
-        </GraphProvider>
-      );
-    }
-
-    render(<App />);
-    await waitFor(() => expect(storeRef).toBeDefined());
-    await waitFor(() => expect(storeRef.graphProjection.cells.getSnapshot().length).toBe(3));
-
-    const elementA = storeRef.graph.getCell('a');
+    const elementA = store.graph.getCell('a');
     expect(elementA?.isElement()).toBe(true);
     act(() => {
       (elementA as { set: (key: string, value: unknown) => void }).set('size', {
@@ -72,24 +44,12 @@ describe('controlled GraphProvider: reset preserves measured size', () => {
       height: 40,
     });
 
-    act(() => {
-      externalSetCells([
-        ...INITIAL_CELLS,
-        {
-          id: 'task-1',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 140, y: 200 },
-          data: { label: 'Task 1' },
-        } as CellRecord<Record<string, unknown>, Record<string, unknown>>,
-      ]);
-    });
-    await waitFor(() => expect(storeRef.graphProjection.cells.getSnapshot().length).toBe(4));
+    setCells([...INITIAL_CELLS, labeledElementCell('task-1', 140, 200, 'Task 1')]);
+    await waitFor(() => expect(store.graphProjection.cells.getSnapshot().length).toBe(4));
 
-    act(() => {
-      externalSetCells(INITIAL_CELLS);
-    });
-    await waitFor(() => expect(storeRef.graphProjection.cells.getSnapshot().length).toBe(3));
-    expect(storeRef.graph.getCell('task-1')).toBeUndefined();
+    setCells(INITIAL_CELLS);
+    await waitFor(() => expect(store.graphProjection.cells.getSnapshot().length).toBe(3));
+    expect(store.graph.getCell('task-1')).toBeUndefined();
 
     const sizeAfterReset = (
       elementA as { size: () => { width: number; height: number } }
@@ -98,46 +58,20 @@ describe('controlled GraphProvider: reset preserves measured size', () => {
   });
 
   it('removes every cell that disappears from the controlled snapshot in a single update', async () => {
-    let externalSetCells!: (next: Cells) => void;
-
-    function App() {
-      const [cells, setCells] = useState<Cells>([
+    const { store, setCells } = await renderControlledGraphProvider(
+      [
         ...INITIAL_CELLS,
-        {
-          id: 'task-1',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 140, y: 200 },
-          data: { label: 'Task 1' },
-        } as CellRecord<Record<string, unknown>, Record<string, unknown>>,
-        {
-          id: 'task-2',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 220, y: 200 },
-          data: { label: 'Task 2' },
-        } as CellRecord<Record<string, unknown>, Record<string, unknown>>,
-      ]);
-      externalSetCells = setCells;
-      return (
-        <GraphProvider
-          cells={cells}
-          onCellsChange={setCells as React.Dispatch<React.SetStateAction<Cells>>}
-        >
-          <Probe />
-        </GraphProvider>
-      );
-    }
+        labeledElementCell('task-1', 140, 200, 'Task 1'),
+        labeledElementCell('task-2', 220, 200, 'Task 2'),
+      ],
+      5
+    );
 
-    render(<App />);
-    await waitFor(() => expect(storeRef).toBeDefined());
-    await waitFor(() => expect(storeRef.graphProjection.cells.getSnapshot().length).toBe(5));
-
-    act(() => {
-      externalSetCells(INITIAL_CELLS);
-    });
-    await waitFor(() => expect(storeRef.graph.getCell('task-1')).toBeUndefined());
-    await waitFor(() => expect(storeRef.graph.getCell('task-2')).toBeUndefined());
-    expect(storeRef.graphProjection.cells.getSnapshot().length).toBe(3);
-    expect(storeRef.graphProjection.cells.has('task-1')).toBe(false);
-    expect(storeRef.graphProjection.cells.has('task-2')).toBe(false);
+    setCells(INITIAL_CELLS);
+    await waitFor(() => expect(store.graph.getCell('task-1')).toBeUndefined());
+    await waitFor(() => expect(store.graph.getCell('task-2')).toBeUndefined());
+    expect(store.graphProjection.cells.getSnapshot().length).toBe(3);
+    expect(store.graphProjection.cells.has('task-1')).toBe(false);
+    expect(store.graphProjection.cells.has('task-2')).toBe(false);
   });
 });

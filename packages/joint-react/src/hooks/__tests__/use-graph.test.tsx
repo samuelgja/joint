@@ -1,38 +1,13 @@
-import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { GraphProvider } from '../../components/graph/graph-provider';
+import { graphProviderWrapper } from '../../utils/test-wrappers';
 import { useGraph, type GraphApi } from '../use-graph';
 import { useGraphStore } from '../use-graph-store';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import type { AnyCellRecord, CellRecord, CellId, ElementRecord } from '../../types/cell.types';
+import { CELLS_AB_LINK, flushMicrotasks as flush, makeElement } from './__helpers__/cell-fixtures';
 
-const INITIAL: readonly CellRecord[] = [
-  {
-    id: 'a',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 0, y: 0 },
-    size: { width: 10, height: 10 },
-  } as CellRecord,
-  {
-    id: 'b',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 50, y: 0 },
-    size: { width: 10, height: 10 },
-  } as CellRecord,
-  {
-    id: 'l1',
-    type: LINK_MODEL_TYPE,
-    source: { id: 'a' },
-    target: { id: 'b' },
-  } as CellRecord,
-];
-
-function wrapper({ children }: { readonly children: React.ReactNode }) {
-  return <GraphProvider initialCells={INITIAL}>{children}</GraphProvider>;
-}
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
+const wrapper = graphProviderWrapper({ initialCells: CELLS_AB_LINK });
 
 // Hoisted so the nested-function-depth lint rule doesn't fire inside the
 // `await act(async () => { ... })` + `setCell(fn)` call stack.
@@ -61,6 +36,24 @@ function appendBangToLabel(
   api.setCellData(id, (previous) => ({ ...previous, label: `${previous.label}!` }));
 }
 
+// Shared renderHook shapes so the api+store setup is written once.
+function renderGraphApiWithStore() {
+  return renderHook(() => ({ api: useGraph(), store: useGraphStore() }), { wrapper });
+}
+
+async function renderTypedGraphApiWithLabel(label: string) {
+  const view = renderHook(
+    () => ({ api: useGraph<ElementRecord<NodeLabel>>(), store: useGraphStore() }),
+    { wrapper }
+  );
+  await waitFor(() => expect(view.result.current).toBeDefined());
+  await act(async () => {
+    view.result.current.api.setCellData('a', { label });
+    await flush();
+  });
+  return view;
+}
+
 describe('useGraph', () => {
   it('exposes the graph instance and the unified setter API', async () => {
     const { result } = renderHook(() => useGraph(), { wrapper });
@@ -78,12 +71,7 @@ describe('useGraph', () => {
       const { result } = renderHook(() => useGraph(), { wrapper });
       await waitFor(() => expect(result.current).toBeDefined());
       await act(async () => {
-        result.current.setCell({
-          id: 'c',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 100, y: 0 },
-          size: { width: 10, height: 10 },
-        } as CellRecord);
+        result.current.setCell(makeElement('c', 100));
         await flush();
       });
       expect(result.current.graph.getCell('c')).toBeDefined();
@@ -163,14 +151,7 @@ describe('useGraph', () => {
       const { result } = renderHook(() => useGraph(), { wrapper });
       await waitFor(() => expect(result.current).toBeDefined());
       await act(async () => {
-        result.current.resetCells([
-          {
-            id: 'z',
-            type: ELEMENT_MODEL_TYPE,
-            position: { x: 0, y: 0 },
-            size: { width: 10, height: 10 },
-          } as CellRecord,
-        ]);
+        result.current.resetCells([makeElement('z')]);
         await flush();
       });
       expect(result.current.graph.getCell('z')).toBeDefined();
@@ -185,9 +166,7 @@ describe('useGraph', () => {
       // skip the 'change' event — so the cells container never updated and
       // hooks that read via useCells(selector) returned stale data. A
       // controlled <input value={label}> then reset the user's keystroke.
-      const { result } = renderHook(() => ({ api: useGraph(), store: useGraphStore() }), {
-        wrapper,
-      });
+      const { result } = renderGraphApiWithStore();
       await waitFor(() => expect(result.current).toBeDefined());
       await flush();
 
@@ -322,9 +301,7 @@ describe('useGraph', () => {
     });
 
     it('classifies cells fetched from the graph view container', async () => {
-      const { result } = renderHook(() => ({ api: useGraph(), store: useGraphStore() }), {
-        wrapper,
-      });
+      const { result } = renderGraphApiWithStore();
       await waitFor(() => expect(result.current).toBeDefined());
       await flush();
       const elementCell = result.current.store.graphProjection.cells.get('a')!;
@@ -336,28 +313,12 @@ describe('useGraph', () => {
 
   describe('setCellData (typed via useGraph generics)', () => {
     it('replaces element data via the direct form', async () => {
-      const { result } = renderHook(
-        () => ({ api: useGraph<ElementRecord<NodeLabel>>(), store: useGraphStore() }),
-        { wrapper }
-      );
-      await waitFor(() => expect(result.current).toBeDefined());
-      await act(async () => {
-        result.current.api.setCellData('a', { label: 'hi' });
-        await flush();
-      });
+      const { result } = await renderTypedGraphApiWithLabel('hi');
       expect(result.current.store.graph.getCell('a')?.get('data')).toEqual({ label: 'hi' });
     });
 
     it('runs an updater whose previous data is typed from the generics', async () => {
-      const { result } = renderHook(
-        () => ({ api: useGraph<ElementRecord<NodeLabel>>(), store: useGraphStore() }),
-        { wrapper }
-      );
-      await waitFor(() => expect(result.current).toBeDefined());
-      await act(async () => {
-        result.current.api.setCellData('a', { label: 'hi' });
-        await flush();
-      });
+      const { result } = await renderTypedGraphApiWithLabel('hi');
       await act(async () => {
         appendBangToLabel(result.current.api, 'a');
         await flush();

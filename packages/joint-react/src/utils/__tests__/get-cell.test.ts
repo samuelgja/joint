@@ -1,15 +1,13 @@
-import { dia, shapes } from '@joint/core';
+import type { dia } from '@joint/core';
 import { mapAttributesToLink } from '../../state/data-mapping';
-import { ElementModel } from '../../mvc/element-model';
-import { LinkModel, LINK_MODEL_TYPE } from '../../mvc/link-model';
-
-const DEFAULT_CELL_NAMESPACE = { ...shapes, element: ElementModel, link: LinkModel };
+import { LINK_MODEL_TYPE } from '../../mvc/link-model';
+import { getTestGraph } from '../test-wrappers';
 
 describe('graph-state-selectors link mapping', () => {
   let graph: dia.Graph;
 
   beforeEach(() => {
-    graph = new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
+    graph = getTestGraph();
   });
 
   afterEach(() => {

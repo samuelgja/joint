@@ -1,16 +1,17 @@
-import { dia } from '@joint/core';
-import { DEFAULT_CELL_NAMESPACE } from '../graph-store';
+import type { dia } from '@joint/core';
 import { graphChanges } from '../graph-changes';
 import type { CellRecord } from '../../types/cell.types';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../../mvc/link-model';
-
-function createGraph() {
-  return new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
-}
+import {
+  addElement,
+  addLink,
+  createTestGraph,
+  flushMicrotasks as flush,
+} from './__helpers__/graph-fixtures';
 
 function setup() {
-  const graph = createGraph();
+  const graph = createTestGraph();
   const onChanges = jest.fn();
   const controller = graphChanges({
     graph,
@@ -20,7 +21,7 @@ function setup() {
 }
 
 function setupWithSize() {
-  const graph = createGraph();
+  const graph = createTestGraph();
   const onChanges = jest.fn();
   const onElementsSizeChange = jest.fn();
   const controller = graphChanges({
@@ -31,26 +32,29 @@ function setupWithSize() {
   return { graph, onChanges, onElementsSizeChange, controller };
 }
 
-function addElement(graph: dia.Graph, id: string, x = 10, y = 20, width = 100, height = 50) {
-  graph.addCell({
-    id,
-    type: 'element',
-    position: { x, y },
-    size: { width, height },
-  });
+/** Resets the graph to two sized elements `a`/`b` joined by link `l1`. */
+function resetWithSizedPairAndLink(graph: dia.Graph): void {
+  graph.resetCells([
+    {
+      id: 'a',
+      type: 'element',
+      position: { x: 0, y: 0 },
+      size: { width: 100, height: 50 },
+    },
+    {
+      id: 'b',
+      type: 'element',
+      position: { x: 200, y: 0 },
+      size: { width: 80, height: 40 },
+    },
+    {
+      id: 'l1',
+      type: 'standard.Link',
+      source: { id: 'a' },
+      target: { id: 'b' },
+    },
+  ]);
 }
-
-function addLink(graph: dia.Graph, id: string, source: string, target: string) {
-  graph.addCell({
-    id,
-    type: 'standard.Link',
-    source: { id: source },
-    target: { id: target },
-  });
-}
-
-/** Flush pending microtasks so scheduled callbacks execute. */
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
 
 describe('graphChanges', () => {
   describe('cell events', () => {
@@ -384,26 +388,7 @@ describe('graphChanges', () => {
   describe('onElementsSizeChange', () => {
     it('fires for each element when resetCells seeds cells with sizes', () => {
       const { graph, onElementsSizeChange } = setupWithSize();
-      graph.resetCells([
-        {
-          id: 'a',
-          type: 'element',
-          position: { x: 0, y: 0 },
-          size: { width: 100, height: 50 },
-        },
-        {
-          id: 'b',
-          type: 'element',
-          position: { x: 200, y: 0 },
-          size: { width: 80, height: 40 },
-        },
-        {
-          id: 'l1',
-          type: 'standard.Link',
-          source: { id: 'a' },
-          target: { id: 'b' },
-        },
-      ]);
+      resetWithSizedPairAndLink(graph);
 
       const elementCalls = onElementsSizeChange.mock.calls.filter(
         ([id]) => id === 'a' || id === 'b'
@@ -437,26 +422,7 @@ describe('graphChanges', () => {
 
     it('does not fire for links on reset', () => {
       const { graph, onElementsSizeChange } = setupWithSize();
-      graph.resetCells([
-        {
-          id: 'a',
-          type: 'element',
-          position: { x: 0, y: 0 },
-          size: { width: 100, height: 50 },
-        },
-        {
-          id: 'b',
-          type: 'element',
-          position: { x: 200, y: 0 },
-          size: { width: 80, height: 40 },
-        },
-        {
-          id: 'l1',
-          type: 'standard.Link',
-          source: { id: 'a' },
-          target: { id: 'b' },
-        },
-      ]);
+      resetWithSizedPairAndLink(graph);
 
       for (const [id] of onElementsSizeChange.mock.calls) {
         expect(id).not.toBe('l1');

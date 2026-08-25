@@ -1,29 +1,12 @@
-import { dia } from '@joint/core';
-import { DEFAULT_CELL_NAMESPACE } from '../graph-store';
+import type { dia } from '@joint/core';
 import { graphProjection, type IncrementalCellsChange } from '../graph-projection';
-import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
-import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import type { ElementRecord } from '../../types/cell.types';
-
-function createGraph(): dia.Graph {
-  return new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
-}
-
-function addElement(graph: dia.Graph, id: string, x = 10, y = 20, width = 100, height = 50): void {
-  graph.addCell({ id, type: ELEMENT_MODEL_TYPE, position: { x, y }, size: { width, height } });
-}
-
-function addLink(graph: dia.Graph, id: string, source: string, target: string): void {
-  graph.addCell({
-    id,
-    type: LINK_MODEL_TYPE,
-    source: { id: source },
-    target: { id: target },
-  });
-}
-
-/** Flush pending microtasks so commitChanges callbacks execute. */
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
+import {
+  addElement,
+  addLink,
+  createTestGraph,
+  flushMicrotasks as flush,
+} from './__helpers__/graph-fixtures';
 
 /** Clone incremental changes to capture snapshot (source maps are cleared after callback). */
 function cloneChanges(c: IncrementalCellsChange): IncrementalCellsChange {
@@ -34,15 +17,20 @@ function cloneChanges(c: IncrementalCellsChange): IncrementalCellsChange {
   };
 }
 
+/** Creates a projection that records every incremental change summary. */
+function setupChangeCapture() {
+  const graph = createTestGraph();
+  const allChanges: IncrementalCellsChange[] = [];
+  const view = graphProjection({
+    graph,
+    onIncrementalCellsChange: (change) => allChanges.push(cloneChanges(change)),
+  });
+  return { graph, allChanges, view };
+}
+
 describe('graphProjection onIncrementalCellsChange', () => {
   it('fires with added cell when an element is added to the graph', async () => {
-    const graph = createGraph();
-    const allChanges: IncrementalCellsChange[] = [];
-
-    const view = graphProjection({
-      graph,
-      onIncrementalCellsChange: (c) => allChanges.push(cloneChanges(c)),
-    });
+    const { graph, allChanges, view } = setupChangeCapture();
 
     addElement(graph, 'el-1');
     await flush();
@@ -55,13 +43,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('fires with removed id when a cell is removed', async () => {
-    const graph = createGraph();
-    const allChanges: IncrementalCellsChange[] = [];
-
-    const view = graphProjection({
-      graph,
-      onIncrementalCellsChange: (c) => allChanges.push(cloneChanges(c)),
-    });
+    const { graph, allChanges, view } = setupChangeCapture();
 
     addElement(graph, 'el-1');
     await flush();
@@ -78,13 +60,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('fires with changed element on position update', async () => {
-    const graph = createGraph();
-    const allChanges: IncrementalCellsChange[] = [];
-
-    const view = graphProjection({
-      graph,
-      onIncrementalCellsChange: (c) => allChanges.push(cloneChanges(c)),
-    });
+    const { graph, allChanges, view } = setupChangeCapture();
 
     addElement(graph, 'el-1');
     await flush();
@@ -104,7 +80,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('does not throw when no onIncrementalCellsChange is provided', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     addElement(graph, 'el-1');
@@ -115,7 +91,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('commits container state before firing onIncrementalCellsChange', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     let containerValueDuringCallback: unknown;
 
     const view = graphProjection({
@@ -135,7 +111,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('updates the cells container on position change', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     addElement(graph, 'el-1', 10, 20, 100, 50);
@@ -151,7 +127,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('updates the cells container on size change', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     addElement(graph, 'el-1', 10, 20, 100, 50);
@@ -167,7 +143,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('updates the cells container on attribute change (new reference)', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     addElement(graph, 'el-1', 10, 20, 100, 50);
@@ -183,12 +159,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('emits added entries for both elements and links in the unified summary', async () => {
-    const graph = createGraph();
-    const allChanges: IncrementalCellsChange[] = [];
-    const view = graphProjection({
-      graph,
-      onIncrementalCellsChange: (c) => allChanges.push(cloneChanges(c)),
-    });
+    const { graph, allChanges, view } = setupChangeCapture();
 
     addElement(graph, 'a');
     addElement(graph, 'b', 200, 0);
@@ -203,12 +174,7 @@ describe('graphProjection onIncrementalCellsChange', () => {
   });
 
   it('element removal also removes connected links in the same incremental summary', async () => {
-    const graph = createGraph();
-    const allChanges: IncrementalCellsChange[] = [];
-    const view = graphProjection({
-      graph,
-      onIncrementalCellsChange: (c) => allChanges.push(cloneChanges(c)),
-    });
+    const { graph, allChanges, view } = setupChangeCapture();
 
     addElement(graph, 'a');
     addElement(graph, 'b', 200, 0);

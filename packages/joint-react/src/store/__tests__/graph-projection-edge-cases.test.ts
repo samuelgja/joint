@@ -1,45 +1,23 @@
-import { dia } from '@joint/core';
-import { DEFAULT_CELL_NAMESPACE } from '../graph-store';
+import type { dia } from '@joint/core';
 import { graphProjection } from '../graph-projection';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
-import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import type { CellRecord, ElementRecord, LinkRecord } from '../../types/cell.types';
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
-
-function createGraph(): dia.Graph {
-  return new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
-}
+import {
+  addLinkedElementTriple,
+  createTestGraph,
+  flushMicrotasks as flush,
+} from './__helpers__/graph-fixtures';
 
 describe('graphProjection — incremental remove of element with connected links', () => {
   it('removes connected links from the container when element is removed', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const incrementalCallback = jest.fn();
     const view = graphProjection<ElementRecord, LinkRecord>({
       graph,
       onIncrementalCellsChange: incrementalCallback,
     });
 
-    graph.addCells([
-      {
-        id: 'a',
-        type: ELEMENT_MODEL_TYPE,
-        position: { x: 0, y: 0 },
-        size: { width: 10, height: 10 },
-      },
-      {
-        id: 'b',
-        type: ELEMENT_MODEL_TYPE,
-        position: { x: 50, y: 0 },
-        size: { width: 10, height: 10 },
-      },
-      {
-        id: 'l1',
-        type: LINK_MODEL_TYPE,
-        source: { id: 'a' },
-        target: { id: 'b' },
-      },
-    ]);
+    addLinkedElementTriple(graph);
     await flush();
     incrementalCallback.mockClear();
 
@@ -57,7 +35,7 @@ describe('graphProjection — incremental remove of element with connected links
     // element + its connected link both present in the same batch. The
     // graph-projection's remove branch then walks `getConnectedLinks` to mirror
     // JointJS's connected-link removal explicitly.
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection<ElementRecord, LinkRecord>({
       graph,
       onIncrementalCellsChange: () => {
@@ -65,26 +43,7 @@ describe('graphProjection — incremental remove of element with connected links
       },
     });
 
-    graph.addCells([
-      {
-        id: 'a',
-        type: ELEMENT_MODEL_TYPE,
-        position: { x: 0, y: 0 },
-        size: { width: 10, height: 10 },
-      },
-      {
-        id: 'b',
-        type: ELEMENT_MODEL_TYPE,
-        position: { x: 50, y: 0 },
-        size: { width: 10, height: 10 },
-      },
-      {
-        id: 'l1',
-        type: LINK_MODEL_TYPE,
-        source: { id: 'a' },
-        target: { id: 'b' },
-      },
-    ]);
+    addLinkedElementTriple(graph);
     await flush();
 
     // Build a synthetic change-set carrying just the element 'a' as a
@@ -104,7 +63,7 @@ describe('graphProjection — incremental remove of element with connected links
 
 describe('graphProjection — updateGraph branch coverage', () => {
   it('returns early when flag is not "updateFromReact"', () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
     const cells: readonly CellRecord[] = [
       {
@@ -124,7 +83,7 @@ describe('graphProjection — updateGraph branch coverage', () => {
   });
 
   it('handles a missing cell after syncCells (defensive continue)', () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     // Inject a stub `getCell` that returns undefined for 'phantom-id'.

@@ -19,6 +19,21 @@ import { ELEMENT_MODEL_TYPE } from '../../../mvc/element-model';
 
 const UPPERCASE_STYLE = { textTransform: 'uppercase' } as const;
 
+/** Paper wrapper whose graph holds a single element cell of the given size. */
+function singleCellWrapper(width: number, height: number) {
+  return paperRenderElementWrapper({
+    graphProviderProps: {
+      initialCells: [
+        {
+          id: '1',
+          type: ELEMENT_MODEL_TYPE,
+          size: { width, height },
+        },
+      ],
+    },
+  });
+}
+
 describe('SVGText', () => {
   it('renders with minimal props', () => {
     render(<SVGText>hello</SVGText>, { wrapper: paperRenderElementWrapper({}) });
@@ -35,7 +50,6 @@ describe('SVGText', () => {
 
   it('renders with height and textWrap options', () => {
     render(
-       
       <SVGText width={100} height={40} textWrap={{ ellipsis: true, maxLineCount: 2 }}>
         hello world hello world hello world
       </SVGText>,
@@ -67,19 +81,7 @@ describe('SVGText', () => {
       <SVGText width={120} textWrap style={{ fontWeight: 700, fontFamily: 'serif', fontSize: 12, letterSpacing: 1, lineHeight: 1.2 }}>
         styled fallback
       </SVGText>,
-      {
-        wrapper: paperRenderElementWrapper({
-          graphProviderProps: {
-            initialCells: [
-              {
-                id: '1',
-                type: ELEMENT_MODEL_TYPE,
-                size: { width: 120, height: 40 },
-              },
-            ],
-          },
-        }),
-      }
+      { wrapper: singleCellWrapper(120, 40) }
     );
     await waitFor(() => {
       expect(util.breakText).toHaveBeenCalledWith(
@@ -102,19 +104,7 @@ describe('SVGText', () => {
       <SVGText textWrap>
         wrap-from-cell-size
       </SVGText>,
-      {
-        wrapper: paperRenderElementWrapper({
-          graphProviderProps: {
-            initialCells: [
-              {
-                id: '1',
-                type: ELEMENT_MODEL_TYPE,
-                size: { width: 87, height: 33 },
-              },
-            ],
-          },
-        }),
-      }
+      { wrapper: singleCellWrapper(87, 33) }
     );
     await waitFor(() => {
       expect(util.breakText).toHaveBeenCalledWith(
@@ -131,19 +121,7 @@ describe('SVGText', () => {
       <SVGText width={'50%' as unknown as number} textWrap>
         non-num width
       </SVGText>,
-      {
-        wrapper: paperRenderElementWrapper({
-          graphProviderProps: {
-            initialCells: [
-              {
-                id: '1',
-                type: ELEMENT_MODEL_TYPE,
-                size: { width: 120, height: 40 },
-              },
-            ],
-          },
-        }),
-      }
+      { wrapper: singleCellWrapper(120, 40) }
     );
     await waitFor(() => {
       expect(util.breakText).toHaveBeenCalledWith(
@@ -160,19 +138,7 @@ describe('SVGText', () => {
       <SVGText width={-10} textWrap>
         neg width
       </SVGText>,
-      {
-        wrapper: paperRenderElementWrapper({
-          graphProviderProps: {
-            initialCells: [
-              {
-                id: '1',
-                type: ELEMENT_MODEL_TYPE,
-                size: { width: 120, height: 40 },
-              },
-            ],
-          },
-        }),
-      }
+      { wrapper: singleCellWrapper(120, 40) }
     );
     await waitFor(() => {
       expect(util.breakText).toHaveBeenCalledWith(
@@ -207,19 +173,7 @@ describe('SVGText', () => {
         {/* non-string child */}
         {123 as unknown as string}
       </SVGText>,
-      {
-        wrapper: paperRenderElementWrapper({
-          graphProviderProps: {
-            initialCells: [
-              {
-                id: '1',
-                type: ELEMENT_MODEL_TYPE,
-                size: { width: 50, height: 50 },
-              },
-            ],
-          },
-        }),
-      }
+      { wrapper: singleCellWrapper(50, 50) }
     );
     await waitFor(() => {
       const messages = [
@@ -246,19 +200,7 @@ describe('SVGText', () => {
       >
         styled text
       </SVGText>,
-      {
-        wrapper: paperRenderElementWrapper({
-          graphProviderProps: {
-            initialCells: [
-              {
-                id: '1',
-                type: ELEMENT_MODEL_TYPE,
-                size: { width: 120, height: 40 },
-              },
-            ],
-          },
-        }),
-      }
+      { wrapper: singleCellWrapper(120, 40) }
     );
 
     return waitFor(() => {

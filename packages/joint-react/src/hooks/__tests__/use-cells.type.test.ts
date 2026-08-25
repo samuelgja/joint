@@ -1,12 +1,10 @@
-
-
 /* eslint-disable react-hooks/rules-of-hooks */
 /**
- * Type-only tests for `useCells`. The `expectType` helper forces TypeScript to
- * check structural assignability at compile time — if the file compiles, the
- * contract holds. There is no runtime behavior being tested here; the dummy
- * `describe`/`it` exists only so Jest does not error on a test file with no
- * test cases.
+ * Type-only tests for `useCells`. The shared `expectType` helper forces
+ * TypeScript to check structural assignability at compile time — if the file
+ * compiles, the contract holds. There is no runtime behavior being tested
+ * here; the dummy `describe`/`it` exists only so Jest does not error on a
+ * test file with no test cases.
  *
  * Locked patterns (DX contract):
  * - `useCells()` → `ReadonlyArray<Computed<CellRecord>>`
@@ -25,31 +23,15 @@
  * `Computed<LinkRecord<…>>` when reading record-specific fields.
  */
 import { useCells } from '../use-cells';
-import type {
-  ElementJSONInit,
-  CellId,
-  Computed,
-  ElementRecord,
-  LinkRecord,
-  CellRecord,
-} from '../../types/cell.types';
-
-interface ElementUserData {
-  readonly label: string;
-}
-interface LinkUserData {
-  readonly kind: string;
-}
-type MyElement = Computed<ElementRecord<ElementUserData>>;
-type MyLink = Computed<LinkRecord<LinkUserData>>;
-// Bare (write-shape) record: position/size/data are optional here; the hook must
-// return its resolved `Computed` form (those fields required) — see the block below.
-type MyElementRecord = ElementRecord<ElementUserData>;
-
-/** Compile-time assertion that `actual` is assignable to `Expected`. */
-const expectType = <Expected>(_actual: Expected): void => {
-  /* type-only check */
-};
+import type { CellId, CellRecord, Computed } from '../../types/cell.types';
+import {
+  expectType,
+  type AppCell,
+  type AppCellWithEdge,
+  type MyElement,
+  type MyElementRecord,
+  type MyLink,
+} from './__helpers__/cell-type-fixtures';
 
 // All hook calls below are wrapped in `if (false)` so TypeScript still
 // type-checks them, but Jest never executes them — these are pure
@@ -90,6 +72,12 @@ if (false as boolean) {
   // id form
   expectType<MyElement | undefined>(useCells<MyElement>('some-id'));
 
+  // nullish id + selector — selector receives `Cell | undefined`, returns Selected
+  const maybeId: CellId | null | undefined = undefined;
+  expectType<string>(
+    useCells<MyElement, string>(maybeId, (cell) => cell?.data.label ?? 'none')
+  );
+
   // id list
   expectType<readonly MyElement[]>(useCells<MyElement>(['a', 'b']));
 
@@ -125,13 +113,6 @@ if (false as boolean) {
   );
 
   // User-defined custom cell with literal type — narrowing works
-  interface MyCustomNode extends ElementJSONInit {
-    readonly id: CellId;
-    readonly type: 'my-custom';
-    readonly data: { readonly foo: string };
-  }
-  type AppCell = Computed<CellRecord> | MyCustomNode;
-
   expectType<readonly string[]>(
     useCells((cells: readonly AppCell[]) =>
       cells.flatMap((cell) => (cell.type === 'my-custom' ? [cell.data.foo] : []))
@@ -139,13 +120,6 @@ if (false as boolean) {
   );
 
   // Custom link-flavoured record narrows from union
-  interface MyCustomEdge extends ElementJSONInit {
-    readonly id: CellId;
-    readonly type: 'my-edge';
-    readonly data: { readonly weight: number };
-  }
-  type AppCellWithEdge = Computed<CellRecord> | MyCustomNode | MyCustomEdge;
-
   expectType<readonly number[]>(
     useCells((cells: readonly AppCellWithEdge[]) =>
       cells.flatMap((cell) => (cell.type === 'my-edge' ? [cell.data.weight] : []))

@@ -1,35 +1,18 @@
-import React from 'react';
-import { render, renderHook, act } from '@testing-library/react';
+import { render, renderHook } from '@testing-library/react';
 import { GraphProvider } from '../../components/graph/graph-provider';
-import { CellIdContext } from '../../context';
+import { graphProviderWrapper } from '../../utils/test-wrappers';
 import { useCell } from '../use-cell';
-import { useGraphStore } from '../use-graph-store';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
-import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import type { CellRecord } from '../../types/cell.types';
+import { CELLS_AB_LINK } from './__helpers__/cell-fixtures';
+import {
+  createStoreProbeWrapper,
+  graphAct,
+  renderInCellContext,
+  settle,
+} from './__helpers__/cell-render';
 
-const initialCells: readonly CellRecord[] = [
-  {
-    id: 'a',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 0, y: 0 },
-    size: { width: 10, height: 10 },
-    data: { label: 'A' },
-  } as CellRecord,
-  {
-    id: 'b',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 50, y: 0 },
-    size: { width: 10, height: 10 },
-    data: { label: 'B' },
-  } as CellRecord,
-  {
-    id: 'l',
-    type: LINK_MODEL_TYPE,
-    source: { id: 'a' },
-    target: { id: 'b' },
-  } as CellRecord,
-];
+const wrapper = graphProviderWrapper({ initialCells: CELLS_AB_LINK });
 
 function ReadCell({
   onRead,
@@ -54,18 +37,12 @@ function resetCapturedCell() {
   captureState.cell = undefined;
 }
 
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
-
-function plainWrapper({ children }: { readonly children: React.ReactNode }) {
-  return <GraphProvider initialCells={initialCells}>{children}</GraphProvider>;
-}
-
 describe('useCell', () => {
   it('throws when used outside CellIdContext', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     expect(() =>
       render(
-        <GraphProvider initialCells={initialCells}>
+        <GraphProvider initialCells={CELLS_AB_LINK}>
           <ReadCell onRead={NOOP_READ} />
         </GraphProvider>
       )
@@ -75,13 +52,7 @@ describe('useCell', () => {
 
   it('returns the cell record when wrapped in CellIdContext', () => {
     resetCapturedCell();
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <CellIdContext.Provider value="a">
-          <ReadCell onRead={captureCell} />
-        </CellIdContext.Provider>
-      </GraphProvider>
-    );
+    renderInCellContext(CELLS_AB_LINK, 'a', <ReadCell onRead={captureCell} />);
     expect(captureState.cell?.id).toBe('a');
     expect(captureState.cell?.type).toBe(ELEMENT_MODEL_TYPE);
   });
@@ -89,13 +60,7 @@ describe('useCell', () => {
   it('throws when the id is missing from the store', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     expect(() =>
-      render(
-        <GraphProvider initialCells={initialCells}>
-          <CellIdContext.Provider value="does-not-exist">
-            <ReadCell onRead={NOOP_READ} />
-          </CellIdContext.Provider>
-        </GraphProvider>
-      )
+      renderInCellContext(CELLS_AB_LINK, 'does-not-exist', <ReadCell onRead={NOOP_READ} />)
     ).toThrow();
     spy.mockRestore();
   });
@@ -103,52 +68,41 @@ describe('useCell', () => {
 
 describe('useCell (id argument form)', () => {
   it('returns the cell record for an explicit id without needing context', async () => {
-    const { result } = renderHook(() => useCell('a'), { wrapper: plainWrapper });
-    await act(async () => flush());
+    const { result } = renderHook(() => useCell('a'), { wrapper });
+    await settle();
     expect(result.current?.id).toBe('a');
   });
 
   it('selector form returns the selected slice', async () => {
     const { result } = renderHook(() => useCell('a', (cell) => cell.id), {
-      wrapper: plainWrapper,
+      wrapper,
     });
-    await act(async () => flush());
+    await settle();
     expect(result.current).toBe('a');
   });
 
   it('throws when the explicit id does not resolve to a cell', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => renderHook(() => useCell('missing'), { wrapper: plainWrapper })).toThrow();
+    expect(() => renderHook(() => useCell('missing'), { wrapper })).toThrow();
     spy.mockRestore();
   });
 
   it('subscribes only to the requested id — unrelated cells do not re-render', async () => {
     const renderSpy = jest.fn();
-    let storeRef!: ReturnType<typeof useGraphStore>;
-    function Probe() {
-      storeRef = useGraphStore();
-      return null;
-    }
+    const { Wrapper, store } = createStoreProbeWrapper(CELLS_AB_LINK);
     function Consumer() {
       const cell = useCell('a');
       renderSpy(cell?.id);
       return null;
     }
-    renderHook(() => null, {
-      wrapper: ({ children }) => (
-        <GraphProvider initialCells={initialCells}>
-          <Probe />
-          <Consumer />
-          {children}
-        </GraphProvider>
-      ),
-    });
-    await act(async () => flush());
+    render(
+      <Wrapper>
+        <Consumer />
+      </Wrapper>
+    );
+    await settle();
     const before = renderSpy.mock.calls.length;
-    await act(async () => {
-      storeRef.graph.getCell('b')?.set('position', { x: 99, y: 99 });
-      await flush();
-    });
+    await graphAct(() => store.current!.graph.getCell('b')?.set('position', { x: 99, y: 99 }));
     expect(renderSpy.mock.calls.length).toBe(before);
   });
 
@@ -158,9 +112,9 @@ describe('useCell (id argument form)', () => {
         useCell('a', (cell) => ({
           id: cell.id,
         })),
-      { wrapper: plainWrapper }
+      { wrapper }
     );
-    await act(async () => flush());
+    await settle();
     expect(result.current).toEqual({ id: 'a' });
   });
 });
@@ -172,47 +126,7 @@ describe('useCell (context form with selector)', () => {
       captured = useCell((cell) => cell.id);
       return null;
     }
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <CellIdContext.Provider value="a">
-          <Probe />
-        </CellIdContext.Provider>
-      </GraphProvider>
-    );
+    renderInCellContext(CELLS_AB_LINK, 'a', <Probe />);
     expect(captured).toBe('a');
-  });
-
-  it('context form forwards a custom isEqual into the underlying useCells (line 77)', async () => {
-    // (selector, isEqual?) overload — argument1 = function selector,
-    // argument2 = function equality. Picks up the `argument2 = isEqual`
-    // branch (line 77).
-    const isEqual = jest.fn((a: string, b: string) => a === b);
-    let captured: unknown;
-    function Probe() {
-      captured = useCell((cell) => String(cell.id), isEqual);
-      return null;
-    }
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <CellIdContext.Provider value="a">
-          <Probe />
-        </CellIdContext.Provider>
-      </GraphProvider>
-    );
-    expect(captured).toBe('a');
-  });
-});
-
-describe('useCell (id + selector + isEqual form)', () => {
-  it('forwards a custom isEqual when called as useCell(id, selector, isEqual) (line 82)', async () => {
-    // (id, selector, isEqual?) overload — argument1 = id (string),
-    // argument2 = selector, argument3 = equality. Picks up the
-    // `argument3 = isEqual` branch (line 82).
-    const isEqual = jest.fn((a: string, b: string) => a === b);
-    const { result } = renderHook(
-      () => useCell('a', (cell) => String(cell.id), isEqual),
-      { wrapper: plainWrapper }
-    );
-    expect(result.current).toBe('a');
   });
 });

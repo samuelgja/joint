@@ -1,8 +1,5 @@
-/* eslint-disable react-perf/jsx-no-new-function-as-prop */
-/* eslint-disable react-perf/jsx-no-new-object-as-prop */
-
 import { render, waitFor } from '@testing-library/react';
-import { useContext, type ComponentType } from 'react';
+import { useContext, type ComponentType, type ReactNode } from 'react';
 import { GraphProvider } from '../../../graph/graph-provider';
 import { Paper } from '../../paper';
 import { SVGElementItem, HTMLElementItem, ElementHitArea } from '../paper-element-item';
@@ -11,6 +8,8 @@ import { ELEMENT_MODEL_TYPE } from '../../../../mvc/element-model';
 import type { CellRecord, CellId } from '../../../../types/cell.types';
 
 const RenderEmpty: ComponentType<Record<string, unknown>> = () => <span data-testid="render-empty" />;
+const renderRectangle = () => <rect />;
+const PAPER_STYLE = { width: 100, height: 100 } as const;
 
 const CELLS: readonly CellRecord[] = [
   {
@@ -22,135 +21,92 @@ const CELLS: readonly CellRecord[] = [
   } as CellRecord,
 ];
 
+interface CapturedStores {
+  graphStore: React.ContextType<typeof GraphStoreContext>;
+  paperStore: React.ContextType<typeof PaperStoreContext>;
+}
+
 /**
  * Captures the live graph + paper store from inside a Paper, so the harness
  * can re-mount SVG / HTML element items with `portalElement={null}` for the
  * defensive guard branches.
  */
-function StoreCapture({ onCapture }: { readonly onCapture: (graph: unknown, paper: unknown) => void }) {
+function StoreCapture({ target }: { readonly target: CapturedStores }) {
   const graphStore = useContext(GraphStoreContext);
   const paperStore = useContext(PaperStoreContext);
-  if (graphStore && paperStore) onCapture(graphStore, paperStore);
+  if (graphStore && paperStore) {
+    target.graphStore = graphStore;
+    target.paperStore = paperStore;
+  }
   return null;
+}
+
+/** Renders a GraphProvider + Paper and resolves once both stores are captured. */
+async function renderPaperAndCaptureStores(useHTMLOverlay = false) {
+  // eslint-disable-next-line react-perf/jsx-no-new-object-as-prop -- per-mount mutable capture target
+  const captured: CapturedStores = { graphStore: null, paperStore: null };
+  const { rerender, container } = render(
+    <GraphProvider initialCells={CELLS}>
+      <Paper style={PAPER_STYLE} useHTMLOverlay={useHTMLOverlay} renderElement={renderRectangle}>
+        <StoreCapture target={captured} />
+      </Paper>
+    </GraphProvider>
+  );
+  await waitFor(() => {
+    expect(captured.graphStore).not.toBeNull();
+    expect(captured.paperStore).not.toBeNull();
+  });
+  return { captured, rerender, container };
+}
+
+interface CellContextsProps {
+  captured: CapturedStores;
+  cellId: CellId;
+  children: ReactNode;
+}
+
+/** Standalone mount target: the captured stores plus a cell id, as contexts. */
+function CellContexts({ captured, cellId, children }: Readonly<CellContextsProps>) {
+  return (
+    <GraphStoreContext.Provider value={captured.graphStore}>
+      <PaperStoreContext.Provider value={captured.paperStore}>
+        <CellIdContext.Provider value={cellId}>{children}</CellIdContext.Provider>
+      </PaperStoreContext.Provider>
+    </GraphStoreContext.Provider>
+  );
 }
 
 describe('paper-element-item exports', () => {
   it('SVGElementItem returns null when portalElement is null', async () => {
-    let capturedGraph: unknown = null;
-    let capturedPaper: unknown = null;
-    const { rerender, container } = render(
-      <GraphProvider initialCells={CELLS}>
-        <Paper style={{ width: 100, height: 100 }} renderElement={() => <rect />}>
-          <StoreCapture
-            onCapture={(graph, paper) => {
-              capturedGraph = graph;
-              capturedPaper = paper;
-            }}
-          />
-        </Paper>
-      </GraphProvider>
-    );
-    await waitFor(() => {
-      expect(capturedGraph).not.toBeNull();
-      expect(capturedPaper).not.toBeNull();
-    });
-    // Now mount SVGElementItem standalone with portalElement={null}
+    const { captured, rerender, container } = await renderPaperAndCaptureStores();
     rerender(
-      <GraphStoreContext.Provider
-        value={capturedGraph as React.ContextType<typeof GraphStoreContext>}
-      >
-        <PaperStoreContext.Provider
-          value={capturedPaper as React.ContextType<typeof PaperStoreContext>}
-        >
-          <CellIdContext.Provider value={'one' as CellId}>
-            <SVGElementItem
-              renderElement={RenderEmpty}
-              portalElement={null}
-              areElementsMeasured
-            />
-          </CellIdContext.Provider>
-        </PaperStoreContext.Provider>
-      </GraphStoreContext.Provider>
+      <CellContexts captured={captured} cellId={'one' as CellId}>
+        <SVGElementItem renderElement={RenderEmpty} portalElement={null} areElementsMeasured />
+      </CellContexts>
     );
     expect(container.querySelector('[data-testid="render-empty"]')).toBeNull();
   });
 
   it('HTMLElementItem returns null when portalElement is null', async () => {
-    let capturedGraph: unknown = null;
-    let capturedPaper: unknown = null;
-    const { rerender, container } = render(
-      <GraphProvider initialCells={CELLS}>
-        <Paper style={{ width: 100, height: 100 }} useHTMLOverlay renderElement={() => <rect />}>
-          <StoreCapture
-            onCapture={(graph, paper) => {
-              capturedGraph = graph;
-              capturedPaper = paper;
-            }}
-          />
-        </Paper>
-      </GraphProvider>
-    );
-    await waitFor(() => {
-      expect(capturedGraph).not.toBeNull();
-    });
+    const { captured, rerender, container } = await renderPaperAndCaptureStores(true);
     rerender(
-      <GraphStoreContext.Provider
-        value={capturedGraph as React.ContextType<typeof GraphStoreContext>}
-      >
-        <PaperStoreContext.Provider
-          value={capturedPaper as React.ContextType<typeof PaperStoreContext>}
-        >
-          <CellIdContext.Provider value={'one' as CellId}>
-            <HTMLElementItem
-              renderElement={RenderEmpty}
-              portalElement={null}
-              areElementsMeasured
-            />
-          </CellIdContext.Provider>
-        </PaperStoreContext.Provider>
-      </GraphStoreContext.Provider>
+      <CellContexts captured={captured} cellId={'one' as CellId}>
+        <HTMLElementItem renderElement={RenderEmpty} portalElement={null} areElementsMeasured />
+      </CellContexts>
     );
     expect(container.querySelector('[data-testid="render-empty"]')).toBeNull();
   });
 
   it('HTMLElementItem renders a placeholder wrapper when the cell is missing from the store', async () => {
-    let capturedGraph: unknown = null;
-    let capturedPaper: unknown = null;
-    const { rerender, container } = render(
-      <GraphProvider initialCells={CELLS}>
-        <Paper style={{ width: 100, height: 100 }} useHTMLOverlay renderElement={() => <rect />}>
-          <StoreCapture
-            onCapture={(graph, paper) => {
-              capturedGraph = graph;
-              capturedPaper = paper;
-            }}
-          />
-        </Paper>
-      </GraphProvider>
-    );
-    await waitFor(() => {
-      expect(capturedGraph).not.toBeNull();
-    });
+    const { captured, rerender, container } = await renderPaperAndCaptureStores(true);
 
     const portalTarget = document.createElement('div');
     document.body.append(portalTarget);
 
     rerender(
-      <GraphStoreContext.Provider
-        value={capturedGraph as React.ContextType<typeof GraphStoreContext>}
-      >
-        <PaperStoreContext.Provider
-          value={capturedPaper as React.ContextType<typeof PaperStoreContext>}
-        >
-          <CellIdContext.Provider value={'missing-cell-id' as CellId}>
-            <HTMLElementItem
-              renderElement={RenderEmpty}
-              portalElement={portalTarget}
-              areElementsMeasured
-            />
-          </CellIdContext.Provider>
-        </PaperStoreContext.Provider>
-      </GraphStoreContext.Provider>
+      <CellContexts captured={captured} cellId={'missing-cell-id' as CellId}>
+        <HTMLElementItem renderElement={RenderEmpty} portalElement={portalTarget} areElementsMeasured />
+      </CellContexts>
     );
 
     // Placeholder wrapper should still be created with id and zero geometry.
@@ -164,37 +120,13 @@ describe('paper-element-item exports', () => {
   });
 
   it('ElementHitArea renders a transparent rectangle sized to the cell', async () => {
-    let capturedGraph: unknown = null;
-    let capturedPaper: unknown = null;
-    const { rerender, container } = render(
-      <GraphProvider initialCells={CELLS}>
-        <Paper style={{ width: 100, height: 100 }} renderElement={() => <rect />}>
-          <StoreCapture
-            onCapture={(graph, paper) => {
-              capturedGraph = graph;
-              capturedPaper = paper;
-            }}
-          />
-        </Paper>
-      </GraphProvider>
-    );
-    await waitFor(() => {
-      expect(capturedGraph).not.toBeNull();
-    });
+    const { captured, rerender, container } = await renderPaperAndCaptureStores();
 
     rerender(
       <svg>
-        <GraphStoreContext.Provider
-          value={capturedGraph as React.ContextType<typeof GraphStoreContext>}
-        >
-          <PaperStoreContext.Provider
-            value={capturedPaper as React.ContextType<typeof PaperStoreContext>}
-          >
-            <CellIdContext.Provider value={'one' as CellId}>
-              <ElementHitArea />
-            </CellIdContext.Provider>
-          </PaperStoreContext.Provider>
-        </GraphStoreContext.Provider>
+        <CellContexts captured={captured} cellId={'one' as CellId}>
+          <ElementHitArea />
+        </CellContexts>
       </svg>
     );
 

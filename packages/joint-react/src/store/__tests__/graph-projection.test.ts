@@ -5,35 +5,47 @@ import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import { isElementType, isLinkType } from '../../utils/cell-type';
 import type { CellRecord, ElementRecord, LinkRecord } from '../../types/cell.types';
-
-function createGraph(): dia.Graph {
-  return new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
-}
+import {
+  addElement,
+  addLink,
+  createTestGraph,
+  flushMicrotasks as flush,
+} from './__helpers__/graph-fixtures';
 
 function setup() {
-  const graph = createGraph();
+  const graph = createTestGraph();
   const view = graphProjection({ graph });
   return { graph, view };
 }
 
-function addElement(
+/** Adds `el-1` at (10, 20) carrying a `data.label` payload and flushes the commit. */
+async function addLabeledElement(
   graph: dia.Graph,
-  id: string,
-  x = 10,
-  y = 20,
-  width = 100,
-  height = 50
-): void {
-  graph.addCell({ id, type: ELEMENT_MODEL_TYPE, position: { x, y }, size: { width, height } });
+  label: string,
+  size?: { width: number; height: number }
+): Promise<void> {
+  graph.addCell({
+    id: 'el-1',
+    type: ELEMENT_MODEL_TYPE,
+    position: { x: 10, y: 20 },
+    size: size ?? { width: 200, height: 100 },
+    data: { label },
+  });
+  await flush();
 }
 
-function addLink(graph: dia.Graph, id: string, source: string, target: string): void {
-  graph.addCell({
-    id,
-    type: LINK_MODEL_TYPE,
-    source: { id: source },
-    target: { id: target },
-  });
+/** Seeds `parent-1`/`child-1`, embeds the child, and returns both models. */
+async function setupEmbeddedPair() {
+  const { graph, view } = setup();
+  addElement(graph, 'parent-1', 0, 0, 400, 300);
+  addElement(graph, 'child-1', 50, 50, 100, 50);
+  await flush();
+
+  const parent = graph.getCell('parent-1') as dia.Element;
+  const child = graph.getCell('child-1') as dia.Element;
+  parent.embed(child);
+  await flush();
+  return { graph, view, parent, child };
 }
 
 /** Returns the element record under `id`, narrowed via the graph's type registry. */
@@ -79,9 +91,6 @@ function countLinks(graph: dia.Graph, view: ReturnType<typeof graphProjection>):
   }
   return count;
 }
-
-/** Flush pending microtasks so commitChanges callbacks execute. */
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
 
 describe('graphProjection — single cells container', () => {
   it('exposes only the unified `cells` container', () => {
@@ -432,7 +441,7 @@ describe('graphProjection — link propagation', () => {
 
 describe('graphProjection — controlled-mode updateGraph round-trip', () => {
   it('all cells persist after position change and updateGraph round-trip', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     const initialCells: readonly CellRecord[] = [
@@ -531,14 +540,7 @@ describe('graphProjection — selective reference stability', () => {
 
   it('element has correct data and size after add', async () => {
     const { graph, view } = setup();
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 10, y: 20 },
-      size: { width: 200, height: 100 },
-      data: { label: 'Hello' },
-    });
-    await flush();
+    await addLabeledElement(graph, 'Hello');
 
     const element = getElement(graph, view,'el-1')!;
     expect(element.position).toEqual({ x: 10, y: 20 });
@@ -549,14 +551,7 @@ describe('graphProjection — selective reference stability', () => {
 
   it('element preserves correct values after internal attribute change', async () => {
     const { graph, view } = setup();
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 10, y: 20 },
-      size: { width: 200, height: 100 },
-      data: { label: 'Hello' },
-    });
-    await flush();
+    await addLabeledElement(graph, 'Hello');
 
     (graph.getCell('el-1') as dia.Element).set('attrs', { body: { fill: 'red' } });
     await flush();
@@ -572,14 +567,7 @@ describe('graphProjection — selective reference stability', () => {
 describe('graphProjection — LAYOUT_UPDATE_EVENT path', () => {
   it('element retains correct size after layout update with stale model.changed', async () => {
     const { graph, view } = setup();
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 10, y: 20 },
-      size: { width: 200, height: 100 },
-      data: { label: 'Hello' },
-    });
-    await flush();
+    await addLabeledElement(graph, 'Hello');
 
     const before = getElement(graph, view,'el-1')!;
     expect(before.size).toEqual({ width: 200, height: 100 });
@@ -601,14 +589,7 @@ describe('graphProjection — LAYOUT_UPDATE_EVENT path', () => {
 
   it('element retains size after batch resize (multiple set calls)', async () => {
     const { graph, view } = setup();
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 10, y: 20 },
-      size: { width: 100, height: 50 },
-      data: { label: 'Resize me' },
-    });
-    await flush();
+    await addLabeledElement(graph, 'Resize me', { width: 100, height: 50 });
 
     expect(getElement(graph, view,'el-1')!.size).toEqual({ width: 100, height: 50 });
 
@@ -628,14 +609,7 @@ describe('graphProjection — LAYOUT_UPDATE_EVENT path', () => {
 
   it('element retains position when size is set last in a batch', async () => {
     const { graph, view } = setup();
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 10, y: 20 },
-      size: { width: 100, height: 50 },
-      data: { label: 'Test' },
-    });
-    await flush();
+    await addLabeledElement(graph, 'Test', { width: 100, height: 50 });
 
     const cell = graph.getCell('el-1') as dia.Element;
     graph.startBatch('resize');
@@ -651,7 +625,7 @@ describe('graphProjection — LAYOUT_UPDATE_EVENT path', () => {
   });
 
   it('fresh layout update has correct values after updateGraph seeding', async () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const view = graphProjection({ graph });
 
     view.updateGraph({
@@ -686,15 +660,7 @@ describe('graphProjection — LAYOUT_UPDATE_EVENT path', () => {
 
 describe('graphProjection — embedding', () => {
   it('reflects parent after embed', async () => {
-    const { graph, view } = setup();
-    addElement(graph, 'parent-1', 0, 0, 400, 300);
-    addElement(graph, 'child-1', 50, 50, 100, 50);
-    await flush();
-
-    const parent = graph.getCell('parent-1') as dia.Element;
-    const child = graph.getCell('child-1') as dia.Element;
-    parent.embed(child);
-    await flush();
+    const { graph, view } = await setupEmbeddedPair();
 
     expect(getElement(graph, view,'child-1')).toEqual(
       expect.objectContaining({ parent: 'parent-1' })
@@ -703,15 +669,7 @@ describe('graphProjection — embedding', () => {
   });
 
   it('removes parent attribute after unembed', async () => {
-    const { graph, view } = setup();
-    addElement(graph, 'parent-1', 0, 0, 400, 300);
-    addElement(graph, 'child-1', 50, 50, 100, 50);
-    await flush();
-
-    const parent = graph.getCell('parent-1') as dia.Element;
-    const child = graph.getCell('child-1') as dia.Element;
-    parent.embed(child);
-    await flush();
+    const { graph, view, parent, child } = await setupEmbeddedPair();
 
     expect(getElement(graph, view,'child-1')?.parent).toBe('parent-1');
 
@@ -723,15 +681,7 @@ describe('graphProjection — embedding', () => {
   });
 
   it('reflects embeds array on parent after embed / unembed', async () => {
-    const { graph, view } = setup();
-    addElement(graph, 'parent-1', 0, 0, 400, 300);
-    addElement(graph, 'child-1', 50, 50, 100, 50);
-    await flush();
-
-    const parent = graph.getCell('parent-1') as dia.Element;
-    const child = graph.getCell('child-1') as dia.Element;
-    parent.embed(child);
-    await flush();
+    const { graph, view, parent, child } = await setupEmbeddedPair();
 
     expect(getElement(graph, view,'parent-1')?.embeds).toEqual(['child-1']);
 
@@ -762,7 +712,7 @@ describe('graphProjection — isUpdateFromReact filtering', () => {
 
 describe('graphProjection — syncFromGraph and partial updateGraph', () => {
   it('syncFromGraph seeds the cells container from current graph state', () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     addElement(graph, 'a');
     addElement(graph, 'b', 50, 0);
     const view = graphProjection({ graph });
@@ -774,7 +724,7 @@ describe('graphProjection — syncFromGraph and partial updateGraph', () => {
   });
 
   it('updateGraph without cells is a no-op and preserves existing state', () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     graph.addCells([
       {
         id: 'e1',

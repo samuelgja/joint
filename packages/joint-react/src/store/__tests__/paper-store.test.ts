@@ -6,14 +6,19 @@ import { PaperView } from '../../mvc/paper';
 const allVisible: dia.Paper.Options['cellVisibility'] = () => true;
 const noneVisible: dia.Paper.Options['cellVisibility'] = () => false;
 
-function makeOwnershipStore() {
+/** Builds a `PaperStore` named `test-paper` around a fresh graph + graph store. */
+function makePaperStore(paperOptions: dia.Paper.Options = {}): PaperStore {
   const graph = new dia.Graph();
   const graphStore = new GraphStore({ graph });
-  const paperStore = new PaperStore({
+  return new PaperStore({
     graphStore,
-    paperOptions: { cellVisibility: allVisible },
+    paperOptions,
     id: 'test-paper',
   });
+}
+
+function makeOwnershipStore() {
+  const paperStore = makePaperStore({ cellVisibility: allVisible });
   paperStore.nativeCellVisibility = allVisible;
   return { paperStore, userCallback: allVisible };
 }
@@ -21,14 +26,7 @@ function makeOwnershipStore() {
 describe('PaperStore', () => {
   describe('constructor', () => {
     it('should create a PaperStore with paper instance', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       expect(paperStore).toBeDefined();
       expect(paperStore.paper).toBeInstanceOf(dia.Paper);
@@ -36,17 +34,7 @@ describe('PaperStore', () => {
     });
 
     it('should set up paper with correct options', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {
-          width: 800,
-          height: 600,
-        },
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore({ width: 800, height: 600 });
 
       expect(paperStore.paper.options.width).toBe(800);
       expect(paperStore.paper.options.height).toBe(600);
@@ -81,14 +69,7 @@ describe('PaperStore', () => {
     });
 
     it('should enable visible magnet highlighting while dragging links by default', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       const { highlighting } = paperStore.paper.options;
       expect(highlighting).not.toBe(false);
@@ -102,21 +83,14 @@ describe('PaperStore', () => {
     });
 
     it('should allow overriding markAvailable and magnetAvailability highlighting', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {
-          markAvailable: false,
-          highlighting: {
-            magnetAvailability: {
-              name: 'addClass',
-              options: { className: 'custom-available-magnet' },
-            },
+      const paperStore = makePaperStore({
+        markAvailable: false,
+        highlighting: {
+          magnetAvailability: {
+            name: 'addClass',
+            options: { className: 'custom-available-magnet' },
           },
         },
-        id: 'test-paper',
       });
 
       const { highlighting } = paperStore.paper.options;
@@ -131,14 +105,7 @@ describe('PaperStore', () => {
 
   describe('destroy', () => {
     it('should call paper.remove() when destroy is called', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       const removeSpy = jest.spyOn(paperStore.paper, 'remove');
 
@@ -148,14 +115,7 @@ describe('PaperStore', () => {
     });
 
     it('should be safe to call destroy multiple times', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       // First destroy should work
       expect(() => paperStore.destroy()).not.toThrow();
@@ -165,14 +125,7 @@ describe('PaperStore', () => {
     });
 
     it('should unregister paper update callback on destroy', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       // Verify paper exists before destroy
       expect(paperStore.paper).toBeDefined();
@@ -184,16 +137,10 @@ describe('PaperStore', () => {
     });
 
     it('should clean up paper DOM element', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
       const paperElement = document.createElement('div');
       document.body.append(paperElement);
 
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
       paperStore.paper.render(paperElement);
 
       // Verify paper element has children (the paper's SVG)
@@ -212,14 +159,7 @@ describe('PaperStore', () => {
 
   describe('measureNode', () => {
     it('should return model geometry for root element node', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       const { measureNode } = paperStore.paper.options;
       expect(typeof measureNode).toBe('function');
@@ -238,14 +178,7 @@ describe('PaperStore', () => {
     });
 
     it('should return SVG bounding box for port magnet nodes, not model geometry', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {},
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore();
 
       const { measureNode } = paperStore.paper.options;
       expect(typeof measureNode).toBe('function');
@@ -282,17 +215,8 @@ describe('PaperStore', () => {
     });
 
     it('should allow user to override measureNode', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
       const customMeasureNode = jest.fn();
-
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: {
-          measureNode: customMeasureNode,
-        },
-        id: 'test-paper',
-      });
+      const paperStore = makePaperStore({ measureNode: customMeasureNode });
 
       // User-provided measureNode should override the default
       expect(paperStore.paper.options.measureNode).toBe(customMeasureNode);
@@ -370,13 +294,7 @@ describe('PaperStore', () => {
     });
 
     it('seeds nativeCellVisibility from paperOptions in the constructor', () => {
-      const graph = new dia.Graph();
-      const graphStore = new GraphStore({ graph });
-      const paperStore = new PaperStore({
-        graphStore,
-        paperOptions: { cellVisibility: allVisible },
-        id: 'seeded-paper',
-      });
+      const paperStore = makePaperStore({ cellVisibility: allVisible });
       // No manual assignment — claim then release must restore the seeded value.
       expect(paperStore.nativeCellVisibility).toBe(allVisible);
       paperStore.claimCellVisibility('owner');

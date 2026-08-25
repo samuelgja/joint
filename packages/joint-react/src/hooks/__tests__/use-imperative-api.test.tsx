@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
-import { useImperativeApi } from '../use-imperative-api';
+import { useImperativeApi, type ImperativeApiOptions } from '../use-imperative-api';
 
 interface FakeInstance {
   readonly id: number;
@@ -39,6 +39,37 @@ function useTestApi() {
   return { handle, ref };
 }
 
+/** Renders the hook with an `isDisabled` prop that tests can toggle via `rerender`. */
+function renderDisabledToggleHook(onReadyChange: jest.Mock, isDisabledAtMount: boolean) {
+  return renderHook(
+    ({ isDisabled }: { isDisabled: boolean }) =>
+      useImperativeApi(
+        {
+          onLoad: makeInstance,
+          onReadyChange,
+          isDisabled,
+        },
+        []
+      ),
+    { initialProps: { isDisabled: isDisabledAtMount } }
+  );
+}
+
+/** Renders the hook with a numeric `dep` (initially 1) that tests can bump via `rerender`. */
+function renderDependencyHook(onUpdate?: ImperativeApiOptions<FakeInstance>['onUpdate']) {
+  return renderHook(
+    ({ dep }: { dep: number }) =>
+      useImperativeApi(
+        {
+          onLoad: makeInstance,
+          onUpdate,
+        },
+        [dep]
+      ),
+    { initialProps: { dep: 1 } }
+  );
+}
+
 describe('useImperativeApi', () => {
   it('creates an instance, marks ready, and tears it down on unmount', async () => {
     const onReadyChange = jest.fn();
@@ -61,18 +92,7 @@ describe('useImperativeApi', () => {
 
   it('isDisabled=true after mount tears down and notifies not-ready (lines 129–130)', async () => {
     const onReadyChange = jest.fn();
-    const { result, rerender } = renderHook(
-      ({ isDisabled }: { isDisabled: boolean }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-            onReadyChange,
-            isDisabled,
-          },
-          []
-        ),
-      { initialProps: { isDisabled: false } }
-    );
+    const { result, rerender } = renderDisabledToggleHook(onReadyChange, false);
     await waitFor(() => expect(result.current.isReady).toBe(true));
     onReadyChange.mockClear();
     rerender({ isDisabled: true });
@@ -82,18 +102,7 @@ describe('useImperativeApi', () => {
 
   it('starts disabled and creates the instance once enabled', async () => {
     const onReadyChange = jest.fn();
-    const { result, rerender } = renderHook(
-      ({ isDisabled }: { isDisabled: boolean }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-            onReadyChange,
-            isDisabled,
-          },
-          []
-        ),
-      { initialProps: { isDisabled: true } }
-    );
+    const { result, rerender } = renderDisabledToggleHook(onReadyChange, true);
     expect(result.current.isReady).toBe(false);
     rerender({ isDisabled: false });
     await waitFor(() => expect(result.current.isReady).toBe(true));
@@ -101,17 +110,7 @@ describe('useImperativeApi', () => {
 
   it('fires onUpdate when dependencies change after the first mount (lines 157–168)', async () => {
     const onUpdate = jest.fn();
-    const { rerender } = renderHook(
-      ({ dep }: { dep: number }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-            onUpdate,
-          },
-          [dep]
-        ),
-      { initialProps: { dep: 1 } }
-    );
+    const { rerender } = renderDependencyHook(onUpdate);
     expect(onUpdate).not.toHaveBeenCalled();
     rerender({ dep: 2 });
     expect(onUpdate).toHaveBeenCalledTimes(1);
@@ -122,17 +121,7 @@ describe('useImperativeApi', () => {
   it('honors the optional cleanup function returned from onUpdate (lines 170–172)', async () => {
     const cleanup = jest.fn();
     const onUpdate = jest.fn(() => cleanup);
-    const { rerender, unmount } = renderHook(
-      ({ dep }: { dep: number }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-            onUpdate,
-          },
-          [dep]
-        ),
-      { initialProps: { dep: 1 } }
-    );
+    const { rerender, unmount } = renderDependencyHook(onUpdate);
     rerender({ dep: 2 });
     rerender({ dep: 3 });
     // Each new dep change runs cleanup of the previous onUpdate before the new one.
@@ -147,17 +136,7 @@ describe('useImperativeApi', () => {
         reset();
       }
     );
-    const { result, rerender } = renderHook(
-      ({ dep }: { dep: number }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-            onUpdate,
-          },
-          [dep]
-        ),
-      { initialProps: { dep: 1 } }
-    );
+    const { result, rerender } = renderDependencyHook(onUpdate);
     await waitFor(() => expect(result.current.isReady).toBe(true));
     const firstId = result.current.ref.current?.id;
     rerender({ dep: 2 });
@@ -239,32 +218,13 @@ describe('useImperativeApi', () => {
 
   it('does not fire onUpdate when dependency identity is unchanged across renders', async () => {
     const onUpdate = jest.fn();
-    const { rerender } = renderHook(
-      ({ dep }: { dep: number }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-            onUpdate,
-          },
-          [dep]
-        ),
-      { initialProps: { dep: 1 } }
-    );
+    const { rerender } = renderDependencyHook(onUpdate);
     rerender({ dep: 1 });
     expect(onUpdate).not.toHaveBeenCalled();
   });
 
   it('skips onUpdate without an onUpdate option (early return line 152–154)', async () => {
-    const { rerender } = renderHook(
-      ({ dep }: { dep: number }) =>
-        useImperativeApi(
-          {
-            onLoad: makeInstance,
-          },
-          [dep]
-        ),
-      { initialProps: { dep: 1 } }
-    );
+    const { rerender } = renderDependencyHook();
     expect(() => rerender({ dep: 2 })).not.toThrow();
   });
 

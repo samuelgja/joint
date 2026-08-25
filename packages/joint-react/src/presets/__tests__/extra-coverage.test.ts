@@ -7,6 +7,21 @@ import { elementPort } from '../element-ports';
 import { boundaryPoint, anchorPoint } from '../connection-points';
 import { LinkView } from '../link-view';
 import { Paper } from '../paper';
+import { setupPaperFixture } from './__helpers__/paper-fixture';
+
+function createPresetPaper() {
+  const container = document.createElement('div');
+  document.body.append(container);
+  const graph = new dia.Graph({}, { cellNamespace: shapes });
+  const paper = new Paper({ el: container, model: graph, cellViewNamespace: shapes, width: 100, height: 100 });
+  return {
+    paper,
+    cleanup: () => {
+      paper.remove();
+      container.remove();
+    },
+  };
+}
 
 describe('presets / element-ports / elementPort — group-positioned', () => {
   it('omits position when neither cx nor cy is supplied', () => {
@@ -53,239 +68,73 @@ describe('presets / link-style — no-arg variants', () => {
 
 describe('presets / connectors / rightAngleRouter', () => {
   it('returns a router that delegates to routerFns.rightAngle', () => {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const graph = new dia.Graph({}, { cellNamespace: shapes });
-    const paper = new dia.Paper({
-      el: container,
-      model: graph,
-      cellViewNamespace: shapes,
-      width: 800,
-      height: 600,
-      async: false,
-      frozen: false,
-    });
+    const context = setupPaperFixture();
     try {
-      const source = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const target = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: source.id },
-        target: { id: target.id },
-      });
-      graph.addCells([source, target, link]);
-      const linkView = paper.findViewByModel(link) as dia.LinkView;
-
       const router = rightAngleRouter(15, 5);
-      const result = router([], { args: 1 } as any, linkView);
+      const result = router([], { args: 1 } as any, context.linkView);
       expect(Array.isArray(result)).toBe(true);
     } finally {
-      paper.remove();
-      container.remove();
+      context.cleanup();
     }
   });
 });
 
 describe('presets / connectors / outwardsCurveConnector', () => {
   it('returns a path or string for given source/target with a real linkView', () => {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const graph = new dia.Graph({}, { cellNamespace: shapes });
-    const paper = new dia.Paper({
-      el: container,
-      model: graph,
-      cellViewNamespace: shapes,
-      width: 800,
-      height: 600,
-      async: false,
-      frozen: false,
-    });
+    const context = setupPaperFixture();
     try {
-      const source = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const target = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: source.id },
-        target: { id: target.id },
-      });
-      graph.addCells([source, target, link]);
-      const linkView = paper.findViewByModel(link) as dia.LinkView;
-
       const sourcePoint = new g.Point(0, 50);
       const targetPoint = new g.Point(200, 50);
-      const result = outwardsCurveConnector(
-        sourcePoint as any,
-        targetPoint as any,
-        [],
-        {} as any,
-        linkView
-      );
+      const result = outwardsCurveConnector(sourcePoint as any, targetPoint as any, [], {} as any, context.linkView);
       expect(result).toBeDefined();
     } finally {
-      paper.remove();
-      container.remove();
+      context.cleanup();
     }
   });
 });
 
-interface PaperContext {
-  paper: dia.Paper;
-  graph: dia.Graph;
-  link: dia.Link;
-  linkView: dia.LinkView;
-  source: dia.Element;
-  target: dia.Element;
-  cleanup: () => void;
-}
-
-function setupPaperWithLink(): PaperContext {
-  const container = document.createElement('div');
-  document.body.append(container);
-
-  const graph = new dia.Graph({}, { cellNamespace: shapes });
-  const paper = new dia.Paper({
-    el: container,
-    model: graph,
-    cellViewNamespace: shapes,
-    width: 800,
-    height: 600,
-    async: false,
-    frozen: false,
-  });
-
-  const source = new shapes.standard.Rectangle({
-    position: { x: 0, y: 0 },
-    size: { width: 100, height: 100 },
-  });
-  const target = new shapes.standard.Rectangle({
-    position: { x: 200, y: 0 },
-    size: { width: 100, height: 100 },
-  });
-  const link = new shapes.standard.Link({
-    source: { id: source.id },
-    target: { id: target.id },
-  });
-  graph.addCells([source, target, link]);
-
-  const linkView = paper.findViewByModel(link) as dia.LinkView;
-
-  return {
-    paper,
-    graph,
-    link,
-    linkView,
-    source,
-    target,
-    cleanup: () => {
-      paper.remove();
-      container.remove();
-    },
-  };
-}
-
 describe('presets / connection-points — real Paper integration', () => {
   it('boundaryPoint calls rectangle on root magnet', () => {
-    const ctx = setupPaperWithLink();
+    const context = setupPaperFixture();
     try {
-      const targetView = ctx.paper.findViewByModel(ctx.target) as dia.ElementView;
       const line = new g.Line(new g.Point(0, 50), new g.Point(250, 50));
-      const point = boundaryPoint(
-        line as any,
-        targetView,
-        targetView.el,
-        {} as any,
-        'target',
-        ctx.linkView
-      );
+      const point = boundaryPoint(line as any, context.targetView, context.targetView.el, {} as any, 'target', context.linkView);
       expect(point).toBeDefined();
     } finally {
-      ctx.cleanup();
+      context.cleanup();
     }
   });
 
   it('boundaryPoint calls boundary for non-port custom magnet', () => {
-    const ctx = setupPaperWithLink();
+    const context = setupPaperFixture();
     try {
-      const targetView = ctx.paper.findViewByModel(ctx.target) as dia.ElementView;
-      const customMagnet = targetView.el.querySelector('rect') as unknown as SVGElement;
+      const customMagnet = context.targetView.el.querySelector('rect') as unknown as SVGElement;
       const line = new g.Line(new g.Point(0, 50), new g.Point(250, 50));
-      const point = boundaryPoint(
-        line as any,
-        targetView,
-        customMagnet,
-        {} as any,
-        'target',
-        ctx.linkView
-      );
+      const point = boundaryPoint(line as any, context.targetView, customMagnet, {} as any, 'target', context.linkView);
       expect(point).toBeDefined();
     } finally {
-      ctx.cleanup();
+      context.cleanup();
     }
   });
 
   it('anchorPoint uses rectangle on custom magnet (DOM geometry)', () => {
-    const ctx = setupPaperWithLink();
+    const context = setupPaperFixture();
     try {
-      const targetView = ctx.paper.findViewByModel(ctx.target) as dia.ElementView;
-      const customMagnet = targetView.el.querySelector('rect') as unknown as SVGElement;
+      const customMagnet = context.targetView.el.querySelector('rect') as unknown as SVGElement;
       const line = new g.Line(new g.Point(0, 50), new g.Point(250, 50));
-      const point = anchorPoint(
-        line as any,
-        targetView,
-        customMagnet,
-        {} as any,
-        'target',
-        ctx.linkView
-      );
+      const point = anchorPoint(line as any, context.targetView, customMagnet, {} as any, 'target', context.linkView);
       expect(point).toBeDefined();
     } finally {
-      ctx.cleanup();
+      context.cleanup();
     }
   });
 });
 
 describe('presets / link-view / LinkView', () => {
   it('toggles connecting class around arrowhead move', () => {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const graph = new dia.Graph({}, { cellNamespace: shapes });
-    const paper = new dia.Paper({
-      el: container,
-      model: graph,
-      cellViewNamespace: shapes,
-      width: 800,
-      height: 600,
-      async: false,
-      frozen: false,
-      linkView: LinkView,
-    });
-
+    const context = setupPaperFixture({ paperOptions: { linkView: LinkView } });
     try {
-      const source = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const target = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: source.id },
-        target: { id: target.id },
-      });
-      graph.addCells([source, target, link]);
-
-      const linkView = paper.findViewByModel(link) as InstanceType<typeof LinkView>;
+      const linkView = context.linkView as InstanceType<typeof LinkView>;
       expect(linkView).toBeInstanceOf(LinkView);
 
       // Call protected methods directly to exercise the override paths.
@@ -306,42 +155,14 @@ describe('presets / link-view / LinkView', () => {
       expect(linkView.el.classList.contains('jj-is-connecting')).toBe(false);
       expect(linkView.el.classList.contains('jj-is-snapped')).toBe(false);
     } finally {
-      paper.remove();
-      container.remove();
+      context.cleanup();
     }
   });
 
   it('sets snapped class when _snapArrowhead returns truthy', () => {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const graph = new dia.Graph({}, { cellNamespace: shapes });
-    const paper = new dia.Paper({
-      el: container,
-      model: graph,
-      cellViewNamespace: shapes,
-      width: 800,
-      height: 600,
-      async: false,
-      frozen: false,
-      linkView: LinkView,
-    });
-
+    const context = setupPaperFixture({ paperOptions: { linkView: LinkView } });
     try {
-      const source = new shapes.standard.Rectangle({
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const target = new shapes.standard.Rectangle({
-        position: { x: 200, y: 0 },
-        size: { width: 100, height: 100 },
-      });
-      const link = new shapes.standard.Link({
-        source: { id: source.id },
-        target: { id: target.id },
-      });
-      graph.addCells([source, target, link]);
-
-      const linkView = paper.findViewByModel(link) as InstanceType<typeof LinkView>;
+      const linkView = context.linkView as InstanceType<typeof LinkView>;
 
       // Stub the parent's _snapArrowhead to control return value via prototype override.
       const parentProto = Object.getPrototypeOf(Object.getPrototypeOf(linkView));
@@ -360,31 +181,19 @@ describe('presets / link-view / LinkView', () => {
         parentProto._snapArrowhead = original;
       }
     } finally {
-      paper.remove();
-      container.remove();
+      context.cleanup();
     }
   });
 });
 
 describe('presets / paper module / Paper', () => {
   it('can be instantiated and applies preset options', () => {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const graph = new dia.Graph({}, { cellNamespace: shapes });
-    const paper = new Paper({
-      el: container,
-      model: graph,
-      cellViewNamespace: shapes,
-      width: 100,
-      height: 100,
-    });
-
+    const { paper, cleanup } = createPresetPaper();
     try {
       expect(paper).toBeInstanceOf(dia.Paper);
       expect(paper.el.classList.contains('jj-paper')).toBe(true);
     } finally {
-      paper.remove();
-      container.remove();
+      cleanup();
     }
   });
 });
@@ -393,25 +202,14 @@ describe('presets / paper module / Paper', () => {
 // skips `addThemeClassName` and no `joint-theme-*` class lands on `paper.el`.
 describe('presets / theme suppression', () => {
   it('does not add joint-theme-* class to paper.el', () => {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const graph = new dia.Graph({}, { cellNamespace: shapes });
-    const paper = new Paper({
-      el: container,
-      model: graph,
-      cellViewNamespace: shapes,
-      width: 100,
-      height: 100,
-    });
-
+    const { paper, cleanup } = createPresetPaper();
     try {
       const classNames = [...paper.el.classList];
       for (const className of classNames) {
         expect(className.startsWith('joint-theme-')).toBe(false);
       }
     } finally {
-      paper.remove();
-      container.remove();
+      cleanup();
     }
   });
 });

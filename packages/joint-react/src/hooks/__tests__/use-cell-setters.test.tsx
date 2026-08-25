@@ -11,35 +11,13 @@ import {
 } from '../use-cell-setters';
 import { useGraphStore } from '../use-graph-store';
 import { ELEMENT_MODEL_TYPE, ElementModel } from '../../mvc/element-model';
-import { LINK_MODEL_TYPE, LinkModel } from '../../mvc/link-model';
+import { LinkModel } from '../../mvc/link-model';
 import type {
   AnyCellRecord,
   CellRecord,
   ElementRecord,
 } from '../../types/cell.types';
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
-
-const baseCells: readonly CellRecord[] = [
-  {
-    id: 'a',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 0, y: 0 },
-    size: { width: 10, height: 10 },
-  } as CellRecord,
-  {
-    id: 'b',
-    type: ELEMENT_MODEL_TYPE,
-    position: { x: 50, y: 0 },
-    size: { width: 10, height: 10 },
-  } as CellRecord,
-  {
-    id: 'l1',
-    type: LINK_MODEL_TYPE,
-    source: { id: 'a' },
-    target: { id: 'b' },
-  } as CellRecord,
-];
+import { CELLS_AB_LINK as baseCells, flushMicrotasks as flush } from './__helpers__/cell-fixtures';
 
 const wrapper = graphProviderWrapper({ initialCells: baseCells });
 

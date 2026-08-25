@@ -6,11 +6,7 @@ import {
   shouldClearLink,
   type ClearViewCacheEntry,
 } from '../clear-view';
-import { DEFAULT_CELL_NAMESPACE } from '../graph-store';
-
-function createGraph(): dia.Graph {
-  return new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
-}
+import { createTestGraph, seedElementPairWithLink } from './__helpers__/graph-fixtures';
 
 interface MockLinkView {
   _sourceMagnet: SVGElement | null;
@@ -118,7 +114,7 @@ describe('clearConnectedLinkViews', () => {
   let graph: dia.Graph;
 
   beforeEach(() => {
-    graph = createGraph();
+    graph = createTestGraph();
   });
 
   it('returns an empty change map when the cell is missing', () => {
@@ -128,24 +124,7 @@ describe('clearConnectedLinkViews', () => {
   });
 
   it('skips links when the validator excludes them', () => {
-    graph.addCell({
-      id: 'a',
-      type: 'element',
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    graph.addCell({
-      id: 'b',
-      type: 'element',
-      position: { x: 50, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    graph.addCell({
-      id: 'l1',
-      type: 'standard.Link',
-      source: { id: 'a' },
-      target: { id: 'b' },
-    });
+    seedElementPairWithLink(graph);
 
     const paper = {
       findViewByModel: jest.fn(),
@@ -158,25 +137,7 @@ describe('clearConnectedLinkViews', () => {
   });
 
   it('skips links with no view in the paper', () => {
-    graph.addCell({
-      id: 'a',
-      type: 'element',
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    graph.addCell({
-      id: 'b',
-      type: 'element',
-      position: { x: 50, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    const link = new dia.Link({
-      id: 'l1',
-      type: 'standard.Link',
-      source: { id: 'a' },
-      target: { id: 'b' },
-    });
-    graph.addCell(link);
+    const link = seedElementPairWithLink(graph);
 
     // Override `findView` to simulate the no-view-registered case.
     link.findView = jest.fn(() => undefined as unknown as dia.LinkView) as unknown as typeof link.findView;
@@ -190,25 +151,7 @@ describe('clearConnectedLinkViews', () => {
   });
 
   it('records pending change and clears magnets when a view exists', () => {
-    graph.addCell({
-      id: 'a',
-      type: 'element',
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    graph.addCell({
-      id: 'b',
-      type: 'element',
-      position: { x: 50, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    const link = new dia.Link({
-      id: 'l1',
-      type: 'standard.Link',
-      source: { id: 'a' },
-      target: { id: 'b' },
-    });
-    graph.addCell(link);
+    const link = seedElementPairWithLink(graph);
 
     // Stub findView on the link to return a mock view
     const mockLinkView = createMockLinkView();
@@ -231,7 +174,7 @@ describe('executeClearViewForCell', () => {
   let graph: dia.Graph;
 
   beforeEach(() => {
-    graph = createGraph();
+    graph = createTestGraph();
   });
 
   it('iterates papers and skips ones without a paper instance', () => {
@@ -261,25 +204,7 @@ describe('executeClearViewForCell', () => {
   });
 
   it('cleans the cell view nodes cache and clears connected link views', () => {
-    graph.addCell({
-      id: 'a',
-      type: 'element',
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    graph.addCell({
-      id: 'b',
-      type: 'element',
-      position: { x: 50, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    const link = new dia.Link({
-      id: 'l1',
-      type: 'standard.Link',
-      source: { id: 'a' },
-      target: { id: 'b' },
-    });
-    graph.addCell(link);
+    const link = seedElementPairWithLink(graph);
 
     const cleanNodesCache = jest.fn();
     const elementView = { cleanNodesCache } as unknown as dia.ElementView;

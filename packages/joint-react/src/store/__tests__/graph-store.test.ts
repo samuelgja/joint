@@ -1,13 +1,14 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 import { dia, shapes } from '@joint/core';
-import { GraphStore, DEFAULT_CELL_NAMESPACE } from '../graph-store';
+import { GraphStore } from '../graph-store';
 import { ELEMENT_MODEL_TYPE, ElementModel } from '../../mvc/element-model';
-import { LINK_MODEL_TYPE, LinkModel } from '../../mvc/link-model';
+import { LinkModel } from '../../mvc/link-model';
 import type { CellRecord } from '../../types/cell.types';
-
-const createGraph = () => new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
+import {
+  addLinkedElementTriple,
+  createTestGraph,
+  flushMicrotasks as flush,
+} from './__helpers__/graph-fixtures';
 
 describe('GraphStore', () => {
   describe('constructor', () => {
@@ -20,7 +21,7 @@ describe('GraphStore', () => {
     });
 
     it('honors an externally-provided graph', () => {
-      const graph = createGraph();
+      const graph = createTestGraph();
       const store = new GraphStore({ graph });
       expect(store.graph).toBe(graph);
       store.destroy(true);
@@ -49,7 +50,7 @@ describe('GraphStore', () => {
     });
 
     it('seeds from an externally-populated graph via syncFromGraph', () => {
-      const graph = createGraph();
+      const graph = createTestGraph();
       graph.addCell({
         id: 'a',
         type: ELEMENT_MODEL_TYPE,
@@ -214,26 +215,7 @@ describe('GraphStore', () => {
       const snaps: Array<ReturnType<typeof snapshot>> = [];
       const store = new GraphStore({});
       store.setOnIncrementalCellsChange((c) => snaps.push(snapshot(c as Parameters<typeof snapshot>[0])));
-      store.graph.addCells([
-        {
-          id: 'a',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 0, y: 0 },
-          size: { width: 10, height: 10 },
-        },
-        {
-          id: 'b',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 50, y: 0 },
-          size: { width: 10, height: 10 },
-        },
-        {
-          id: 'l1',
-          type: LINK_MODEL_TYPE,
-          source: { id: 'a' },
-          target: { id: 'b' },
-        },
-      ]);
+      addLinkedElementTriple(store.graph);
       await flush();
       const last = snaps.at(-1)!;
       expect(last.added.has('l1')).toBe(true);

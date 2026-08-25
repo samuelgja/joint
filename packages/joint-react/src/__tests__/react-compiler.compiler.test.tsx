@@ -17,17 +17,15 @@
  * 2. The library's public behaviour is unchanged once compiled — the same
  *    add / remove / select contracts hold as in the uncompiled suites.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { render, screen, fireEvent, act, renderHook } from '@testing-library/react';
-import { GraphProvider } from '../components/graph/graph-provider';
 import { useCells } from '../hooks/use-cells';
-import { useGraphStore } from '../hooks/use-graph-store';
 import type { InferElement } from '../utils/create';
 import { ELEMENT_MODEL_TYPE } from '../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../mvc/link-model';
-import type { CellRecord, ElementRecord, LinkRecord } from '../types/cell.types';
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
+import type { ElementRecord, LinkRecord } from '../types/cell.types';
+import { CELLS_AB, makeElement, pickCellIds } from '../hooks/__tests__/__helpers__/cell-fixtures';
+import { createStoreProbeWrapper, graphAct, settle } from '../hooks/__tests__/__helpers__/cell-render';
 
 // ── Part 1: the compiler is active ──────────────────────────────────────────
 
@@ -85,52 +83,24 @@ describe('React Compiler — auto-memoization is active', () => {
 
 // ── Part 2: the library behaves identically when compiled ───────────────────
 
-const makeElement = (id: string, x = 0): CellRecord =>
-  ({ id, type: ELEMENT_MODEL_TYPE, position: { x, y: 0 }, size: { width: 10, height: 10 } }) as CellRecord;
-
-const initialCells: readonly CellRecord[] = [makeElement('a', 0), makeElement('b', 50)];
-
-let storeRef: ReturnType<typeof useGraphStore> | undefined;
-function StoreProbe() {
-  storeRef = useGraphStore();
-  return null;
-}
-function Wrapper({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <GraphProvider initialCells={initialCells}>
-      <StoreProbe />
-      {children}
-    </GraphProvider>
-  );
-}
-const cellIds = (cells: readonly CellRecord[]) => cells.map((cell) => String(cell.id));
+const { Wrapper, store } = createStoreProbeWrapper(CELLS_AB);
 
 describe('React Compiler — @joint/react behaviour is unchanged', () => {
-  beforeEach(() => {
-    storeRef = undefined;
-  });
-
   it('useCells reflects the initial cells', async () => {
-    const { result } = renderHook(() => useCells(cellIds), { wrapper: Wrapper });
-    await act(async () => flush());
+    const { result } = renderHook(() => useCells(pickCellIds), { wrapper: Wrapper });
+    await settle();
     expect(result.current).toEqual(['a', 'b']);
   });
 
   it('useCells stays reactive to add and remove when compiled', async () => {
-    const { result } = renderHook(() => useCells(cellIds), { wrapper: Wrapper });
-    await act(async () => flush());
+    const { result } = renderHook(() => useCells(pickCellIds), { wrapper: Wrapper });
+    await settle();
     expect(result.current).toEqual(['a', 'b']);
 
-    await act(async () => {
-      storeRef!.graph.addCell(makeElement('c', 100));
-      await flush();
-    });
+    await graphAct(() => store.current!.graph.addCell(makeElement('c', 100)));
     expect(new Set(result.current)).toEqual(new Set(['a', 'b', 'c']));
 
-    await act(async () => {
-      storeRef!.graph.getCell('a')?.remove();
-      await flush();
-    });
+    await graphAct(() => store.current!.graph.getCell('a')?.remove());
     // Order is not contractual for the all-cells selector form (the container
     // uses O(1) swap-remove); compare as a set.
     expect(new Set(result.current)).toEqual(new Set(['b', 'c']));

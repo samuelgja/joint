@@ -40,6 +40,14 @@ function makeCellView(options: {
   return view;
 }
 
+/** An existing link going t→s (the reverse direction of the s→t link under validation). */
+function makeReverseLink(port: string | null = null) {
+  return {
+    source: () => ({ id: 't', port }),
+    target: () => ({ id: 's', port }),
+  };
+}
+
 describe('presets / can-connect / toConnectionEnd', () => {
   it('returns null fields when no magnet', () => {
     const view = makeCellView({ id: 'a' });
@@ -188,12 +196,7 @@ describe('presets / can-connect / canConnect built-in rules', () => {
   });
 
   it('one-per-direction (default) allows the reverse-direction link', () => {
-    // Existing link goes t→s; the new link goes s→t (opposite direction).
-    const reverseLink = {
-      source: () => ({ id: 't', port: null }),
-      target: () => ({ id: 's', port: null }),
-    };
-    const sourceView = makeCellView({ id: 's', paperLinks: [reverseLink] });
+    const sourceView = makeCellView({ id: 's', paperLinks: [makeReverseLink()] });
     const targetView = makeCellView({ id: 't' });
     const linkView = { model: {} } as any;
     const function_ = canConnect();
@@ -201,11 +204,7 @@ describe('presets / can-connect / canConnect built-in rules', () => {
   });
 
   it('one-per-pair blocks the reverse-direction link', () => {
-    const reverseLink = {
-      source: () => ({ id: 't', port: null }),
-      target: () => ({ id: 's', port: null }),
-    };
-    const sourceView = makeCellView({ id: 's', paperLinks: [reverseLink] });
+    const sourceView = makeCellView({ id: 's', paperLinks: [makeReverseLink()] });
     const targetView = makeCellView({ id: 't' });
     const linkView = { model: {} } as any;
     const function_ = canConnect({ linkLimit: 'one-per-pair' });
@@ -225,11 +224,7 @@ describe('presets / can-connect / canConnect built-in rules', () => {
   });
 
   it('linkLimit none skips both same- and reverse-direction checks', () => {
-    const reverseLink = {
-      source: () => ({ id: 't', port: null }),
-      target: () => ({ id: 's', port: null }),
-    };
-    const sourceView = makeCellView({ id: 's', paperLinks: [reverseLink] });
+    const sourceView = makeCellView({ id: 's', paperLinks: [makeReverseLink()] });
     const targetView = makeCellView({ id: 't' });
     const linkView = { model: {} } as any;
     const function_ = canConnect({ linkLimit: 'none' });
@@ -239,11 +234,7 @@ describe('presets / can-connect / canConnect built-in rules', () => {
   it('one-per-pair allows a reverse link on a different port pair', () => {
     // Existing reverse link uses ports t:p1 → s:p1; the new s→t link uses
     // different ports (s:p2 → t:p2), so it is not the same connection.
-    const reverseLink = {
-      source: () => ({ id: 't', port: 'p1' }),
-      target: () => ({ id: 's', port: 'p1' }),
-    };
-    const sourceView = makeCellView({ id: 's', paperLinks: [reverseLink] });
+    const sourceView = makeCellView({ id: 's', paperLinks: [makeReverseLink('p1')] });
     const targetView = makeCellView({ id: 't' });
     const linkView = { model: {} } as any;
     const sourceMagnet = makeMagnet({ port: 'p2' });

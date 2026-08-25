@@ -1,13 +1,20 @@
-import { dia } from '@joint/core';
-import { DEFAULT_CELL_NAMESPACE } from '../graph-store';
 import { graphProjection } from '../graph-projection';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
+import { createTestGraph, flushMicrotasks as flush } from './__helpers__/graph-fixtures';
 
-function createGraph(): dia.Graph {
-  return new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
+/** Creates a projection over a graph holding `el-1` with `data.text = 'ab'`. */
+function createProjectionWithDataCell() {
+  const graph = createTestGraph();
+  const view = graphProjection({ graph });
+  graph.addCell({
+    id: 'el-1',
+    type: ELEMENT_MODEL_TYPE,
+    position: { x: 0, y: 0 },
+    size: { width: 10, height: 10 },
+    data: { text: 'ab' },
+  });
+  return { graph, view };
 }
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
 
 /**
  * A `data` edit (from `useSetCellData` / `useSetCell`) must notify subscribers
@@ -18,15 +25,7 @@ const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
  */
 describe('data edits notify synchronously; layout changes coalesce', () => {
   it('notifies a cell subscriber synchronously for a data change', () => {
-    const graph = createGraph();
-    const view = graphProjection({ graph });
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-      data: { text: 'ab' },
-    });
+    const { graph, view } = createProjectionWithDataCell();
 
     let notified = 0;
     const unsubscribe = view.cells.subscribeById('el-1', () => {
@@ -45,15 +44,7 @@ describe('data edits notify synchronously; layout changes coalesce', () => {
   });
 
   it('coalesces a layout (position) change onto a microtask (drag)', async () => {
-    const graph = createGraph();
-    const view = graphProjection({ graph });
-    graph.addCell({
-      id: 'el-1',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-      data: { text: 'ab' },
-    });
+    const { graph, view } = createProjectionWithDataCell();
     await flush();
 
     let notified = 0;

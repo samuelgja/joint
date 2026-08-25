@@ -62,6 +62,14 @@ async function renderUncontrolled() {
   await act(async () => flush());
 }
 
+/** Runs `edits` in a rollbackOnError transaction and asserts it rethrows 'boom'. */
+async function expectTransactionRollback(edits: () => void) {
+  await act(async () => {
+    expect(() => transactionRef!(edits, { rollbackOnError: true })).toThrow('boom');
+    await flush();
+  });
+}
+
 describe('useGraph().transaction', () => {
   it('collapses many synchronous edits into a single store commit (one re-render)', async () => {
     await renderUncontrolled();
@@ -97,17 +105,9 @@ describe('useGraph().transaction', () => {
     await renderUncontrolled();
     expect(positionOf('a')).toEqual({ x: 0, y: 0 });
 
-    await act(async () => {
-      expect(() =>
-        transactionRef!(
-          () => {
-            storeRef!.graph.getCell('a')!.set('position', { x: 999, y: 999 });
-            throw new Error('boom');
-          },
-          { rollbackOnError: true }
-        )
-      ).toThrow('boom');
-      await flush();
+    await expectTransactionRollback(() => {
+      storeRef!.graph.getCell('a')!.set('position', { x: 999, y: 999 });
+      throw new Error('boom');
     });
 
     // Restored on both the graph and the reactive container.
@@ -169,17 +169,9 @@ describe('useGraph().transaction', () => {
     await renderUncontrolled();
     expect(sizeOf('a')).toEqual({ width: 10, height: 10 });
 
-    await act(async () => {
-      expect(() =>
-        transactionRef!(
-          () => {
-            cellA().set('size', { width: 999, height: 999 });
-            throw new Error('boom');
-          },
-          { rollbackOnError: true }
-        )
-      ).toThrow('boom');
-      await flush();
+    await expectTransactionRollback(() => {
+      cellA().set('size', { width: 999, height: 999 });
+      throw new Error('boom');
     });
 
     expect(sizeOf('a')).toEqual({ width: 10, height: 10 });
@@ -189,18 +181,10 @@ describe('useGraph().transaction', () => {
     await renderUncontrolled();
     expect(dataOf('a')).toEqual({ label: 'a', nested: { count: 0 } });
 
-    await act(async () => {
-      expect(() =>
-        transactionRef!(
-          () => {
-            cellA().prop('data/nested/count', 5);
-            cellA().prop('data/label', 'changed');
-            throw new Error('boom');
-          },
-          { rollbackOnError: true }
-        )
-      ).toThrow('boom');
-      await flush();
+    await expectTransactionRollback(() => {
+      cellA().prop('data/nested/count', 5);
+      cellA().prop('data/label', 'changed');
+      throw new Error('boom');
     });
 
     expect(dataOf('a')).toEqual({ label: 'a', nested: { count: 0 } });
@@ -209,19 +193,11 @@ describe('useGraph().transaction', () => {
   it('rolls back mixed position/size/deep-data changes when the callback throws', async () => {
     await renderUncontrolled();
 
-    await act(async () => {
-      expect(() =>
-        transactionRef!(
-          () => {
-            cellA().set('position', { x: 111, y: 222 });
-            cellA().set('size', { width: 333, height: 444 });
-            cellA().prop('data/nested/count', 99);
-            throw new Error('boom');
-          },
-          { rollbackOnError: true }
-        )
-      ).toThrow('boom');
-      await flush();
+    await expectTransactionRollback(() => {
+      cellA().set('position', { x: 111, y: 222 });
+      cellA().set('size', { width: 333, height: 444 });
+      cellA().prop('data/nested/count', 99);
+      throw new Error('boom');
     });
 
     expect(positionOf('a')).toEqual({ x: 0, y: 0 });
@@ -233,18 +209,10 @@ describe('useGraph().transaction', () => {
     await renderUncontrolled();
 
     const commits = countCommits();
-    await act(async () => {
-      expect(() =>
-        transactionRef!(
-          () => {
-            cellA().set('position', { x: 111, y: 222 });
-            cellA().set('size', { width: 333, height: 444 });
-            throw new Error('boom');
-          },
-          { rollbackOnError: true }
-        )
-      ).toThrow('boom');
-      await flush();
+    await expectTransactionRollback(() => {
+      cellA().set('position', { x: 111, y: 222 });
+      cellA().set('size', { width: 333, height: 444 });
+      throw new Error('boom');
     });
     commits.unsubscribe();
 

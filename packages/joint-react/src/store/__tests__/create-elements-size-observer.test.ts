@@ -4,88 +4,17 @@
 import type { dia } from '@joint/core';
 import type { CellId } from '../../types/cell.types';
 import type { GraphStoreObserver } from '../create-elements-size-observer';
+import { MockResizeObserver } from './__helpers__/mock-resize-observer';
 
-// Mock ResizeObserver for testing
+// Replace global ResizeObserver with the mock before the module under test loads.
+MockResizeObserver.install();
 
-let mockResizeObserverInstances: MockResizeObserver[] = [];
-
-class MockResizeObserver {
-  private callback: ResizeObserverCallback;
-  private observedElements = new Map<Element, ResizeObserverEntry>();
-
-  constructor(callback: ResizeObserverCallback) {
-    this.callback = callback;
-    mockResizeObserverInstances.push(this);
-  }
-
-  observe(target: Element) {
-    // Simulate an entry with initial size
-    const entry = this.createEntry(target, 100, 50);
-    this.observedElements.set(target, entry);
-  }
-
-  unobserve(target: Element) {
-    this.observedElements.delete(target);
-  }
-
-  disconnect() {
-    this.observedElements.clear();
-  }
-
-  // Test helper to simulate resize
-  triggerResize(target: Element, width: number, height: number) {
-    const entry = this.createEntry(target, width, height);
-    this.observedElements.set(target, entry);
-    this.callback([entry], this as unknown as ResizeObserver);
-  }
-
-  // Test helper to trigger callback for all observed elements
-  triggerAllCallbacks() {
-    const entries = [...this.observedElements.values()];
-    if (entries.length > 0) {
-      this.callback(entries, this as unknown as ResizeObserver);
-    }
-  }
-
-  isObserving(target: Element): boolean {
-    return this.observedElements.has(target);
-  }
-
-  get observedCount(): number {
-    return this.observedElements.size;
-  }
-
-  private createEntry(target: Element, width: number, height: number): ResizeObserverEntry {
-    return {
-      target,
-      contentRect: {
-        width,
-        height,
-        top: 0,
-        left: 0,
-        bottom: height,
-        right: width,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      },
-      borderBoxSize: [{ inlineSize: width, blockSize: height }],
-      contentBoxSize: [{ inlineSize: width, blockSize: height }],
-      devicePixelContentBoxSize: [{ inlineSize: width, blockSize: height }],
-    } as ResizeObserverEntry;
-  }
-
-  static getLastInstance(): MockResizeObserver | undefined {
-    return mockResizeObserverInstances.at(-1);
-  }
-
-  static clearInstances() {
-    mockResizeObserverInstances = [];
-  }
-}
-
-// Replace global ResizeObserver with mock
-globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+/** Additive transform stub: grows both dimensions by `delta`. */
+const createAdditiveTransform = (delta: number) =>
+  jest.fn(({ width, height }: { width: number; height: number }) => ({
+    width: width + delta,
+    height: height + delta,
+  }));
 
 describe('createElementsSizeObserver', () => {
   let observer: GraphStoreObserver;
@@ -97,12 +26,10 @@ describe('createElementsSizeObserver', () => {
   let createElementsSizeObserver: any;
 
   beforeEach(() => {
-    MockResizeObserver.clearInstances();
-
     // Reset modules and reimport to ensure the mock is used
     jest.resetModules();
-    // Re-assign the mock after reset to ensure it's used
-    globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+    // Re-install the mock after reset to ensure it's used
+    MockResizeObserver.install();
 
     // jest.resetModules() requires synchronous re-import; using `require` is the only
     // option here. ESM `import()` is async and does not bypass module cache the same way.
@@ -136,6 +63,14 @@ describe('createElementsSizeObserver', () => {
     observer.clean();
   });
 
+  /** Registers a fresh div under `element-1` and returns it with the live mock observer. */
+  function addObservedElement() {
+    const element = document.createElement('div');
+    observer.add({ id: 'element-1', node: element });
+    const resizeObserver = MockResizeObserver.getLastInstance()!;
+    return { element, resizeObserver };
+  }
+
   describe('add', () => {
     it('should register element with ResizeObserver', () => {
       const element = document.createElement('div');
@@ -167,14 +102,9 @@ describe('createElementsSizeObserver', () => {
     });
 
     it('should process ResizeObserver callback when element is added', () => {
-      const element = document.createElement('div');
-
-      observer.add({ id: 'element-1', node: element });
-
       // Trigger resize via ResizeObserver (simulates browser behavior)
-      const resizeObserver = MockResizeObserver.getLastInstance();
-      expect(resizeObserver).toBeDefined();
-      resizeObserver?.triggerResize(element, 100, 50);
+      const { element, resizeObserver } = addObservedElement();
+      resizeObserver.triggerResize(element, 100, 50);
 
       expect(mockOnBatchUpdate).toHaveBeenCalledTimes(1);
 
@@ -202,38 +132,29 @@ describe('createElementsSizeObserver', () => {
 
   describe('ResizeObserver callback', () => {
     it('should process size changes from ResizeObserver', () => {
-      const element = document.createElement('div');
-
-      observer.add({ id: 'element-1', node: element });
-
-      const resizeObserver = MockResizeObserver.getLastInstance();
-      expect(resizeObserver).toBeDefined();
+      const { element, resizeObserver } = addObservedElement();
 
       // Trigger initial resize
-      resizeObserver?.triggerResize(element, 100, 50);
+      resizeObserver.triggerResize(element, 100, 50);
       expect(mockOnBatchUpdate).toHaveBeenCalledTimes(1);
 
       // Trigger resize to a different size
-      resizeObserver?.triggerResize(element, 200, 100);
+      resizeObserver.triggerResize(element, 200, 100);
 
       // Should be called again for the resize
       expect(mockOnBatchUpdate).toHaveBeenCalledTimes(2);
     });
 
     it('should not update if size has not changed significantly', () => {
-      const element = document.createElement('div');
-
-      observer.add({ id: 'element-1', node: element });
-
-      const resizeObserver = MockResizeObserver.getLastInstance();
+      const { element, resizeObserver } = addObservedElement();
 
       // Trigger initial resize
-      resizeObserver?.triggerResize(element, 100, 50);
+      resizeObserver.triggerResize(element, 100, 50);
       expect(mockOnBatchUpdate).toHaveBeenCalledTimes(1);
       mockOnBatchUpdate.mockClear();
 
       // Trigger resize with same size (within epsilon of 0.5)
-      resizeObserver?.triggerResize(element, 100.1, 50.1);
+      resizeObserver.triggerResize(element, 100.1, 50.1);
 
       // Should not trigger update because change is within epsilon
       expect(mockOnBatchUpdate).not.toHaveBeenCalled();
@@ -241,10 +162,7 @@ describe('createElementsSizeObserver', () => {
 
     it('should use transform function when provided', () => {
       const element = document.createElement('div');
-      const transform = jest.fn(({ width, height }) => ({
-        width: width + 20,
-        height: height + 20,
-      }));
+      const transform = createAdditiveTransform(20);
 
       observer.add({ id: 'element-1', node: element, transform });
 
@@ -385,15 +303,8 @@ describe('createElementsSizeObserver', () => {
     it('should use the active node transform function, not a previous one', () => {
       const nodeA = document.createElement('div');
       const nodeB = document.createElement('div');
-
-      const transformA = jest.fn(({ width, height }) => ({
-        width: width + 10,
-        height: height + 10,
-      }));
-      const transformB = jest.fn(({ width, height }) => ({
-        width: width + 50,
-        height: height + 50,
-      }));
+      const transformA = createAdditiveTransform(10);
+      const transformB = createAdditiveTransform(50);
 
       observer.add({ id: 'element-1', node: nodeA, transform: transformA });
       observer.add({ id: 'element-1', node: nodeB, transform: transformB });
@@ -412,15 +323,8 @@ describe('createElementsSizeObserver', () => {
     it('should use the previous transform after active node is removed', () => {
       const nodeA = document.createElement('div');
       const nodeB = document.createElement('div');
-
-      const transformA = jest.fn(({ width, height }) => ({
-        width: width + 10,
-        height: height + 10,
-      }));
-      const transformB = jest.fn(({ width, height }) => ({
-        width: width + 50,
-        height: height + 50,
-      }));
+      const transformA = createAdditiveTransform(10);
+      const transformB = createAdditiveTransform(50);
 
       observer.add({ id: 'element-1', node: nodeA, transform: transformA });
       const cleanupB = observer.add({ id: 'element-1', node: nodeB, transform: transformB });
@@ -523,16 +427,13 @@ describe('createElementsSizeObserver', () => {
 
   describe('processSizeChange branches', () => {
     it('skips when elements map does not contain the cell id', () => {
-      const element = document.createElement('div');
       mockElements.clear(); // ← getElements() returns an empty map
-      observer.add({ id: 'element-1', node: element });
-      const resizeObserver = MockResizeObserver.getLastInstance()!;
+      const { element, resizeObserver } = addObservedElement();
       resizeObserver.triggerResize(element, 100, 50);
       expect(mockOnBatchUpdate).not.toHaveBeenCalled();
     });
 
     it('skips when cell transform already matches the measured size (within epsilon)', () => {
-      const element = document.createElement('div');
       mockGetCellTransform.mockImplementation((id: CellId) => ({
         width: 100,
         height: 50,
@@ -541,8 +442,7 @@ describe('createElementsSizeObserver', () => {
         angle: 0,
         element: { id } as dia.Element,
       }));
-      observer.add({ id: 'element-1', node: element });
-      const resizeObserver = MockResizeObserver.getLastInstance()!;
+      const { element, resizeObserver } = addObservedElement();
       resizeObserver.triggerResize(element, 100, 50);
       expect(mockOnBatchUpdate).not.toHaveBeenCalled();
     });
@@ -550,58 +450,38 @@ describe('createElementsSizeObserver', () => {
 
   describe('ResizeObserver entry edge cases', () => {
     it('skips entries with no borderBoxSize', () => {
-      const element = document.createElement('div');
-      observer.add({ id: 'element-1', node: element });
-      const resizeObserver = MockResizeObserver.getLastInstance()!;
+      const { element, resizeObserver } = addObservedElement();
 
       // Construct an entry with empty borderBoxSize manually
-      const callback = (resizeObserver as unknown as { callback: ResizeObserverCallback })
-        .callback;
-      callback(
-        [
-          {
-            target: element,
-            contentRect: {} as DOMRectReadOnly,
-            borderBoxSize: [],
-            contentBoxSize: [],
-            devicePixelContentBoxSize: [],
-          } as ResizeObserverEntry,
-        ],
-        resizeObserver as unknown as ResizeObserver
-      );
+      resizeObserver.triggerEntry({
+        target: element,
+        contentRect: {} as DOMRectReadOnly,
+        borderBoxSize: [],
+        contentBoxSize: [],
+        devicePixelContentBoxSize: [],
+      } as ResizeObserverEntry);
 
       expect(mockOnBatchUpdate).not.toHaveBeenCalled();
     });
 
     it('skips entries with zero size (e.g. display:none)', () => {
-      const element = document.createElement('div');
-      observer.add({ id: 'element-1', node: element });
-      const resizeObserver = MockResizeObserver.getLastInstance()!;
+      const { element, resizeObserver } = addObservedElement();
 
       resizeObserver.triggerResize(element, 0, 0);
       expect(mockOnBatchUpdate).not.toHaveBeenCalled();
     });
 
     it('skips entries whose target is not currently observed', () => {
-      const element = document.createElement('div');
-      observer.add({ id: 'element-1', node: element });
-      const resizeObserver = MockResizeObserver.getLastInstance()!;
+      const { resizeObserver } = addObservedElement();
       const otherNode = document.createElement('div');
 
-      const callback = (resizeObserver as unknown as { callback: ResizeObserverCallback })
-        .callback;
-      callback(
-        [
-          {
-            target: otherNode,
-            contentRect: {} as DOMRectReadOnly,
-            borderBoxSize: [{ inlineSize: 100, blockSize: 50 }],
-            contentBoxSize: [{ inlineSize: 100, blockSize: 50 }],
-            devicePixelContentBoxSize: [{ inlineSize: 100, blockSize: 50 }],
-          } as ResizeObserverEntry,
-        ],
-        resizeObserver as unknown as ResizeObserver
-      );
+      resizeObserver.triggerEntry({
+        target: otherNode,
+        contentRect: {} as DOMRectReadOnly,
+        borderBoxSize: [{ inlineSize: 100, blockSize: 50 }],
+        contentBoxSize: [{ inlineSize: 100, blockSize: 50 }],
+        devicePixelContentBoxSize: [{ inlineSize: 100, blockSize: 50 }],
+      } as ResizeObserverEntry);
       expect(mockOnBatchUpdate).not.toHaveBeenCalled();
     });
   });

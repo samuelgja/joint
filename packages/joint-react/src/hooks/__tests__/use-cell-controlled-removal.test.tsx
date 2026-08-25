@@ -1,27 +1,9 @@
-import { Component, type ReactNode } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
 import { GraphProvider, Paper } from '../../components';
 import { useCell } from '../use-cell';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import type { CellRecord, Computed, ElementRecord } from '../../types/cell.types';
-
-// Surfaces an error thrown anywhere in its subtree so the test can assert on it
-// instead of the throw tearing down the whole test render.
-class CatchErrorBoundary extends Component<
-  Readonly<{ onCatch: (error: Error) => void; children: ReactNode }>,
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(error: Error) {
-    this.props.onCatch(error);
-  }
-  render() {
-    return this.state.hasError ? null : this.props.children;
-  }
-}
+import { CatchErrorBoundary } from './__helpers__/shared-catch-error-boundary';
 
 interface NodeData {
   readonly label: string;

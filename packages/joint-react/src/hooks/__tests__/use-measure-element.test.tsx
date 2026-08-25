@@ -1,22 +1,7 @@
 /* eslint-disable react-perf/jsx-no-new-object-as-prop */
-import { Component, useRef, type ReactNode } from 'react';
-
-class CatchErrorBoundary extends Component<
-  Readonly<{ onCatch: (error: Error) => void; children: ReactNode }>,
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(error: Error) {
-    this.props.onCatch(error);
-  }
-  render() {
-    return this.state.hasError ? null : this.props.children;
-  }
-}
+import { useRef } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
+import { CatchErrorBoundary } from './__helpers__/shared-catch-error-boundary';
 import type { dia } from '@joint/core';
 import { GraphProvider, Paper } from '../../components';
 import { CellIdContext } from '../../context';

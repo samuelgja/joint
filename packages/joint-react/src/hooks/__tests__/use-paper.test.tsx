@@ -13,6 +13,22 @@ import type { CellRecord } from '../../types/cell.types';
 
 const EMPTY_CELLS: readonly CellRecord[] = [];
 
+/** Wrapper with a single element cell and a `Paper` registered under `paperId`. */
+function singleElementPaperWrapper(paperId: string) {
+  return paperRenderElementWrapper({
+    graphProviderProps: {
+      initialCells: [
+        {
+          id: '1',
+          type: ELEMENT_MODEL_TYPE,
+          size: { width: 50, height: 50 },
+        } as CellRecord,
+      ],
+    },
+    paperProps: { id: paperId },
+  });
+}
+
 describe('useResolvePaperId', () => {
   it('returns undefined when target is undefined', () => {
     const wrapper = graphProviderWrapper({ initialCells: [] });
@@ -28,18 +44,7 @@ describe('useResolvePaperId', () => {
   });
 
   it('resolves a `dia.Paper` instance synchronously', async () => {
-    const wrapper = paperRenderElementWrapper({
-      graphProviderProps: {
-        initialCells: [
-          {
-            id: '1',
-            type: ELEMENT_MODEL_TYPE,
-            size: { width: 50, height: 50 },
-          } as CellRecord,
-        ],
-      },
-      paperProps: { id: 'instance-paper' },
-    });
+    const wrapper = singleElementPaperWrapper('instance-paper');
     let captured: dia.Paper | null = null;
     const { result } = renderHook(
       () => {
@@ -86,18 +91,7 @@ describe('useResolvePaperId', () => {
 
 describe('usePaper', () => {
   it('returns { paper: dia.Paper } from context', async () => {
-    const wrapper = paperRenderElementWrapper({
-      graphProviderProps: {
-        initialCells: [
-          {
-            id: '1',
-            type: ELEMENT_MODEL_TYPE,
-            size: { width: 50, height: 50 },
-          } as CellRecord,
-        ],
-      },
-      paperProps: { id: 'context-paper' },
-    });
+    const wrapper = singleElementPaperWrapper('context-paper');
     const { result } = renderHook(() => usePaper(), { wrapper });
     await waitFor(() => expect(result.current.paper).toBeDefined());
   });
@@ -109,18 +103,7 @@ describe('usePaper', () => {
   });
 
   it('looks up paper by id', async () => {
-    const wrapper = paperRenderElementWrapper({
-      graphProviderProps: {
-        initialCells: [
-          {
-            id: '1',
-            type: ELEMENT_MODEL_TYPE,
-            size: { width: 50, height: 50 },
-          } as CellRecord,
-        ],
-      },
-      paperProps: { id: 'by-id-paper' },
-    });
+    const wrapper = singleElementPaperWrapper('by-id-paper');
     const { result } = renderHook(() => usePaper('by-id-paper'), { wrapper });
     await waitFor(() => expect(result.current.paper).toBeDefined());
   });

@@ -4,7 +4,7 @@
 import { dia } from '@joint/core';
 import { useEffect, useRef } from 'react';
 import { renderHook, render, waitFor } from '@testing-library/react';
-import { GraphProvider, Paper } from '../../components';
+import { GraphProvider, Paper, type PaperProps } from '../../components';
 import { useCreatePortalPaper } from '../use-create-portal-paper';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../../mvc/link-model';
@@ -102,35 +102,46 @@ describe('useCreatePortalPaper — error and edge cases', () => {
   });
 });
 
+/**
+ * Renders a Paper wired with the given `defaultLink` prop and resolves with the
+ * underlying `dia.Paper` once it is ready, so each test only exercises its own
+ * `defaultLink` variant.
+ */
+async function renderPaperWithDefaultLink(
+  paperId: string,
+  defaultLink: PaperProps['defaultLink']
+): Promise<dia.Paper> {
+  const onReady = jest.fn();
+  function Host() {
+    const paperRef = useRef<dia.Paper | null>(null);
+    return (
+      <>
+        <Paper style={{ width: 100, height: 100 }}
+          ref={paperRef}
+          id={paperId}
+          renderElement={() => <rect />}
+          defaultLink={defaultLink}
+        />
+        <PaperReadyProbe paperRef={paperRef} onReady={onReady} />
+      </>
+    );
+  }
+  render(
+    <GraphProvider initialCells={initialCells}>
+      <Host />
+    </GraphProvider>
+  );
+  await waitFor(() => expect(onReady).toHaveBeenCalled());
+  const [[paper]] = onReady.mock.calls;
+  return paper;
+}
+
 describe('Paper — defaultLink prop variants (lines 100–124)', () => {
   it('accepts a static LinkRecord as defaultLink', async () => {
-    const onReady = jest.fn();
-    function Host() {
-      const paperRef = useRef<dia.Paper | null>(null);
-      return (
-        <>
-          <Paper style={{ width: 100, height: 100 }}
-            ref={paperRef}
-            id="default-link-static"
-            renderElement={() => <rect />}
-            defaultLink={
-              {
-                type: LINK_MODEL_TYPE,
-                data: { kind: 'static' },
-              } as LinkRecord
-            }
-          />
-          <PaperReadyProbe paperRef={paperRef} onReady={onReady} />
-        </>
-      );
-    }
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <Host />
-      </GraphProvider>
-    );
-    await waitFor(() => expect(onReady).toHaveBeenCalled());
-    const [[paper]] = onReady.mock.calls;
+    const paper = await renderPaperWithDefaultLink('default-link-static', {
+      type: LINK_MODEL_TYPE,
+      data: { kind: 'static' },
+    } as LinkRecord);
     // Trigger the defaultLink callback as if a user dragged from a port —
     // exercises the static-record branch (line 120–122).
     const link = callDefaultLink(paper);
@@ -142,90 +153,30 @@ describe('Paper — defaultLink prop variants (lines 100–124)', () => {
       type: LINK_MODEL_TYPE,
       data: { kind: 'factory' },
     }));
-    const onReady = jest.fn();
-    function Host() {
-      const paperRef = useRef<dia.Paper | null>(null);
-      return (
-        <>
-          <Paper style={{ width: 100, height: 100 }}
-            ref={paperRef}
-            id="default-link-factory"
-            renderElement={() => <rect />}
-            defaultLink={factory as never}
-          />
-          <PaperReadyProbe paperRef={paperRef} onReady={onReady} />
-        </>
-      );
-    }
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <Host />
-      </GraphProvider>
-    );
-    await waitFor(() => expect(onReady).toHaveBeenCalled());
-    const [[paper]] = onReady.mock.calls;
+    const paper = await renderPaperWithDefaultLink('default-link-factory', factory as never);
     const link = callDefaultLink(paper);
     expect(factory).toHaveBeenCalled();
     expect(link).toBeInstanceOf(dia.Link);
   });
 
   it('accepts a factory that returns a `dia.Link` instance (line 117)', async () => {
-    const onReady = jest.fn();
     let factoryRanWith: dia.Link | undefined;
     function factory() {
       const link = new dia.Link({});
       factoryRanWith = link;
       return link;
     }
-    function Host() {
-      const paperRef = useRef<dia.Paper | null>(null);
-      return (
-        <>
-          <Paper style={{ width: 100, height: 100 }}
-            ref={paperRef}
-            id="default-link-instance-factory"
-            renderElement={() => <rect />}
-            defaultLink={factory as never}
-          />
-          <PaperReadyProbe paperRef={paperRef} onReady={onReady} />
-        </>
-      );
-    }
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <Host />
-      </GraphProvider>
+    const paper = await renderPaperWithDefaultLink(
+      'default-link-instance-factory',
+      factory as never
     );
-    await waitFor(() => expect(onReady).toHaveBeenCalled());
-    const [[paper]] = onReady.mock.calls;
     const link = callDefaultLink(paper);
     expect(link).toBe(factoryRanWith);
   });
 
   it('returns the default LinkModel when factory returns null/undefined (line 114)', async () => {
     const factory = jest.fn(() => null);
-    const onReady = jest.fn();
-    function Host() {
-      const paperRef = useRef<dia.Paper | null>(null);
-      return (
-        <>
-          <Paper style={{ width: 100, height: 100 }}
-            ref={paperRef}
-            id="default-link-null-factory"
-            renderElement={() => <rect />}
-            defaultLink={factory as never}
-          />
-          <PaperReadyProbe paperRef={paperRef} onReady={onReady} />
-        </>
-      );
-    }
-    render(
-      <GraphProvider initialCells={initialCells}>
-        <Host />
-      </GraphProvider>
-    );
-    await waitFor(() => expect(onReady).toHaveBeenCalled());
-    const [[paper]] = onReady.mock.calls;
+    const paper = await renderPaperWithDefaultLink('default-link-null-factory', factory as never);
     const link = callDefaultLink(paper);
     expect(link).toBeInstanceOf(dia.Link);
   });

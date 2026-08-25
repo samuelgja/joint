@@ -60,14 +60,19 @@ function Child({ forwardedRef }: Readonly<{ forwardedRef: Ref<HTMLDivElement> }>
   return <div data-testid="el" ref={combinedRef} />;
 }
 
+/** Renders the harness under the given StrictMode setting and returns what it recorded. */
+function renderHarness(reactStrictMode: boolean) {
+  const ref = createRef<HTMLDivElement>();
+  const seen: Array<HTMLDivElement | null> = [];
+  render(<Harness forwardedRef={ref} seen={seen} />, { reactStrictMode });
+  return { ref, seen };
+}
+
 describe('useCombinedRef ref-assignment timing', () => {
   it('assigns the forwarded ref before a consumer layout effect runs', () => {
-    const ref = createRef<HTMLDivElement>();
-    const seen: Array<HTMLDivElement | null> = [];
-
     // `reactStrictMode: false` is the whole point: effects run once, as they do in any
     // production build. With the suite-wide StrictMode left on, the remount masks this.
-    render(<Harness forwardedRef={ref} seen={seen} />, { reactStrictMode: false });
+    const { seen } = renderHarness(false);
 
     // The parent's layout effect must have seen the node, not null: the ref is assigned
     // during commit, before layout effects run.
@@ -75,10 +80,7 @@ describe('useCombinedRef ref-assignment timing', () => {
   });
 
   it('is masked by StrictMode, which is why nothing caught it', () => {
-    const ref = createRef<HTMLDivElement>();
-    const seen: Array<HTMLDivElement | null> = [];
-
-    render(<Harness forwardedRef={ref} seen={seen} />, { reactStrictMode: true });
+    const { seen } = renderHarness(true);
 
     // The remount leaves a correct ref behind, so a consumer whose layout effect runs
     // more than once recovers. Deliberately asserts only the final value: this holds
@@ -89,10 +91,7 @@ describe('useCombinedRef ref-assignment timing', () => {
   });
 
   it('has assigned the ref by the time render returns, which is what the existing tests assert', () => {
-    const ref = createRef<HTMLDivElement>();
-    const seen: Array<HTMLDivElement | null> = [];
-
-    render(<Harness forwardedRef={ref} seen={seen} />, { reactStrictMode: false });
+    const { ref } = renderHarness(false);
 
     // Passing here is not evidence of correctness: passive effects have flushed by now.
     // The defect is only visible from inside a layout effect.

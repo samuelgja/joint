@@ -3,6 +3,15 @@ import type { dia } from '@joint/core';
 import { jsx } from '../jsx-to-markup';
 import type { PropsWithChildren } from 'react';
 
+// Markup node produced by `<span>Hello</span>`, shared by several expectations.
+// Typed as `dia.MarkupNodeJSON` (not `as const`) so it stays assignable to the
+// mutable `children` arrays of enclosing markup literals.
+const SPAN_HELLO_NODE: dia.MarkupNodeJSON = {
+  tagName: 'span',
+  children: ['Hello'],
+  attributes: {},
+};
+
 describe('jsx-to-markup', () => {
   it('should convert div with span', () => {
     const markup = jsx(
@@ -13,13 +22,7 @@ describe('jsx-to-markup', () => {
     const expected: dia.MarkupJSON = [
       {
         tagName: 'div',
-        children: [
-          {
-            tagName: 'span',
-            children: ['Hello'],
-            attributes: {},
-          },
-        ],
+        children: [SPAN_HELLO_NODE],
         attributes: {
           id: '1',
         },
@@ -95,13 +98,7 @@ describe('jsx-to-markup', () => {
     const expected: dia.MarkupJSON = [
       {
         tagName: 'div',
-        children: [
-          {
-            tagName: 'span',
-            children: ['Hello'],
-            attributes: {},
-          },
-        ],
+        children: [SPAN_HELLO_NODE],
         attributes: {},
       },
     ];
@@ -125,11 +122,7 @@ describe('jsx-to-markup', () => {
       {
         tagName: 'div',
         children: [
-          {
-            tagName: 'span',
-            children: ['Hello'],
-            attributes: {},
-          },
+          SPAN_HELLO_NODE,
           {
             tagName: 'span',
             children: ['1'],
@@ -236,13 +229,7 @@ describe('jsx-to-markup', () => {
     expect(markup).toEqual([
       {
         tagName: 'div',
-        children: [
-          {
-            tagName: 'span',
-            children: ['Hello'],
-            attributes: {},
-          },
-        ],
+        children: [SPAN_HELLO_NODE],
         attributes: { id: 'foo' },
         bar: 'baz',
         num: 5,

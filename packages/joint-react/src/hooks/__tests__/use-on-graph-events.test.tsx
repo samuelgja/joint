@@ -22,23 +22,31 @@ const GRAPH_EVENT_ARGS: Partial<{ readonly [EventName in keyof dia.Graph.EventMa
   'batch:stop': [{ source: 'batch:stop' }],
 };
 
+type ListenerCallback = (...args: Parameters<mvc.EventHandler>) => void;
+
+/**
+ * Replaces `mvc.Listener.listenTo` with a recorder so tests can look up the
+ * callbacks the hook registered per event name and invoke them directly.
+ */
+function spyOnListenTo() {
+  const listenerHandlers = new Map<string, ListenerCallback[]>();
+  const listenToSpy = jest
+    .spyOn(mvc.Listener.prototype, 'listenTo')
+    .mockImplementation((...args: unknown[]) => {
+      const [, eventNameOrHash, callback] = args;
+      if (typeof eventNameOrHash === 'string' && typeof callback === 'function') {
+        const callbacks = listenerHandlers.get(eventNameOrHash) ?? [];
+        callbacks.push(callback as ListenerCallback);
+        listenerHandlers.set(eventNameOrHash, callbacks);
+      }
+    });
+  return { listenerHandlers, listenToSpy };
+}
+
 describe('use-on-graph-events', () => {
   it('binds all known graph events, pattern events, and custom events with raw JointJS args', async () => {
     const graph = getTestGraph();
-    const listenerHandlers = new Map<
-      string,
-      Array<(...args: Parameters<mvc.EventHandler>) => void>
-    >();
-    const listenToSpy = jest
-      .spyOn(mvc.Listener.prototype, 'listenTo')
-      .mockImplementation((...args: unknown[]) => {
-        const [, eventNameOrHash, callback] = args;
-        if (typeof eventNameOrHash === 'string' && typeof callback === 'function') {
-          const callbacks = listenerHandlers.get(eventNameOrHash) ?? [];
-          callbacks.push(callback as (...args: Parameters<mvc.EventHandler>) => void);
-          listenerHandlers.set(eventNameOrHash, callbacks);
-        }
-      });
+    const { listenerHandlers, listenToSpy } = spyOnListenTo();
 
     const handlers: Partial<dia.Graph.EventMap> = {};
 
@@ -122,20 +130,7 @@ describe('use-on-graph-events', () => {
   it('supports graph instance target overload', () => {
     const graph = getTestGraph();
     const onAdd = jest.fn();
-    const listenerHandlers = new Map<
-      string,
-      Array<(...args: Parameters<mvc.EventHandler>) => void>
-    >();
-    const listenToSpy = jest
-      .spyOn(mvc.Listener.prototype, 'listenTo')
-      .mockImplementation((...args: unknown[]) => {
-        const [, eventNameOrHash, callback] = args;
-        if (typeof eventNameOrHash === 'string' && typeof callback === 'function') {
-          const callbacks = listenerHandlers.get(eventNameOrHash) ?? [];
-          callbacks.push(callback as (...args: Parameters<mvc.EventHandler>) => void);
-          listenerHandlers.set(eventNameOrHash, callbacks);
-        }
-      });
+    const { listenerHandlers, listenToSpy } = spyOnListenTo();
     const cell = {} as dia.Cell;
     const collection = {} as never;
     const options = { source: 'instance' };

@@ -1,10 +1,11 @@
 /* eslint-disable unicorn/prevent-abbreviations */
 
-import { dia, shapes } from '@joint/core';
-import { ELEMENT_MODEL_TYPE, ElementModel } from '../../mvc/element-model';
-import { LinkModel, LINK_MODEL_TYPE } from '../../mvc/link-model';
+import type { dia } from '@joint/core';
+import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
+import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import type { ElementRecord, LinkRecord } from '../../types/cell.types';
 import type { ElementPort } from '../../presets/element-ports';
+import { getTestGraph } from '../../utils/test-wrappers';
 import {
   mapElementToAttributes,
   mapLinkToAttributes,
@@ -12,13 +13,20 @@ import {
   mapAttributesToLink,
 } from '../data-mapping';
 
-const DEFAULT_CELL_NAMESPACE = { ...shapes, element: ElementModel, link: LinkModel };
+/** Builds a 100x100 element at the origin carrying the given ports. */
+const makePortedElement = (portMap: Record<string, ElementPort>): ElementRecord => ({
+  type: ELEMENT_MODEL_TYPE,
+  data: undefined,
+  position: { x: 0, y: 0 },
+  size: { width: 100, height: 100 },
+  portMap,
+});
 
 describe('dataMapper', () => {
   let graph: dia.Graph;
 
   beforeEach(() => {
-    graph = new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
+    graph = getTestGraph();
   });
 
   afterEach(() => {
@@ -117,18 +125,9 @@ describe('dataMapper', () => {
 
   describe('element ports conversion', () => {
     it('should convert simplified ports to JointJS format', () => {
-      const portMap: Record<string, ElementPort> = {
-        p1: { cx: 0, cy: 0.5, width: 10, height: 10, color: 'blue' },
-      };
-      const element: ElementRecord = {
-        type: ELEMENT_MODEL_TYPE,
-        data: undefined,
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-        portMap,
-      };
-
-      const cellJson = mapElementToAttributes(element);
+      const cellJson = mapElementToAttributes(
+        makePortedElement({ p1: { cx: 0, cy: 0.5, width: 10, height: 10, color: 'blue' } })
+      );
       expect(cellJson.ports).toBeDefined();
       expect(cellJson.ports?.groups?.main).toBeDefined();
       expect(cellJson.ports?.items).toHaveLength(1);
@@ -136,18 +135,11 @@ describe('dataMapper', () => {
     });
 
     it('should convert port with label', () => {
-      const portMap: Record<string, ElementPort> = {
-        p1: { cx: 0, cy: 0.5, label: 'Port A', labelPosition: 'outside', labelColor: 'red' },
-      };
-      const element: ElementRecord = {
-        type: ELEMENT_MODEL_TYPE,
-        data: undefined,
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-        portMap,
-      };
-
-      const cellJson = mapElementToAttributes(element);
+      const cellJson = mapElementToAttributes(
+        makePortedElement({
+          p1: { cx: 0, cy: 0.5, label: 'Port A', labelPosition: 'outside', labelColor: 'red' },
+        })
+      );
       const [port] = cellJson.ports!.items!;
       expect(port.label).toBeDefined();
       expect(port.label!.position!.name).toBe('outside');
@@ -155,18 +147,9 @@ describe('dataMapper', () => {
     });
 
     it('should handle rect shape ports', () => {
-      const portMap: Record<string, ElementPort> = {
-        p1: { cx: 0, cy: 0, width: 20, height: 10, shape: 'rect' },
-      };
-      const element: ElementRecord = {
-        type: ELEMENT_MODEL_TYPE,
-        data: undefined,
-        position: { x: 0, y: 0 },
-        size: { width: 100, height: 100 },
-        portMap,
-      };
-
-      const cellJson = mapElementToAttributes(element);
+      const cellJson = mapElementToAttributes(
+        makePortedElement({ p1: { cx: 0, cy: 0, width: 20, height: 10, shape: 'rect' } })
+      );
       const portMarkup = cellJson.ports!.items![0].markup as dia.MarkupNodeJSON[];
       expect(portMarkup[0].tagName).toBe('rect');
     });

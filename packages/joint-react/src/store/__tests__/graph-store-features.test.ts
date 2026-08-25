@@ -1,55 +1,15 @@
-import { dia } from '@joint/core';
-import { GraphStore, DEFAULT_CELL_NAMESPACE } from '../graph-store';
+import type { dia } from '@joint/core';
+import { GraphStore } from '../graph-store';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import { LINK_MODEL_TYPE } from '../../mvc/link-model';
 import type { CellRecord } from '../../types/cell.types';
 import type { Feature } from '../../types/feature.types';
-
-const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
-
-/**
- * Mock ResizeObserver that captures every instantiated observer so tests can
- * trigger callbacks deterministically. Replaces the global before each test.
- */
-class MockResizeObserver {
-  static readonly instances: MockResizeObserver[] = [];
-  callback: ResizeObserverCallback;
-  observed = new Set<Element>();
-
-  constructor(callback: ResizeObserverCallback) {
-    this.callback = callback;
-    MockResizeObserver.instances.push(this);
-  }
-
-  observe(target: Element) {
-    this.observed.add(target);
-  }
-
-  unobserve(target: Element) {
-    this.observed.delete(target);
-  }
-
-  disconnect() {
-    this.observed.clear();
-  }
-
-  triggerResize(target: Element, width: number, height: number) {
-    const entry = {
-      target,
-      contentRect: { width, height, top: 0, left: 0, bottom: height, right: width, x: 0, y: 0 },
-      borderBoxSize: [{ inlineSize: width, blockSize: height }],
-      contentBoxSize: [{ inlineSize: width, blockSize: height }],
-      devicePixelContentBoxSize: [{ inlineSize: width, blockSize: height }],
-    } as unknown as ResizeObserverEntry;
-    this.callback([entry], this as unknown as ResizeObserver);
-  }
-
-  static reset() {
-    MockResizeObserver.instances.length = 0;
-  }
-}
-
-const createGraph = () => new dia.Graph({}, { cellNamespace: DEFAULT_CELL_NAMESPACE });
+import {
+  createTestGraph,
+  flushMicrotasks as flush,
+  seedElementPairWithLink,
+} from './__helpers__/graph-fixtures';
+import { MockResizeObserver } from './__helpers__/mock-resize-observer';
 
 function makeFeature(id: string, instance: unknown = {}): Feature & { clean: jest.Mock } {
   return {
@@ -57,6 +17,20 @@ function makeFeature(id: string, instance: unknown = {}): Feature & { clean: jes
     instance,
     clean: jest.fn(),
   };
+}
+
+/** Creates a store seeded with a single element `a` at (0, 0) of the given size. */
+function makeStoreWithElement(size: { width: number; height: number }) {
+  return new GraphStore<CellRecord, CellRecord>({
+    initialCells: [
+      {
+        id: 'a',
+        type: ELEMENT_MODEL_TYPE,
+        position: { x: 0, y: 0 },
+        size,
+      } as CellRecord,
+    ],
+  });
 }
 
 describe('GraphStore feature lifecycle', () => {
@@ -306,16 +280,7 @@ describe('GraphStore.applyControlled', () => {
 
 describe('GraphStore observer wiring', () => {
   it('size observer batch update writes size and position back to cells', () => {
-    const store = new GraphStore<CellRecord, CellRecord>({
-      initialCells: [
-        {
-          id: 'a',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 0, y: 0 },
-          size: { width: 10, height: 10 },
-        } as CellRecord,
-      ],
-    });
+    const store = makeStoreWithElement({ width: 10, height: 10 });
 
     // Reach into the observer indirectly: invoke setMeasuredNode and then
     // trigger a resize that exercises the onBatchUpdate path. We can also
@@ -331,16 +296,7 @@ describe('GraphStore observer wiring', () => {
   });
 
   it('setMeasuredNode delegates to the observer (returns a cleanup function)', () => {
-    const store = new GraphStore<CellRecord, CellRecord>({
-      initialCells: [
-        {
-          id: 'a',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 0, y: 0 },
-          size: { width: 10, height: 10 },
-        } as CellRecord,
-      ],
-    });
+    const store = makeStoreWithElement({ width: 10, height: 10 });
 
     const node = document.createElement('div');
     const cleanup = store.setMeasuredNode({ id: 'a', node });
@@ -387,25 +343,7 @@ describe('GraphStore observer wiring', () => {
 describe('GraphStore.clearViewForElementAndLinks', () => {
   it('propagates pending link changes to the matching paper store', async () => {
     const store = new GraphStore<CellRecord, CellRecord>({});
-    store.graph.addCell({
-      id: 'a',
-      type: 'element',
-      position: { x: 0, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    store.graph.addCell({
-      id: 'b',
-      type: 'element',
-      position: { x: 50, y: 0 },
-      size: { width: 10, height: 10 },
-    });
-    const link = new dia.Link({
-      id: 'l1',
-      type: 'standard.Link',
-      source: { id: 'a' },
-      target: { id: 'b' },
-    });
-    store.graph.addCell(link);
+    const link = seedElementPairWithLink(store.graph);
     await flush();
 
     const { paperStore } = store.addPaper('p1', { paperOptions: {} });
@@ -470,7 +408,7 @@ describe('GraphStore.setPaperViews', () => {
 
 describe('GraphStore initial seed without controlled or initial cells', () => {
   it('does not call resetCells when neither seed prop is provided', () => {
-    const graph = createGraph();
+    const graph = createTestGraph();
     const resetSpy = jest.spyOn(graph, 'resetCells');
     const store = new GraphStore({ graph });
     expect(resetSpy).not.toHaveBeenCalled();
@@ -480,26 +418,16 @@ describe('GraphStore initial seed without controlled or initial cells', () => {
 
 describe('GraphStore size observer integration', () => {
   beforeEach(() => {
-    MockResizeObserver.reset();
-    globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+    MockResizeObserver.install();
   });
 
   it('writes size and position back to the graph through onBatchUpdate', () => {
-    const store = new GraphStore<CellRecord, CellRecord>({
-      initialCells: [
-        {
-          id: 'a',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 0, y: 0 },
-          size: { width: 1, height: 1 },
-        } as CellRecord,
-      ],
-    });
+    const store = makeStoreWithElement({ width: 1, height: 1 });
 
     const node = document.createElement('div');
     store.setMeasuredNode({ id: 'a', node });
 
-    const observer = MockResizeObserver.instances.at(-1)!;
+    const observer = MockResizeObserver.getLastInstance()!;
     observer.triggerResize(node, 100, 50);
 
     const cell = store.graph.getCell('a') as dia.Element;
@@ -508,16 +436,7 @@ describe('GraphStore size observer integration', () => {
   });
 
   it('also writes position when transform returns x/y', () => {
-    const store = new GraphStore<CellRecord, CellRecord>({
-      initialCells: [
-        {
-          id: 'a',
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 0, y: 0 },
-          size: { width: 1, height: 1 },
-        } as CellRecord,
-      ],
-    });
+    const store = makeStoreWithElement({ width: 1, height: 1 });
 
     const node = document.createElement('div');
     store.setMeasuredNode({
@@ -526,7 +445,7 @@ describe('GraphStore size observer integration', () => {
       transform: ({ width, height }) => ({ width, height, x: 9, y: 11 }),
     });
 
-    const observer = MockResizeObserver.instances.at(-1)!;
+    const observer = MockResizeObserver.getLastInstance()!;
     observer.triggerResize(node, 80, 40);
 
     const cell = store.graph.getCell('a') as dia.Element;
@@ -562,7 +481,7 @@ describe('GraphStore size observer integration', () => {
     const node = document.createElement('div');
     store.setMeasuredNode({ id: 'a', node });
 
-    const observer = MockResizeObserver.instances.at(-1)!;
+    const observer = MockResizeObserver.getLastInstance()!;
     observer.triggerResize(node, 50, 25);
 
     const cell = store.graph.getCell('a') as dia.Element;
@@ -585,7 +504,7 @@ describe('GraphStore size observer integration', () => {
     // processSizeChange bails out before reaching getCellTransform.
     store.graph.removeCells([store.graph.getCell('ghost')]);
 
-    const observer = MockResizeObserver.instances.at(-1)!;
+    const observer = MockResizeObserver.getLastInstance()!;
     expect(() => observer.triggerResize(node, 100, 50)).not.toThrow();
     store.destroy(false);
   });
