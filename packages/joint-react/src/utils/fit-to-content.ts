@@ -103,7 +103,6 @@ export function isFitScroller(instance: unknown): instance is FitScrollerLike {
  * @internal
  */
 interface FitPaperLike {
-  readonly id: string;
   readonly el: HTMLElement;
   readonly getContentArea: (options: { useModelGeometry: boolean }) => g.Rect;
   readonly transformToFitContent: (options?: dia.Paper.TransformToFitContentOptions) => void;
@@ -115,6 +114,7 @@ interface FitPaperLike {
  * @internal
  */
 export interface FitStoreLike {
+  readonly paperId: string;
   readonly paper: FitPaperLike;
   readonly features: Readonly<Record<string, { readonly instance: unknown } | undefined>>;
 }
@@ -156,7 +156,7 @@ export function runFit(paperStore: FitStoreLike, options: ResolvedFitOptions): v
   const scroller = resolveFitScroller(paperStore);
   if (scroller) {
     if (options.mode === 'resize') {
-      warnFitResizeUnderScroller(paper.id);
+      warnFitResizeUnderScroller(paperStore.paperId);
       return;
     }
     // The scroller owns the viewport: `paper.getComputedSize()` is the sheet,
