@@ -1,18 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import '../index.css';
+import { getAPILink } from '../../utils/get-api-documentation-link';
 import Code from './code';
-export type Story = StoryObj<typeof Code>;
-import { makeRootDocumentation } from '../../utils/make-story';
+import codeRaw from './code?raw';
 
-import CodeRaw from './code?raw';
-
-export default {
+const meta = {
   title: 'Examples/Fit to content',
   component: Code,
   tags: ['example'],
-  parameters: makeRootDocumentation({
-    code: CodeRaw,
-  }),
+  parameters: {
+    showcase: {
+      description:
+        'Frame the whole diagram automatically with the `fitToContent` prop, choosing whether it zooms or grows the paper and how often it re-runs.',
+      apiUrl: getAPILink('Paper'),
+      code: codeRaw,
+    },
+  },
 } satisfies Meta<typeof Code>;
+
+export default meta;
+
+export type Story = StoryObj<typeof Code>;
 
 export const Default: Story = {};
