@@ -58,9 +58,8 @@ const PAPER_SCROLLER_FEATURE = 'paperScroller';
  * The `zoomToRect` options the fit passes. Declared locally because the
  * `ui.PaperScroller` types live in `@joint/plus`, which `@joint/react` does not
  * depend on.
- * @internal
  */
-export interface FitZoomToRectOptions extends Readonly<dia.Paper.TransformToFitContentOptions> {
+interface FitZoomToRectOptions extends Readonly<dia.Paper.TransformToFitContentOptions> {
   readonly minScale?: number;
   readonly maxScale?: number;
 }
