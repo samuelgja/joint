@@ -1,0 +1,74 @@
+import { Meta, Story, Canvas, Controls, Markdown } from '@storybook/addon-docs/blocks';
+import * as Stories from './story';
+import Code from './code?raw';
+
+<Meta of={Stories} />
+
+# Fit to Content Example
+
+The `fitToContent` prop frames the whole diagram for you, so you no longer write
+the measure-then-fit effect by hand.
+
+## Overview
+
+Fitting a React-rendered diagram has two awkward parts: elements have no size
+until they are measured, and a mounted `<PaperScroller>` — not the paper — owns
+the viewport. The prop handles both.
+
+```tsx
+<Paper fitToContent />
+<Paper fitToContent={{ padding: 40, refit: 'once' }} />
+<Paper fitToContent={{ mode: 'resize', allowNewOrigin: 'any' }} />
+```
+
+## Modes
+
+- **`mode: 'zoom'`** (default) — scales and translates the content so the whole
+  graph sits inside the viewport. The paper element keeps its CSS size. Accepts
+  every [`transformToFitContent`](https://docs.jointjs.com/api/dia/Paper#transformtofitcontent) option.
+- **`mode: 'resize'`** — grows or shrinks the paper element to wrap the content
+  instead of scaling it. Use it with a scrolling host. Accepts every
+  [`fitToContent`](https://docs.jointjs.com/api/dia/Paper#fittocontent) option.
+
+## Refit policies
+
+- **`'once'`** — fit after the initial measurement pass and never again.
+- **`'resize'`** (default) — also re-fit whenever the host element changes size.
+- **`'always'`** — also re-fit on graph content changes and later measurement
+  passes.
+
+## Demo
+
+Switch preset and press **Add far element**: `'always'` re-frames to include it,
+`'once'` leaves the viewport alone. Resize the browser window to see `'resize'`
+re-frame while `'once'` does not.
+
+<Canvas of={Stories.Default} />
+
+## Implementation
+
+<Markdown>
+{`\`\`\`tsx
+${Code}
+\`\`\``}
+</Markdown>
+
+## Fitting on demand
+
+For a Fit button, use `usePaper().fitToContent()` rather than calling
+`paper.transformToFitContent()` yourself — when a `<PaperScroller>` owns the
+paper, the hook routes through it and the raw paper call cannot.
+
+```tsx
+function FitButton() {
+  const { fitToContent } = usePaper();
+  return <button onClick={() => fitToContent({ padding: 24 })}>Fit</button>;
+}
+```
+
+## Notes
+
+- `fitToContent` is ignored when `transform` is also set — both write the
+  viewport matrix, so together they race. A dev-only warning explains it.
+- `mode: 'resize'` is skipped under a `<PaperScroller>`, which sets the paper's
+  dimensions itself.
