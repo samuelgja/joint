@@ -19,20 +19,15 @@ export type ResolvedFitOptions =
 
 const DEFAULT_REFIT: FitToContentRefit = 'resize';
 
-/** Centred, model-geometry framing — what the effect this prop replaces did by hand. */
-const ZOOM_DEFAULTS: Readonly<dia.Paper.TransformToFitContentOptions> = {
-  useModelGeometry: true,
-  verticalAlign: 'middle',
-  horizontalAlign: 'middle',
-};
-
-const RESIZE_DEFAULTS: Readonly<dia.Paper.FitToContentOptions> = {
-  useModelGeometry: true,
-};
-
 /**
  * Fills in the defaults for the `fitToContent` prop, turning its
  * `boolean | FitToContentOptions` shape into one resolved object.
+ *
+ * Every default is applied with `??` *after* the caller's options are spread.
+ * Spreading defaults first would let an explicit `undefined` erase them — and a
+ * caller assembling the object from optional fields (`verticalAlign: align`)
+ * passes exactly that, which would silently fall back to core's top-left
+ * framing instead of the centred framing this prop promises.
  * @param input - The raw prop value; omitted or `undefined` switches fitting off.
  * @returns Resolved options, or `null` when fitting is switched off.
  * @internal
@@ -41,14 +36,25 @@ export function normalizeFitOptions(
   input?: boolean | FitToContentOptions
 ): ResolvedFitOptions | null {
   if (!input) return null;
-  if (input === true) return { ...ZOOM_DEFAULTS, mode: 'zoom', refit: DEFAULT_REFIT };
-  const refit = input.refit ?? DEFAULT_REFIT;
-  // `mode` and `refit` are re-applied after the spread so an explicit
-  // `undefined` from the caller cannot erase the default.
-  if (input.mode === 'resize') {
-    return { ...RESIZE_DEFAULTS, ...input, mode: 'resize', refit };
+  const options: FitToContentOptions = input === true ? {} : input;
+  const refit = options.refit ?? DEFAULT_REFIT;
+  if (options.mode === 'resize') {
+    return {
+      ...options,
+      mode: 'resize',
+      refit,
+      useModelGeometry: options.useModelGeometry ?? true,
+    };
   }
-  return { ...ZOOM_DEFAULTS, ...input, mode: 'zoom', refit };
+  // Centred, model-geometry framing — what the effect this prop replaces did by hand.
+  return {
+    ...options,
+    mode: 'zoom',
+    refit,
+    useModelGeometry: options.useModelGeometry ?? true,
+    verticalAlign: options.verticalAlign ?? 'middle',
+    horizontalAlign: options.horizontalAlign ?? 'middle',
+  };
 }
 
 /** Feature key `@joint/react-plus` registers its `ui.PaperScroller` under. */
