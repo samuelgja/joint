@@ -1,3 +1,4 @@
+import '../index.css';
 import {
   GraphProvider,
   Paper,
@@ -8,7 +9,15 @@ import {
   type ElementRecord,
   type FitToContentOptions,
 } from '@joint/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { PAPER_CLASSNAME } from 'storybook-config/theme';
+
+const BUTTON_CLASSNAME =
+  'bg-blue-500 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm';
+const TOGGLE_CLASSNAME =
+  'cursor-pointer border border-gray-300 dark:border-gray-600 rounded py-2 px-3 text-sm';
+const TOGGLE_ACTIVE_CLASSNAME = `${TOGGLE_CLASSNAME} bg-blue-500 text-white border-blue-500`;
+const PAPER_STYLE = { height: 450 };
 
 interface ElementData {
   readonly label: string;
@@ -39,9 +48,12 @@ const initialCells: ReadonlyArray<CellRecord<ElementData>> = [
   { id: 'e10', type: 'link', source: { id: '7' }, target: { id: '11' } },
 ];
 
-/** Module constants, so switching preset hands `<Paper>` a stable object. */
+/**
+ * Module constants rather than inline literals, so switching preset does not
+ * hand `<Paper>` a fresh object on every render.
+ */
 const PRESETS: ReadonlyArray<{ readonly name: string; readonly value: FitToContentOptions }> = [
-  { name: 'refit: resize', value: { padding: 24 } },
+  { name: 'refit: resize (default)', value: { padding: 24 } },
   { name: 'refit: once', value: { padding: 24, refit: 'once' } },
   { name: 'refit: always', value: { padding: 24, refit: 'always' } },
   { name: 'mode: resize', value: { mode: 'resize', padding: 24, allowNewOrigin: 'any' } },
@@ -59,7 +71,7 @@ function PresetButton({ name, index, isActive, onSelect }: Readonly<PresetButton
   return (
     <button
       type="button"
-      className={isActive ? 'jj-btn jj-btn--primary' : 'jj-btn'}
+      className={isActive ? TOGGLE_ACTIVE_CLASSNAME : TOGGLE_CLASSNAME}
       onClick={onClick}
     >
       {name}
@@ -71,7 +83,7 @@ function FitButton() {
   const { fitToContent } = usePaper();
   const onFit = useCallback(() => fitToContent({ padding: 24 }), [fitToContent]);
   return (
-    <button type="button" className="jj-btn" onClick={onFit}>
+    <button type="button" className={BUTTON_CLASSNAME} onClick={onFit}>
       Fit now
     </button>
   );
@@ -80,12 +92,10 @@ function FitButton() {
 function Main() {
   const { setCell } = useGraph<ElementRecord<ElementData>>();
   const [presetIndex, setPresetIndex] = useState(0);
-  const farCountRef = useRef(0);
 
   const addFarElement = useCallback(() => {
-    farCountRef.current += 1;
     setCell({
-      id: `far-${farCountRef.current}`,
+      id: `far-${Date.now()}`,
       type: 'element',
       position: { x: 1600, y: 800 },
       data: { label: 'Far away' },
@@ -93,13 +103,15 @@ function Main() {
   }, [setCell]);
 
   const renderElement = useCallback(
-    (data: ElementData) => <HTMLBox className="jj-node">{data.label}</HTMLBox>,
+    (data: ElementData) => (
+      <HTMLBox className="flex items-center justify-center">{data.label}</HTMLBox>
+    ),
     []
   );
 
   return (
-    <div className="flex size-full flex-col">
-      <div className="jj-controls m-3">
+    <div className="flex flex-col">
+      <div className="mb-4 flex flex-row flex-wrap items-center gap-2">
         {PRESETS.map((preset, index) => (
           <PresetButton
             key={preset.name}
@@ -109,16 +121,21 @@ function Main() {
             onSelect={setPresetIndex}
           />
         ))}
-        <button type="button" className="jj-btn" onClick={addFarElement}>
+        <button type="button" className={BUTTON_CLASSNAME} onClick={addFarElement}>
           Add far element
         </button>
-        <FitButton />
       </div>
       <Paper
-        className="min-h-0 flex-1"
+        style={PAPER_STYLE}
+        className={PAPER_CLASSNAME}
+        overflow
         fitToContent={PRESETS[presetIndex].value}
         renderElement={renderElement}
-      />
+      >
+        <div className="absolute right-3 bottom-3">
+          <FitButton />
+        </div>
+      </Paper>
     </div>
   );
 }
