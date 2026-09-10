@@ -5,6 +5,28 @@ import type { CellId } from '../types/cell.types';
 const WARNED = new Set<string>();
 
 /**
+ * Emits a dev-only warning once per `key`; later calls with the same key are
+ * silent until {@link forgetWarning} clears it. The message is built lazily so
+ * a suppressed call does no string work.
+ * @param key - Deduplication key.
+ * @param buildMessage - Produces the warning text.
+ */
+function warnOnce(key: string, buildMessage: () => string): void {
+  if (process.env.NODE_ENV === 'production') return;
+  if (WARNED.has(key)) return;
+  WARNED.add(key);
+  console.warn(buildMessage());
+}
+
+/**
+ * Re-arms a {@link warnOnce} key so the next occurrence warns afresh.
+ * @param key - The key to clear.
+ */
+function forgetWarning(key: string): void {
+  WARNED.delete(key);
+}
+
+/**
  * Warns (dev-only, tree-shaken in production) when a cell setter is called for
  * a target that cannot be resolved, a nullish id, or an id with no matching
  * cell on the graph. The setter then no-ops instead of throwing, so a transient
