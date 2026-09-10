@@ -88,10 +88,8 @@ describe('fitToContent prop', () => {
     renderHook(() => Probe(), { wrapper: makeWrapper('fit-once', { refit: 'once' }) });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
     transformSpy.mockClear();
-    await act(async () => {
-      bump();
-      await flush();
-    });
+    act(() => bump());
+    await flush();
     expect(transformSpy).not.toHaveBeenCalled();
   });
 
@@ -99,10 +97,8 @@ describe('fitToContent prop', () => {
     renderHook(() => null, { wrapper: makeWrapper('fit-resize', true) });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
     transformSpy.mockClear();
-    await act(async () => {
-      triggerResize();
-      await flush();
-    });
+    act(() => triggerResize());
+    await flush();
     expect(transformSpy).toHaveBeenCalled();
   });
 
@@ -110,10 +106,8 @@ describe('fitToContent prop', () => {
     renderHook(() => null, { wrapper: makeWrapper('fit-once-resize', { refit: 'once' }) });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
     transformSpy.mockClear();
-    await act(async () => {
-      triggerResize();
-      await flush();
-    });
+    act(() => triggerResize());
+    await flush();
     expect(transformSpy).not.toHaveBeenCalled();
   });
 
@@ -134,10 +128,8 @@ describe('fitToContent prop', () => {
     renderHook(() => Probe(), { wrapper: makeWrapper('fit-always', { refit: 'always' }) });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
     transformSpy.mockClear();
-    await act(async () => {
-      addCell();
-      await flush();
-    });
+    act(() => addCell());
+    await flush();
     expect(transformSpy).toHaveBeenCalled();
   });
 
