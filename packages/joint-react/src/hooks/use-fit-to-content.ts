@@ -8,6 +8,9 @@ import { simpleScheduler } from '../utils/scheduler';
 import { useGraphStore } from './use-graph-store';
 import { useLatestRef } from './use-latest-ref';
 
+/** Host size as a comparable string, for the resize-echo guard below. */
+const readHostSize = (host: Element) => `${host.clientWidth}x${host.clientHeight}`;
+
 /** Graph events that change the content bounds, for `refit: 'always'`. */
 const CONTENT_EVENTS = ['add', 'remove', 'reset', 'change:position', 'change:size'];
 
@@ -32,25 +35,31 @@ export function useFitToContent(
   const isRequested = normalized !== null;
   const isEnabled = isRequested && !hasTransform;
   const refit = normalized?.refit ?? null;
+  // Content, not identity: `fitToContent={{ padding: 24 }}` is a fresh object on
+  // every render, so keying the fit on identity would re-frame the paper
+  // constantly. Every fit option is plain data, so serializing is enough, and it
+  // lets a changed option re-run the effect below even when `refit` is unchanged.
+  const optionsSignature = normalized === null ? null : JSON.stringify(normalized);
 
   // Declared before the effects below so its layout effect commits the latest
   // options first; the effects then read fresh values without depending on them.
   const optionsRef = useLatestRef(normalized);
   const { measureState, graph } = useGraphStore();
   const hasFittedRef = useRef(false);
-  // `mode: 'resize'` changes the paper's own size, which feeds the
-  // ResizeObserver below. Ignore observer callbacks raised by our own fit.
-  const isFittingRef = useRef(false);
+  // Host size at the last fit, as `${width}x${height}`. Only `mode: 'resize'`
+  // changes the paper's own size, so only it can feed the ResizeObserver below
+  // with the echo of its own fit; comparing sizes drops exactly those callbacks
+  // while letting a real resize through. A timer-based guard would not:
+  // `requestAnimationFrame` never runs in a background tab, which would latch
+  // the guard on forever.
+  const fittedSizeRef = useRef<string | null>(null);
 
   const fitRef = useLatestRef(() => {
     const options = optionsRef.current;
     if (!options || !paperStore) return;
-    isFittingRef.current = true;
     runFit(paperStore, options);
     hasFittedRef.current = true;
-    requestAnimationFrame(() => {
-      isFittingRef.current = false;
-    });
+    fittedSizeRef.current = readHostSize(resolveFitHost(paperStore));
   });
   // Stable identity, so `simpleScheduler` coalesces a burst of triggers into
   // one fit instead of queueing a fresh closure per call.
@@ -62,7 +71,8 @@ export function useFitToContent(
     }
   }, [isRequested, hasTransform, paperStore]);
 
-  // Initial fit: the first measurement pass, for every refit policy.
+  // Fits on the first measurement pass, and again whenever the resolved options
+  // change — a prop is expected to take effect when it changes.
   useLayoutEffect(() => {
     if (!isEnabled || !paperStore) return;
     hasFittedRef.current = false;
@@ -76,20 +86,23 @@ export function useFitToContent(
 
     handleMeasure();
     return measureState.subscribe(handleMeasure);
-  }, [isEnabled, paperStore, measureState, refit]);
+  }, [isEnabled, paperStore, measureState, refit, optionsSignature]);
 
   // Host resize, for 'resize' and 'always'.
   useLayoutEffect(() => {
     if (!isEnabled || !paperStore || refit === 'once') return;
     const host = resolveFitHost(paperStore);
     const observer = new ResizeObserver(() => {
-      if (isFittingRef.current) return;
       if (!hasFittedRef.current) return;
+      // In resize mode an unchanged size means this callback is our own echo.
+      if (optionsRef.current?.mode === 'resize' && readHostSize(host) === fittedSizeRef.current) {
+        return;
+      }
       simpleScheduler(dispatchRef.current);
     });
     observer.observe(host);
     return () => observer.disconnect();
-  }, [isEnabled, paperStore, refit]);
+  }, [isEnabled, paperStore, refit, optionsRef]);
 
   // Content changes, for 'always' only.
   useLayoutEffect(() => {
