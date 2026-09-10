@@ -38,22 +38,19 @@ export function useFitToContent(
   const optionsRef = useLatestRef(normalized);
   const { measureState, graph } = useGraphStore();
   const hasFittedRef = useRef(false);
-  // Host size at the last fit, as `${width}x${height}`. Only `mode: 'resize'`
-  // changes the paper's own size, so only it can feed the ResizeObserver below
-  // with the echo of its own fit; comparing sizes drops exactly those callbacks
-  // while letting a real resize through. A timer-based guard would not:
-  // `requestAnimationFrame` never runs in a background tab, which would latch
-  // the guard on forever.
-  const fittedSizeRef = useRef<string | null>(null);
-
-  const readHostSize = (host: Element) => `${host.clientWidth}x${host.clientHeight}`;
+  // `mode: 'resize'` changes the paper's own size, which feeds the
+  // ResizeObserver below. Ignore observer callbacks raised by our own fit.
+  const isFittingRef = useRef(false);
 
   const fitRef = useLatestRef(() => {
     const options = optionsRef.current;
     if (!options || !paperStore) return;
+    isFittingRef.current = true;
     runFit(paperStore, options);
     hasFittedRef.current = true;
-    fittedSizeRef.current = readHostSize(resolveFitHost(paperStore));
+    requestAnimationFrame(() => {
+      isFittingRef.current = false;
+    });
   });
   // Stable identity, so `simpleScheduler` coalesces a burst of triggers into
   // one fit instead of queueing a fresh closure per call.
@@ -86,11 +83,8 @@ export function useFitToContent(
     if (!isEnabled || !paperStore || refit === 'once') return;
     const host = resolveFitHost(paperStore);
     const observer = new ResizeObserver(() => {
+      if (isFittingRef.current) return;
       if (!hasFittedRef.current) return;
-      // In resize mode an unchanged size means this callback is our own echo.
-      if (optionsRef.current?.mode === 'resize' && readHostSize(host) === fittedSizeRef.current) {
-        return;
-      }
       simpleScheduler(dispatchRef.current);
     });
     observer.observe(host);
