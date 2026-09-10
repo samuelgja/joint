@@ -1,9 +1,7 @@
 /* eslint-disable unicorn/consistent-function-scoping */
-import { render, renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { dia, g } from '@joint/core';
 import { paperRenderElementWrapper } from '../../utils/test-wrappers';
-import { GraphProvider } from '../../components/graph/graph-provider';
-import { Paper } from '../../components/paper/paper';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
 import type { CellRecord } from '../../types/cell.types';
 import type { PaperProps } from '../../components/paper/paper.types';
@@ -27,13 +25,6 @@ beforeEach(() => {
 });
 
 const incrementMeasureState = (previous: number) => previous + 1;
-
-const renderRect = () => <rect />;
-const ZOOM_PRESET: PaperProps['fitToContent'] = { padding: 24 };
-const ZOOM_PRESET_PADDED: PaperProps['fitToContent'] = { padding: 60 };
-/** Distinct object, identical content — what an inline prop produces each render. */
-const ZOOM_PRESET_EQUAL: PaperProps['fitToContent'] = { padding: 24 };
-const RESIZE_PRESET: PaperProps['fitToContent'] = { mode: 'resize', padding: 24 };
 
 const triggerResize = () => {
   for (const trigger of resizeTriggers) trigger();
@@ -192,77 +183,5 @@ describe('fitToContent prop', () => {
     await waitFor(() => expect(warn).toHaveBeenCalled());
     expect(transformSpy).not.toHaveBeenCalled();
     warn.mockRestore();
-  });
-});
-
-// Regression: the refit effects were keyed on `refit` alone, so changing any
-// other fit option (switching `mode` with `refit` unchanged) re-ran nothing and
-// the prop silently kept the previous framing until an unrelated trigger fired.
-describe('fitToContent reacts to prop changes', () => {
-  let transformSpy: jest.SpyInstance;
-  let resizeSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    transformSpy = jest
-      .spyOn(dia.Paper.prototype, 'transformToFitContent')
-      .mockImplementation(() => {});
-    resizeSpy = jest
-      .spyOn(dia.Paper.prototype, 'fitToContent')
-      .mockImplementation(() => new g.Rect(0, 0, 50, 50));
-  });
-
-  afterEach(() => {
-    transformSpy.mockRestore();
-    resizeSpy.mockRestore();
-  });
-
-  const cells = [
-    {
-      id: 'a',
-      type: ELEMENT_MODEL_TYPE,
-      position: { x: 0, y: 0 },
-      size: { width: 50, height: 50 },
-    } as CellRecord,
-  ];
-
-  function Diagram({ fitToContent }: Readonly<{ fitToContent: PaperProps['fitToContent'] }>) {
-    return (
-      <GraphProvider initialCells={cells}>
-        <Paper id="fit-prop-change" fitToContent={fitToContent} renderElement={renderRect} />
-      </GraphProvider>
-    );
-  }
-
-  it('re-fits when mode changes while refit stays the same', async () => {
-    const { rerender } = render(<Diagram fitToContent={ZOOM_PRESET} />);
-    await waitFor(() => expect(transformSpy).toHaveBeenCalled());
-    transformSpy.mockClear();
-    resizeSpy.mockClear();
-
-    // `refit` is 'resize' in both presets — only `mode` differs.
-    rerender(<Diagram fitToContent={RESIZE_PRESET} />);
-    await act(async () => flush());
-    expect(resizeSpy).toHaveBeenCalled();
-  });
-
-  it('re-fits when a fit option changes while mode and refit stay the same', async () => {
-    const { rerender } = render(<Diagram fitToContent={ZOOM_PRESET} />);
-    await waitFor(() => expect(transformSpy).toHaveBeenCalled());
-    transformSpy.mockClear();
-
-    rerender(<Diagram fitToContent={ZOOM_PRESET_PADDED} />);
-    await act(async () => flush());
-    expect(transformSpy).toHaveBeenCalled();
-  });
-
-  it('does not re-fit when an equal options object is passed again', async () => {
-    const { rerender } = render(<Diagram fitToContent={ZOOM_PRESET} />);
-    await waitFor(() => expect(transformSpy).toHaveBeenCalled());
-    transformSpy.mockClear();
-
-    // A different object with the same content — the common inline-prop case.
-    rerender(<Diagram fitToContent={ZOOM_PRESET_EQUAL} />);
-    await act(async () => flush());
-    expect(transformSpy).not.toHaveBeenCalled();
   });
 });

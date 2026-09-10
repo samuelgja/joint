@@ -27,16 +27,11 @@ import type { PaperEventHandlers } from '../../presets/paper-events';
 export type PaperTransform = string | DOMMatrix;
 
 /**
- * Which changes re-run `<Paper>`'s `fitToContent` after the first fit.
+ * How often `<Paper>`'s `fitToContent` re-runs after the first fit.
  *
- * - `'once'` — fit after the initial measurement pass, then stay put.
+ * - `'once'` — fit after the initial measurement pass and never again.
  * - `'resize'` — also re-fit whenever the paper's host element changes size.
  * - `'always'` — also re-fit on graph content changes and later measurement passes.
- *
- * This governs the automatic triggers only. Changing the `fitToContent` prop
- * itself always re-fits, under every policy — a prop is expected to take effect
- * when it changes. Passing an equal (but newly allocated) options object does
- * not, so an inline `fitToContent={{ padding: 24 }}` is safe.
  * @group Types
  */
 export type FitToContentRefit = 'once' | 'resize' | 'always';

@@ -8,9 +8,6 @@ import { simpleScheduler } from '../utils/scheduler';
 import { useGraphStore } from './use-graph-store';
 import { useLatestRef } from './use-latest-ref';
 
-/** Host size as a comparable string, for the resize-echo guard below. */
-const readHostSize = (host: Element) => `${host.clientWidth}x${host.clientHeight}`;
-
 /** Graph events that change the content bounds, for `refit: 'always'`. */
 const CONTENT_EVENTS = ['add', 'remove', 'reset', 'change:position', 'change:size'];
 
@@ -35,11 +32,6 @@ export function useFitToContent(
   const isRequested = normalized !== null;
   const isEnabled = isRequested && !hasTransform;
   const refit = normalized?.refit ?? null;
-  // Content, not identity: `fitToContent={{ padding: 24 }}` is a fresh object on
-  // every render, so keying the fit on identity would re-frame the paper
-  // constantly. Every fit option is plain data, so serializing is enough, and it
-  // lets a changed option re-run the effect below even when `refit` is unchanged.
-  const optionsSignature = normalized === null ? null : JSON.stringify(normalized);
 
   // Declared before the effects below so its layout effect commits the latest
   // options first; the effects then read fresh values without depending on them.
@@ -53,6 +45,8 @@ export function useFitToContent(
   // `requestAnimationFrame` never runs in a background tab, which would latch
   // the guard on forever.
   const fittedSizeRef = useRef<string | null>(null);
+
+  const readHostSize = (host: Element) => `${host.clientWidth}x${host.clientHeight}`;
 
   const fitRef = useLatestRef(() => {
     const options = optionsRef.current;
@@ -71,8 +65,7 @@ export function useFitToContent(
     }
   }, [isRequested, hasTransform, paperStore]);
 
-  // Fits on the first measurement pass, and again whenever the resolved options
-  // change — a prop is expected to take effect when it changes.
+  // Initial fit: the first measurement pass, for every refit policy.
   useLayoutEffect(() => {
     if (!isEnabled || !paperStore) return;
     hasFittedRef.current = false;
@@ -86,7 +79,7 @@ export function useFitToContent(
 
     handleMeasure();
     return measureState.subscribe(handleMeasure);
-  }, [isEnabled, paperStore, measureState, refit, optionsSignature]);
+  }, [isEnabled, paperStore, measureState, refit]);
 
   // Host resize, for 'resize' and 'always'.
   useLayoutEffect(() => {
@@ -102,7 +95,7 @@ export function useFitToContent(
     });
     observer.observe(host);
     return () => observer.disconnect();
-  }, [isEnabled, paperStore, refit, optionsRef]);
+  }, [isEnabled, paperStore, refit]);
 
   // Content changes, for 'always' only.
   useLayoutEffect(() => {

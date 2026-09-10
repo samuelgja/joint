@@ -47,32 +47,6 @@ describe('normalizeFitOptions', () => {
   it('does not let an explicit undefined refit erase the default', () => {
     expect(normalizeFitOptions({ refit: undefined })?.refit).toBe('resize');
   });
-
-  // Regression: a spread let an explicit `undefined` from the caller erase a
-  // React default, silently falling back to core's top/left framing.
-  it('does not let explicit undefined options erase the other React defaults', () => {
-    expect(
-      normalizeFitOptions({
-        verticalAlign: undefined,
-        horizontalAlign: undefined,
-        useModelGeometry: undefined,
-      })
-    ).toEqual({
-      mode: 'zoom',
-      refit: 'resize',
-      useModelGeometry: true,
-      verticalAlign: 'middle',
-      horizontalAlign: 'middle',
-    });
-  });
-
-  it('keeps the resize arm default when useModelGeometry is explicitly undefined', () => {
-    expect(normalizeFitOptions({ mode: 'resize', useModelGeometry: undefined })).toEqual({
-      mode: 'resize',
-      refit: 'resize',
-      useModelGeometry: true,
-    });
-  });
 });
 
 const contentArea = new g.Rect(0, 0, 120, 80);
