@@ -46,17 +46,17 @@ function makeWrapper(id: string, fitToContent?: PaperProps['fitToContent']) {
   });
 }
 
-describe('fitToContent prop', () => {
+// The React Compiler auto-memoizes the hook's render-phase work. These cases
+// re-run the trigger wiring under it to prove the memoization does not stop a
+// fit from being scheduled.
+describe('fitToContent prop (react-compiler)', () => {
   let transformSpy: jest.SpyInstance;
   let resizeSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    // Spy on the prototype: the first fit can land before a test could reach
-    // the instance.
     transformSpy = jest
       .spyOn(dia.Paper.prototype, 'transformToFitContent')
       .mockImplementation(() => {});
-    // `paper.fitToContent` returns the applied area, so the stub must too.
     resizeSpy = jest
       .spyOn(dia.Paper.prototype, 'fitToContent')
       .mockImplementation(() => new g.Rect(0, 0, 50, 50));
@@ -68,14 +68,8 @@ describe('fitToContent prop', () => {
   });
 
   it('fits after the first measurement pass', async () => {
-    renderHook(() => null, { wrapper: makeWrapper('fit-initial', true) });
+    renderHook(() => null, { wrapper: makeWrapper('fit-initial-compiler', true) });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
-  });
-
-  it('does not fit when the prop is absent', async () => {
-    renderHook(() => null, { wrapper: makeWrapper('fit-off') });
-    await flush();
-    expect(transformSpy).not.toHaveBeenCalled();
   });
 
   it('refit "once" ignores later measurement passes', async () => {
@@ -85,7 +79,9 @@ describe('fitToContent prop', () => {
       bump = () => measureState.set(incrementMeasureState);
       return null;
     }
-    renderHook(() => Probe(), { wrapper: makeWrapper('fit-once', { refit: 'once' }) });
+    renderHook(() => Probe(), {
+      wrapper: makeWrapper('fit-once-compiler', { refit: 'once' }),
+    });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
     transformSpy.mockClear();
     await act(async () => {
@@ -96,7 +92,7 @@ describe('fitToContent prop', () => {
   });
 
   it('refit "resize" fits again when the host resizes', async () => {
-    renderHook(() => null, { wrapper: makeWrapper('fit-resize', true) });
+    renderHook(() => null, { wrapper: makeWrapper('fit-resize-compiler', true) });
     await waitFor(() => expect(transformSpy).toHaveBeenCalled());
     transformSpy.mockClear();
     await act(async () => {
@@ -104,68 +100,5 @@ describe('fitToContent prop', () => {
       await flush();
     });
     expect(transformSpy).toHaveBeenCalled();
-  });
-
-  it('refit "once" does not fit on a host resize', async () => {
-    renderHook(() => null, { wrapper: makeWrapper('fit-once-resize', { refit: 'once' }) });
-    await waitFor(() => expect(transformSpy).toHaveBeenCalled());
-    transformSpy.mockClear();
-    await act(async () => {
-      triggerResize();
-      await flush();
-    });
-    expect(transformSpy).not.toHaveBeenCalled();
-  });
-
-  it('refit "always" fits again when a cell is added', async () => {
-    let addCell: () => void = () => {};
-    function Probe() {
-      const { graph } = useGraphStore();
-      addCell = () =>
-        graph.addCell(
-          new dia.Element({
-            type: ELEMENT_MODEL_TYPE,
-            position: { x: 400, y: 400 },
-            size: { width: 20, height: 20 },
-          })
-        );
-      return null;
-    }
-    renderHook(() => Probe(), { wrapper: makeWrapper('fit-always', { refit: 'always' }) });
-    await waitFor(() => expect(transformSpy).toHaveBeenCalled());
-    transformSpy.mockClear();
-    await act(async () => {
-      addCell();
-      await flush();
-    });
-    expect(transformSpy).toHaveBeenCalled();
-  });
-
-  it('resize mode calls paper.fitToContent instead', async () => {
-    renderHook(() => null, { wrapper: makeWrapper('fit-mode-resize', { mode: 'resize' }) });
-    await waitFor(() => expect(resizeSpy).toHaveBeenCalled());
-    expect(transformSpy).not.toHaveBeenCalled();
-  });
-
-  it('warns and skips when transform is set too', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    renderHook(() => null, {
-      wrapper: paperRenderElementWrapper({
-        graphProviderProps: {
-          initialCells: [
-            { id: 'a', type: ELEMENT_MODEL_TYPE, size: { width: 50, height: 50 } } as CellRecord,
-          ],
-        },
-        paperProps: {
-          id: 'fit-vs-transform',
-          fitToContent: true,
-          transform: 'scale(0.5)',
-          renderElement: () => <rect />,
-        },
-      }),
-    });
-    await waitFor(() => expect(warn).toHaveBeenCalled());
-    expect(transformSpy).not.toHaveBeenCalled();
-    warn.mockRestore();
   });
 });
