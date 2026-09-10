@@ -53,6 +53,7 @@ const contentArea = new g.Rect(0, 0, 120, 80);
 
 function createFakePaper() {
   return {
+    id: 'p1',
     el: document.createElement('div'),
     transformToFitContent: jest.fn(),
     fitToContent: jest.fn(() => new g.Rect(0, 0, 120, 80)),
@@ -79,7 +80,7 @@ function createStore(
   paper: ReturnType<typeof createFakePaper>,
   features: Record<string, { readonly instance: unknown } | undefined>
 ): FitStoreLike & { readonly paper: ReturnType<typeof createFakePaper> } {
-  return { paperId: 'p1', paper, features };
+  return { paper, features };
 }
 
 describe('isFitScroller', () => {
