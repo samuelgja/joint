@@ -1,6 +1,5 @@
-import type { dia, g } from '@joint/core';
+import type { dia } from '@joint/core';
 import type { FitToContentOptions, FitToContentRefit } from '../components/paper/paper.types';
-import { warnFitResizeUnderScroller } from './dev-warnings';
 
 /**
  * A fully defaulted {@link FitToContentOptions}: `mode` and `refit` are always
@@ -33,12 +32,12 @@ const RESIZE_DEFAULTS: Readonly<dia.Paper.FitToContentOptions> = {
 /**
  * Fills in the defaults for the `fitToContent` prop, turning its
  * `boolean | FitToContentOptions` shape into one resolved object.
- * @param input - The raw prop value; omitted or `undefined` switches fitting off.
+ * @param input - The raw prop value.
  * @returns Resolved options, or `null` when fitting is switched off.
  * @internal
  */
 export function normalizeFitOptions(
-  input?: boolean | FitToContentOptions
+  input: boolean | FitToContentOptions | undefined
 ): ResolvedFitOptions | null {
   if (!input) return null;
   if (input === true) return { ...ZOOM_DEFAULTS, mode: 'zoom', refit: DEFAULT_REFIT };
@@ -49,127 +48,4 @@ export function normalizeFitOptions(
     return { ...RESIZE_DEFAULTS, ...input, mode: 'resize', refit };
   }
   return { ...ZOOM_DEFAULTS, ...input, mode: 'zoom', refit };
-}
-
-/** Feature key `@joint/react-plus` registers its `ui.PaperScroller` under. */
-const PAPER_SCROLLER_FEATURE = 'paperScroller';
-
-/**
- * The `zoomToRect` options the fit passes. Declared locally because the
- * `ui.PaperScroller` types live in `@joint/plus`, which `@joint/react` does not
- * depend on.
- * @internal
- */
-export interface FitZoomToRectOptions extends Readonly<dia.Paper.TransformToFitContentOptions> {
-  readonly minScale?: number;
-  readonly maxScale?: number;
-}
-
-/**
- * The only part of a `<PaperScroller>` the fit uses. Nothing else about the
- * scroller is assumed, so `@joint/react` stays free of a `@joint/plus` import.
- * @internal
- */
-export interface FitScrollerLike {
-  readonly el: HTMLElement;
-  readonly zoomToRect: (rect: g.Rect, options?: FitZoomToRectOptions) => void;
-  readonly getZoomBounds: () => { readonly min: number; readonly max: number };
-}
-
-/**
- * Narrows an unknown registered feature instance to {@link FitScrollerLike}.
- * A type guard rather than a cast: `Feature.instance` is `unknown`, and this is
- * the only place the shape is trusted.
- * @param instance - The feature instance to inspect.
- * @returns True when the instance exposes the scroller surface the fit calls.
- * @internal
- */
-export function isFitScroller(instance: unknown): instance is FitScrollerLike {
-  return (
-    typeof instance === 'object' &&
-    instance !== null &&
-    'zoomToRect' in instance &&
-    typeof instance.zoomToRect === 'function' &&
-    'getZoomBounds' in instance &&
-    typeof instance.getZoomBounds === 'function' &&
-    'el' in instance &&
-    instance.el instanceof HTMLElement
-  );
-}
-
-/**
- * The paper surface `runFit` drives. Declared structurally so the unit tests can
- * exercise it without mounting a real paper.
- * @internal
- */
-interface FitPaperLike {
-  readonly id: string;
-  readonly el: HTMLElement;
-  readonly getContentArea: (options: { useModelGeometry: boolean }) => g.Rect;
-  readonly transformToFitContent: (options?: dia.Paper.TransformToFitContentOptions) => void;
-  readonly fitToContent: (options?: dia.Paper.FitToContentOptions) => g.Rect;
-}
-
-/**
- * The store slice `runFit` reads: the paper plus the registered features.
- * @internal
- */
-export interface FitStoreLike {
-  readonly paper: FitPaperLike;
-  readonly features: Readonly<Record<string, { readonly instance: unknown } | undefined>>;
-}
-
-/**
- * Finds a `<PaperScroller>` registered against this paper, if any.
- * @param paperStore - The paper's store.
- * @returns The scroller, or `null` when none is registered.
- * @internal
- */
-export function resolveFitScroller(paperStore: FitStoreLike): FitScrollerLike | null {
-  const instance = paperStore.features[PAPER_SCROLLER_FEATURE]?.instance;
-  return isFitScroller(instance) ? instance : null;
-}
-
-/**
- * The element whose size changes should trigger a re-fit: the scroller's
- * viewport when one owns the paper, otherwise the paper's own host.
- * @param paperStore - The paper's store.
- * @returns The element to observe.
- * @internal
- */
-export function resolveFitHost(paperStore: FitStoreLike): Element {
-  return resolveFitScroller(paperStore)?.el ?? paperStore.paper.el;
-}
-
-/**
- * Frames the paper's content once, routing through a `<PaperScroller>` when one
- * owns the viewport.
- * @param paperStore - The paper's store.
- * @param options - Resolved fit options from {@link normalizeFitOptions}.
- * @internal
- */
-export function runFit(paperStore: FitStoreLike, options: ResolvedFitOptions): void {
-  const { paper } = paperStore;
-  const contentArea = paper.getContentArea({ useModelGeometry: options.useModelGeometry ?? true });
-  if (contentArea.width <= 0 || contentArea.height <= 0) return;
-
-  const scroller = resolveFitScroller(paperStore);
-  if (scroller) {
-    if (options.mode === 'resize') {
-      warnFitResizeUnderScroller(paper.id);
-      return;
-    }
-    // The scroller owns the viewport: `paper.getComputedSize()` is the sheet,
-    // not the visible window, so `transformToFitContent` would fit to the wrong
-    // box and never scroll. Same call `usePaperScroller().zoomToFit()` makes.
-    const { min, max } = scroller.getZoomBounds();
-    scroller.zoomToRect(contentArea, { minScale: min, maxScale: max, ...options });
-    return;
-  }
-
-  if (options.mode === 'resize') {
-    paper.fitToContent(options);
-    return;
-  }
-  paper.transformToFitContent(options);
 }
