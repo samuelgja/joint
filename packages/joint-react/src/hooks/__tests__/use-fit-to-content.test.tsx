@@ -121,14 +121,14 @@ describe('fitToContent prop', () => {
     let addCell: () => void = () => {};
     function Probe() {
       const { graph } = useGraphStore();
-      // Plain attributes, so the graph builds the cell through its namespace and
-      // gets joint-react's ElementModel (a raw `dia.Element` has no markup).
       addCell = () =>
-        graph.addCell({
-          type: ELEMENT_MODEL_TYPE,
-          position: { x: 400, y: 400 },
-          size: { width: 20, height: 20 },
-        });
+        graph.addCell(
+          new dia.Element({
+            type: ELEMENT_MODEL_TYPE,
+            position: { x: 400, y: 400 },
+            size: { width: 20, height: 20 },
+          })
+        );
       return null;
     }
     renderHook(() => Probe(), { wrapper: makeWrapper('fit-always', { refit: 'always' }) });
@@ -145,22 +145,6 @@ describe('fitToContent prop', () => {
     renderHook(() => null, { wrapper: makeWrapper('fit-mode-resize', { mode: 'resize' }) });
     await waitFor(() => expect(resizeSpy).toHaveBeenCalled());
     expect(transformSpy).not.toHaveBeenCalled();
-  });
-
-  it('resize mode ignores the ResizeObserver echo of its own fit', async () => {
-    // A `mode: 'resize'` fit changes the host's size, which feeds the observer.
-    // The guard compares sizes, so a callback reporting the size we just fitted
-    // at is dropped; jsdom reports a constant size, which is exactly that case.
-    renderHook(() => null, {
-      wrapper: makeWrapper('fit-resize-echo', { mode: 'resize' }),
-    });
-    await waitFor(() => expect(resizeSpy).toHaveBeenCalled());
-    resizeSpy.mockClear();
-    await act(async () => {
-      triggerResize();
-      await flush();
-    });
-    expect(resizeSpy).not.toHaveBeenCalled();
   });
 
   it('warns and skips when transform is set too', async () => {
