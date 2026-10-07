@@ -1,4 +1,5 @@
-import { dia } from '@joint/core';
+import type { dia } from '@joint/core';
+import { Cell } from '@joint/core/dia';
 import type {
   ElementJSONInit,
   LinkJSONInit,
@@ -15,7 +16,7 @@ import { mapCellToAttributes } from '../state/data-mapping/cell-mapper';
  * @returns the cell id
  */
 export function resolveCellRef(cellRef: CellRef): CellId {
-  if (cellRef instanceof dia.Cell) {
+  if (cellRef instanceof Cell) {
     return cellRef.id as CellId;
   }
   return cellRef as CellId;
@@ -31,7 +32,7 @@ export function cellInputToRecord<
   Element extends ElementJSONInit = ElementJSONInit,
   Link extends LinkJSONInit = LinkJSONInit,
 >(input: CellInput<Element, Link>): Element | Link {
-  if (input instanceof dia.Cell) {
+  if (input instanceof Cell) {
     return toCellRecord<Element, Link>(input);
   }
   return input;
@@ -49,7 +50,7 @@ export function cellInputToModel<
   Element extends ElementJSONInit = ElementJSONInit,
   Link extends LinkJSONInit = LinkJSONInit,
 >(input: CellInput<Element, Link>, graph: dia.Graph): dia.Cell | dia.Cell.JSONInit {
-  if (input instanceof dia.Cell) {
+  if (input instanceof Cell) {
     return input;
   }
   return mapCellToAttributes(input, graph);

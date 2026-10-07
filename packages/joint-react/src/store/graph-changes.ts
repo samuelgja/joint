@@ -1,4 +1,5 @@
-import { mvc, type dia } from '@joint/core';
+import type { dia, mvc } from '@joint/core';
+import { Listener } from '@joint/core/mvc';
 import type { IncrementalChange } from '../state/incremental.types';
 import { simpleScheduler } from '../utils/scheduler';
 import type { ElementJSONInit, LinkJSONInit, CellId } from '../types/cell.types';
@@ -126,7 +127,7 @@ export function graphChanges(options: Options) {
     onChanges({ changes, isInsideBatch: isInsideBatch(), deferCommit: isDeferring() });
   }
 
-  const controller = new mvc.Listener();
+  const controller = new Listener();
 
   controller.listenTo(
     graph,

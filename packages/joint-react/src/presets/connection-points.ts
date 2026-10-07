@@ -1,4 +1,5 @@
-import { connectionPoints } from '@joint/core';
+import type { connectionPoints } from '@joint/core';
+import { boundary, rectangle } from '@joint/core/connectionPoints';
 import { BOUNDARY_OPTIONS, EMPTY_OPTIONS, getMarkerLength, MODEL_GEOMETRY_OPTIONS } from './utils';
 
 /**
@@ -25,9 +26,9 @@ export const boundaryPoint: connectionPoints.ConnectionPoint = (
   linkView,
 ) => {
   if (endMagnet === endView.el || endMagnet.getAttribute('port')) {
-    return connectionPoints.rectangle(endPathSegmentLine, endView, endMagnet, MODEL_GEOMETRY_OPTIONS, endType, linkView);
+    return rectangle(endPathSegmentLine, endView, endMagnet, MODEL_GEOMETRY_OPTIONS, endType, linkView);
   }
-  return connectionPoints.boundary(endPathSegmentLine, endView, endMagnet, BOUNDARY_OPTIONS, endType, linkView);
+  return boundary(endPathSegmentLine, endView, endMagnet, BOUNDARY_OPTIONS, endType, linkView);
 };
 
 /**
@@ -54,7 +55,7 @@ export const anchorPoint: connectionPoints.ConnectionPoint = (
     return endPathSegmentLine.end.clone();
   }
   // For custom magnets, use rectangle with DOM geometry to find the point on the magnet itself.
-  return connectionPoints.rectangle(endPathSegmentLine, endView, endMagnet, EMPTY_OPTIONS, endType, linkView);
+  return rectangle(endPathSegmentLine, endView, endMagnet, EMPTY_OPTIONS, endType, linkView);
 };
 
 /**

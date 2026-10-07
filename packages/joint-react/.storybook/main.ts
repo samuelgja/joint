@@ -21,6 +21,19 @@ function getAbsolutePath(value: string): string {
   return path.dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
 
+/** `@joint/core` namespace subpaths imported by the library source. */
+const CORE_NAMESPACES = [
+  'anchors',
+  'connectionPoints',
+  'connectors',
+  'dia',
+  'g',
+  'mvc',
+  'routers',
+  'shapes',
+  'util',
+];
+
 const config: StorybookConfig = {
   // Scope discovery to the top-level `stories/` dir only. A `../**` glob makes
   // Storybook's globber walk the whole package — including `node_modules`
@@ -66,7 +79,13 @@ const config: StorybookConfig = {
     // demand and slowing the first load. (`@joint/react` is intentionally
     // omitted — it's this package's dev target, aliased to source above.)
     config.optimizeDeps = config.optimizeDeps || {};
-    config.optimizeDeps.include = [...(config.optimizeDeps.include ?? []), '@joint/core'];
+    // The namespace subpaths are listed too: left out, they would be served raw
+    // from `joint-core/src` next to the pre-bundled entry, as a second copy of core.
+    config.optimizeDeps.include = [
+      ...(config.optimizeDeps.include ?? []),
+      '@joint/core',
+      ...CORE_NAMESPACES.map((namespace) => `@joint/core/${namespace}`),
+    ];
     return config;
   },
 };

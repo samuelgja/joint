@@ -21,6 +21,8 @@ export type { IncrementalCellsChange } from './store/graph-projection';
  * @group Components
  */
 export { Paper } from './components/paper/paper';
+export { ReactPaper } from './components/react-paper/react-paper';
+export type { ReactPaperProps } from './components/react-paper/react-paper';
 /** @group Types */
 export type {
   PaperProps,
@@ -104,7 +106,7 @@ export type { PaperTarget } from './types/paper.types';
  * Default `<Paper>` id used when none is provided.
  * @group Constants
  */
-export { DEFAULT_PAPER_ID } from './mvc/paper';
+export { DEFAULT_PAPER_ID } from './mvc/paper-id';
 
 /**
  * useCells()

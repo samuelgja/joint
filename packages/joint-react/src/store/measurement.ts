@@ -1,4 +1,5 @@
-import { mvc, type dia } from '@joint/core';
+import type { dia, mvc } from '@joint/core';
+import { Listener } from '@joint/core/mvc';
 import type { CellId, ElementLayout } from '../types/cell.types';
 import type { PaperStore } from './paper-store';
 import { simpleScheduler } from '../utils/scheduler';
@@ -288,7 +289,7 @@ export function createMeasurement(options: Options) {
   // An external graph may already hold elements.
   for (const element of graph.getElements()) track(element);
 
-  const listener = new mvc.Listener();
+  const listener = new Listener();
   listener.listenTo(graph, 'add', (cell: dia.Cell) => {
     if (cell.isElement()) track(cell);
   });

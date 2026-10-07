@@ -1,8 +1,10 @@
-import { dia, shapes } from '@joint/core';
+import type { dia } from '@joint/core';
+import { Graph } from '@joint/core/dia';
+// Every shape namespace of the core build in use, exactly as `shapes` lists them.
+import * as shapes from '@joint/core/shapes';
 import type { ElementJSONInit, LinkJSONInit, CellId } from '../types/cell.types';
-import type { AddPaperOptions } from './paper-store';
-
-import { PaperStore, getDefaultPaperState } from './paper-store';
+import type { AddPaperOptions, PaperStore, PaperStoreOptions } from './paper-store';
+import { warnDuplicatePapers } from '../utils/dev-warnings';
 import { createMeasurement, type AutoSizeOrigin, type Measurement } from './measurement';
 import { ELEMENT_MODEL_TYPE, ElementModel } from '../mvc/element-model';
 import { LINK_MODEL_TYPE, LinkModel } from '../mvc/link-model';
@@ -19,7 +21,6 @@ import {
 } from './graph-projection';
 import { cellInputToModel } from '../utils/normalize-cell-input';
 import type { CellInput } from '../types/cell.types';
-import { warnDuplicatePapers } from '../utils/dev-warnings';
 
 export const DEFAULT_CELL_NAMESPACE: Record<string, unknown> = {
   ...shapes,
@@ -35,6 +36,30 @@ export const DEFAULT_CELL_NAMESPACE: Record<string, unknown> = {
 export interface PaperStoreState {
   readonly version: number;
   readonly featuresState?: Record<string, unknown>;
+}
+
+/** Creates the paper store behind {@link GraphStore.addPaper}. */
+type PaperStoreFactory = (options: PaperStoreOptions) => PaperStore;
+
+let createPaperStore: PaperStoreFactory | undefined;
+
+/**
+ * Hands the graph store its paper implementation. Called by `paper-store.ts`
+ * when it loads, so a graph store never imports the paper itself and an
+ * application without a `<Paper>` can leave it out of its bundle.
+ * @param factory - Creates a paper store from its options.
+ */
+export function setPaperStoreFactory(factory: PaperStoreFactory): void {
+  createPaperStore = factory;
+}
+
+/**
+ * Creates an initial paper state.
+ * Starts at version 1 to avoid falsy zero issues.
+ * Returns a new object each time to prevent shared-reference mutations.
+ */
+export function getDefaultPaperState(): PaperStoreState {
+  return { version: 1 };
 }
 
 /**
@@ -97,7 +122,7 @@ export class GraphStore<
 
     this.graph =
       graph ??
-      new dia.Graph(
+      new Graph(
         {},
         {
           cellNamespace: {
@@ -140,7 +165,6 @@ export class GraphStore<
       // (e.g. stencil drag's cloneView).
       this.graphProjection.syncFromGraph();
     }
-
   }
 
   public setOnIncrementalCellsChange = (callback: OnIncrementalCellsChange<Element, Link>) => {
@@ -308,10 +332,15 @@ export class GraphStore<
   };
 
   public addPaper = (id: string, paperOptions: AddPaperOptions) => {
+    if (!createPaperStore) {
+      throw new Error(
+        'GraphStore: no paper implementation is loaded. Render a <Paper>, or import `PaperStore` from `@joint/react/internal`.'
+      );
+    }
     if (process.env.NODE_ENV !== 'production') {
       warnDuplicatePapers(id, this.paperStores.keys());
     }
-    const paperStore = new PaperStore({ ...paperOptions, graphStore: this, id });
+    const paperStore = createPaperStore({ ...paperOptions, graphStore: this, id });
     this.paperStores.set(id, paperStore);
     this.updatePaperSnapshot(id, () => getDefaultPaperState());
     return { paperStore, remove: () => this.removePaper(id) };

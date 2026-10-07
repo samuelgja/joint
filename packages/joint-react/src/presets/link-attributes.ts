@@ -1,4 +1,4 @@
-import { util } from '@joint/core';
+import { isObject } from '@joint/core/util';
 import { linkLabels } from './link-labels';
 import { linkStyle } from './link-style';
 import type { dia } from '@joint/core';
@@ -57,7 +57,7 @@ export interface LinkAttributes extends dia.Link.Attributes, LinkPresetAttribute
  * @group Presets
  */
 export function linkAttributes(link: LinkAttributes): dia.Link.Attributes {
-  if (!util.isObject(link)) {
+  if (!isObject(link)) {
     throw new TypeError('Invalid link data: expected an object with link properties.');
   }
 

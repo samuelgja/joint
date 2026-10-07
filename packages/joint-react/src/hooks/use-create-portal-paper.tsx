@@ -19,10 +19,11 @@ import { useCells } from './use-cells';
 import { useCellIds } from './use-cell-ids';
 import type { LinkRecord } from '../types/cell.types';
 import type { PaperStore } from '../store';
+import { addPaper } from '../store/paper-store';
 import { isPaperView } from '../mvc/paper';
 import type { PaperView } from '../mvc/paper';
 import type { DefaultLink, PaperProps, RenderLink } from '../components/paper/paper.types';
-import { HTMLBox } from '../components/html-box';
+import { defaultRenderElement } from '../components/paper/default-render-element';
 
 import { mapLinkToAttributes } from '../state/data-mapping';
 import type { CanConnectOptions } from '../presets/can-connect';
@@ -161,16 +162,6 @@ function LinkItem({
 }
 
 /**
- * The default element if the user doesn't provide a renderElement function.
- * Renders `data.label` inside an {@link HTMLBox}.
- * @param data - the element's user data slice
- * @returns A JSX element rendering the label inside an {@link HTMLBox} with default styling.
- */
-const defaultRenderElement = (data: unknown) => {
-  const label = (data as { label?: string } | undefined)?.label;
-  return <HTMLBox>{label}</HTMLBox>;
-};
-/**
  * Creates and manages a React-backed JointJS paper instance lifecycle.
  * @param options - Hook options with paper settings and behavior overrides.
  * @returns Hook state with paper instance and rendered portal content.
@@ -305,7 +296,7 @@ export function useCreatePortalPaper(
   useLayoutEffect(() => {
     const hostElementForCreation = nodeRef?.current;
 
-    const { paperStore, remove } = graphStore.addPaper(id, {
+    const { paperStore, remove } = addPaper(graphStore, id, {
       paperOptions: {
         ...paperOptions,
         id,

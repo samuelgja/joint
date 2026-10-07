@@ -1,6 +1,11 @@
-import { dia } from '@joint/core';
+import type { dia } from '@joint/core';
+import { Link as DiaLink } from '@joint/core/dia';
 import { linkStyle } from '../presets/link-style';
 import type { PortalHostCell } from './paper.types';
+
+// Typed through the root namespace, so the published declarations only refer
+// to `@joint/core` and resolve under every `moduleResolution`.
+const BaseLink: typeof dia.Link = DiaLink;
 
 /**
  * The `type` value `@joint/react` stamps on every {@link LinkModel} (`'link'`).
@@ -31,9 +36,10 @@ const defaultLinkStyle: dia.Link.Attributes['attrs'] = linkStyle();
  * });
  * ```
  */
-export class LinkModel<
-  Attributes extends dia.Link.Attributes = dia.Link.Attributes
-> extends dia.Link<Attributes> implements PortalHostCell {
+export class LinkModel<Attributes extends dia.Link.Attributes = dia.Link.Attributes>
+  extends BaseLink<Attributes>
+  implements PortalHostCell
+{
   /**
    * Selector of the node in this cell's view where `@joint/react` mounts React
    * content, the link's root `<g>` (`'root'`). The markup keeps no dedicated

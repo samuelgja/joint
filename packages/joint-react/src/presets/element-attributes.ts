@@ -1,4 +1,4 @@
-import { util } from '@joint/core';
+import { isObject } from '@joint/core/util';
 import { elementPorts } from './element-ports';
 import type { dia } from '@joint/core';
 import type { ElementPort } from './element-ports';
@@ -68,7 +68,7 @@ export interface ElementAttributes extends dia.Element.Attributes, ElementPreset
  * @group Presets
  */
 export function elementAttributes(element: ElementAttributes): dia.Element.Attributes {
-  if (!util.isObject(element)) {
+  if (!isObject(element)) {
     throw new TypeError('Invalid element format: expected an object.');
   }
 

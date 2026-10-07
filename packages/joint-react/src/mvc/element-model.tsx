@@ -1,5 +1,11 @@
-import { dia } from '@joint/core';
+import type { dia } from '@joint/core';
+import { Element as DiaElement } from '@joint/core/dia';
 import type { PortalHostCell } from './paper.types';
+
+// Typed through the root namespace, so the published declarations only refer
+// to `@joint/core` and resolve under every `moduleResolution`.
+const BaseElement: typeof dia.Element = DiaElement;
+
 /**
  * The `type` value `@joint/react` stamps on every {@link ElementModel}
  * (`'element'`). Match it against a cell's `type` to single out React elements
@@ -34,7 +40,7 @@ export const PORTAL_SELECTOR = '__portal__';
  * ```
  */
 export class ElementModel<Attributes extends dia.Element.Attributes = dia.Element.Attributes>
-  extends dia.Element<Attributes>
+  extends BaseElement<Attributes>
   implements PortalHostCell
 {
   /**

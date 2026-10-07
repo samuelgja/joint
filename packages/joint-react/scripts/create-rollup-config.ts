@@ -90,6 +90,35 @@ function createPlugins() {
   ];
 }
 
+/** A namespace subpath of `@joint/core`, e.g. `@joint/core/mvc`. */
+const CORE_NAMESPACE_IMPORT = /^@joint\/core\/([A-Za-z]+)$/;
+const CORE_NAMESPACE_MODULE = '\0joint-core-namespace:';
+
+/**
+ * `@joint/core` ships its namespace subpaths (`@joint/core/mvc`) as ES modules
+ * only; a CommonJS application gets the whole library from `require('@joint/core')`.
+ * In the CJS build, each subpath import is therefore read off the matching
+ * namespace of the root entry, which also keeps a single copy of core in a
+ * CommonJS application.
+ * @returns The Rollup plugin for the CJS build.
+ */
+function coreNamespacesFromRoot(): Plugin {
+  return {
+    name: 'core-namespaces-from-root',
+    resolveId(source) {
+      const [, namespace] = CORE_NAMESPACE_IMPORT.exec(source) ?? [];
+      if (!namespace) return;
+      // The namespace object is the default export; its members are the named ones.
+      return { id: `${CORE_NAMESPACE_MODULE}${namespace}`, syntheticNamedExports: true };
+    },
+    load(id) {
+      if (!id.startsWith(CORE_NAMESPACE_MODULE)) return;
+      const namespace = id.slice(CORE_NAMESPACE_MODULE.length);
+      return `import { ${namespace} } from '@joint/core';\nexport default ${namespace};`;
+    },
+  };
+}
+
 /**
  * Creates ESM and CJS Rollup configurations with preserved module structure.
  * @param options - Build configuration including entry points and external dependencies.
@@ -136,8 +165,9 @@ export function createRollupConfig(options: CreateRollupConfigOptions): RollupOp
         plugins: [banner(() => bannerText)],
       },
       context: 'globalThis',
-      external,
-      plugins,
+      // The namespace subpaths are resolved by `coreNamespacesFromRoot` instead.
+      external: (id: string) => !CORE_NAMESPACE_IMPORT.test(id) && external(id),
+      plugins: [coreNamespacesFromRoot(), ...plugins],
     },
 
     // Declaration build (bundled .d.ts per entry)

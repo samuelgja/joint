@@ -1,3 +1,4 @@
+import { addPaper } from '../paper-store';
 import { dia } from '@joint/core';
 import { PaperStore } from '../paper-store';
 import { GraphStore } from '../graph-store';
@@ -70,7 +71,9 @@ describe('PaperStore', () => {
         // exact matrix values are not asserted (JSDOM has no DOMMatrix
         // parser; the mock returns identity), only that the setter was
         // invoked with an SVGMatrix-shaped argument.
-        const setterCall = matrixSpy.mock.calls.find((call) => (call as readonly unknown[]).length > 0);
+        const setterCall = matrixSpy.mock.calls.find(
+          (call) => (call as readonly unknown[]).length > 0
+        );
         expect(setterCall).toBeDefined();
         const argument = setterCall![0] as { a: number; d: number };
         expect(typeof argument.a).toBe('number');
@@ -306,7 +309,7 @@ describe('PaperStore', () => {
       const graph = new dia.Graph();
       const graphStore = new GraphStore({ graph });
 
-      const { paperStore, remove } = graphStore.addPaper('test-paper', {
+      const { paperStore, remove } = addPaper(graphStore, 'test-paper', {
         paperOptions: {},
       });
 
@@ -324,10 +327,10 @@ describe('PaperStore', () => {
       const graph = new dia.Graph();
       const graphStore = new GraphStore({ graph });
 
-      graphStore.addPaper('paper-1', {
+      addPaper(graphStore, 'paper-1', {
         paperOptions: {},
       });
-      graphStore.addPaper('paper-2', {
+      addPaper(graphStore, 'paper-2', {
         paperOptions: {},
       });
 
@@ -347,7 +350,7 @@ describe('PaperStore', () => {
       const graph = new dia.Graph();
       const graphStore = new GraphStore({ graph });
 
-      graphStore.addPaper('test-paper', {
+      addPaper(graphStore, 'test-paper', {
         paperOptions: {},
       });
 

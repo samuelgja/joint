@@ -1,4 +1,5 @@
-import { connectionPoints, type dia } from '@joint/core';
+import type { connectionPoints, dia } from '@joint/core';
+import { anchor as anchorConnectionPoint } from '@joint/core/connectionPoints';
 import type { LinkMode } from './anchors';
 import { centerAnchor, perpendicularAnchor, midSideAnchor } from './anchors';
 import { boundaryPoint, anchorPoint, withOffsets } from './connection-points';
@@ -245,7 +246,7 @@ export function linkRoutingSmooth(options: LinkRoutingSmoothOptions = {}): LinkR
       ),
       defaultConnectionPoint: connectionPointWhenConnected(
         withCustomAnchorOffsets(
-          connectionPoints.anchor as connectionPoints.ConnectionPoint,
+          anchorConnectionPoint as connectionPoints.ConnectionPoint,
           sourceOffset,
           targetOffset,
           markerSelector
@@ -260,7 +261,7 @@ export function linkRoutingSmooth(options: LinkRoutingSmoothOptions = {}): LinkR
     defaultConnector: outwardsCurveConnector,
     defaultAnchor: midSideAnchor(mode, sourceOffset, targetOffset, markerSelector),
     defaultConnectionPoint: withCustomAnchorOffsets(
-      connectionPoints.anchor as connectionPoints.ConnectionPoint,
+      anchorConnectionPoint as connectionPoints.ConnectionPoint,
       sourceOffset,
       targetOffset,
       markerSelector

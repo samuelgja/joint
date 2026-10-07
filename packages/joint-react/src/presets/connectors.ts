@@ -1,5 +1,5 @@
 import type { connectors as connectorTypes } from '@joint/core';
-import { connectors as connectorFns } from '@joint/core';
+import { curve } from '@joint/core/connectors';
 
 /**
  * Curve connector with outwards tangent direction.
@@ -10,7 +10,7 @@ import { connectors as connectorFns } from '@joint/core';
  * @param linkView
  */
 export const outwardsCurveConnector: connectorTypes.Connector = (sourcePoint, targetPoint, routePoints, _args, linkView) =>
-  connectorFns.curve(sourcePoint, targetPoint, routePoints, {
-    sourceDirection: connectorFns.curve.TangentDirections.OUTWARDS,
-    targetDirection: connectorFns.curve.TangentDirections.OUTWARDS,
+  curve(sourcePoint, targetPoint, routePoints, {
+    sourceDirection: curve.TangentDirections.OUTWARDS,
+    targetDirection: curve.TangentDirections.OUTWARDS,
   }, linkView);

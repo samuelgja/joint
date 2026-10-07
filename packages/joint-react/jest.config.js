@@ -23,6 +23,11 @@ const base = {
   moduleNameMapper: {
     '^.+\\.css$': '<rootDir>/__mocks__/style-mock.ts', // Mock CSS files
     '^@joint/react$': '<rootDir>/src/index.ts',
+    // One copy of @joint/core, its ESM source: the namespace subpaths
+    // (`@joint/core/dia`) resolve to `src/`, so the bare entry must too, or the
+    // tests would mix classes from `src/` with the prebuilt `dist/` bundle.
+    '^@joint/core$': '<rootDir>/../joint-core/joint.mjs',
+    '^@joint/core/([a-zA-Z]+)$': '<rootDir>/../joint-core/src/$1/index.mjs',
     '^src/(.*)$': '<rootDir>/src/$1',
     '^storybook-config/(.*)$': '<rootDir>/.storybook/$1',
     '^storybook/theming$': '<rootDir>/__mocks__/storybook-mock.ts',

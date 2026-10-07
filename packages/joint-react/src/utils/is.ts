@@ -1,5 +1,12 @@
 /* eslint-disable jsdoc/require-jsdoc */
-import { util, mvc, type dia } from '@joint/core';
+import type { dia, mvc } from '@joint/core';
+import { Collection } from '@joint/core/mvc';
+import {
+  isBoolean as isBooleanValue,
+  isNumber as isNumberValue,
+  isObject,
+  isString as isStringValue,
+} from '@joint/core/util';
 import type { FunctionComponent, JSX } from 'react';
 
 export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
@@ -7,21 +14,21 @@ export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return util.isObject(value);
+  return isObject(value);
 }
 
 function hasChildren(props: Record<string, unknown>) {
   return 'children' in props;
 }
 export function isString(value: unknown): value is string {
-  return util.isString(value);
+  return isStringValue(value);
 }
 
 export function isNumber(value: unknown): value is number {
-  return util.isNumber(value);
+  return isNumberValue(value);
 }
 export function isBoolean(value: unknown): value is boolean {
-  return util.isBoolean(value);
+  return isBooleanValue(value);
 }
 
 export function isNull(value: unknown): value is null {
@@ -45,7 +52,7 @@ export function isRef<T>(value: unknown): value is React.RefObject<T> {
 }
 
 export function isCollection(value: unknown): value is mvc.Collection<dia.Cell> {
-  return value instanceof mvc.Collection;
+  return value instanceof Collection;
 }
 
 

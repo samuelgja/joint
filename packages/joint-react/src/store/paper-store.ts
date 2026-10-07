@@ -2,11 +2,10 @@ import type { dia } from '@joint/core';
 import type { CellId } from '../types/cell.types';
 import type { RenderElement, RenderLink } from '../components';
 import type { PortalSelector } from '../mvc/paper.types';
-import type { GraphStore } from './graph-store';
+import { setPaperStoreFactory, type GraphStore } from './graph-store';
 import { PaperView } from '../mvc/paper';
 import type { Feature } from '../types/feature.types';
 import type { IncrementalChange } from '../state/incremental.types';
-import type { PaperStoreState } from './graph-store';
 import { simpleScheduler } from '../utils/scheduler';
 import { toSVGMatrix } from '../utils/transform';
 import type { PaperTransform } from '../components/paper/paper.types';
@@ -46,15 +45,6 @@ export interface PaperStoreOptions extends AddPaperOptions {
   readonly graphStore: GraphStore<any, any>;
   /** Unique identifier for this paper instance */
   readonly id: string;
-}
-
-/**
- * Creates an initial paper state.
- * Starts at version 1 to avoid falsy zero issues.
- * Returns a new object each time to prevent shared-reference mutations.
- */
-export function getDefaultPaperState(): PaperStoreState {
-  return { version: 1 };
 }
 
 /**
@@ -288,4 +278,23 @@ export class PaperStore {
       feature.clean?.();
     }
   };
+}
+
+setPaperStoreFactory((options) => new PaperStore(options));
+
+/**
+ * Adds a paper to a graph store. Same as `graphStore.addPaper()`, imported from
+ * this module so the paper implementation it needs is loaded for certain.
+ * @param graphStore - The graph store the paper belongs to.
+ * @param id - Unique identifier of the paper.
+ * @param options - Paper options, renderers and an optional paper to adopt.
+ * @returns The created store and the function removing it again.
+ */
+export function addPaper(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  graphStore: GraphStore<any, any>,
+  id: string,
+  options: AddPaperOptions
+) {
+  return graphStore.addPaper(id, options);
 }

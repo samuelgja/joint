@@ -1,4 +1,5 @@
-import { type dia, util } from '@joint/core';
+import type { dia } from '@joint/core';
+import { isCalcExpression } from '@joint/core/util';
 import type { LiteralUnion } from '../types';
 
 /**
@@ -131,7 +132,7 @@ export function linkLabel(label: LinkLabel): dia.Link.Label {
   } else {
     bodyTagName = 'path';
     labelBackgroundAttributes.d = backgroundShape;
-    if (util.isCalcExpression(backgroundShape)) {
+    if (isCalcExpression(backgroundShape)) {
       labelBackgroundAttributes.ref = 'label';
     }
   }

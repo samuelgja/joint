@@ -175,7 +175,7 @@ function SizesTable() {
   const sizes = useCells(selectElementsSizes);
   if (sizes.size === 0) return <p className="text-ink-faint">No elements.</p>;
   return (
-    <ul className="flex flex-col gap-0.5 font-mono text-[12px]">
+    <ul className="flex max-h-40 flex-col gap-0.5 overflow-y-auto font-mono text-[12px]">
       {[...sizes].map(([id, { width, height }]) => (
         <li key={id} className="flex justify-between">
           <span className="text-ink-muted">{id}</span>

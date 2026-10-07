@@ -1,5 +1,5 @@
 import type { dia } from '@joint/core';
-import { DEFAULT_PAPER_ID } from '../mvc/paper';
+import { DEFAULT_PAPER_ID } from '../mvc/paper-id';
 import type { CellId } from '../types/cell.types';
 
 const WARNED = new Set<string>();
@@ -159,5 +159,23 @@ export function warnSchedulerCascade(): void {
   console.error(
     '[@joint/react] A store callback keeps scheduling more work each time it runs, ' +
       'for example a change handler that adds or removes cells. Guard it so it settles.'
+  );
+}
+
+/**
+ * Warns once per end (dev-only, tree-shaken in production) when a link drawn
+ * by `ReactPaper` is connected to another link. `ReactPaper` resolves link ends
+ * against elements only, so such an end is drawn as a free point.
+ * @param endId - Id of the link the end points at.
+ */
+export function warnLinkToLinkEnd(endId: CellId): void {
+  if (process.env.NODE_ENV === 'production') return;
+  const key = `react-paper-link-end:${String(endId)}`;
+  if (WARNED.has(key)) return;
+  WARNED.add(key);
+  console.warn(
+    `[ReactPaper] A link is connected to the link "${String(endId)}". ` +
+      'Link-to-link connections are not supported by ReactPaper yet: connect links to ' +
+      'elements or ports, or use <Paper> for this diagram.'
   );
 }

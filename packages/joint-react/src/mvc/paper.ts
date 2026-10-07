@@ -5,13 +5,12 @@ import type { IncrementalChange } from '../state/incremental.types';
 import { simpleScheduler } from '../utils/scheduler';
 import { Paper } from '../presets/paper';
 import { MEASURING_CLASS_NAME } from '../utils/class-names';
+
+export { DEFAULT_PAPER_ID } from './paper-id';
 export const CLEANUP_EVENT_NAME = 'cleanup';
 const noopViewMountChange = (): void => {
   // No-op default for onViewMountChange callback
 };
-
-/** Well-known paper ID used when no explicit `id` is provided to `<Paper>`. */
-export const DEFAULT_PAPER_ID = 'default-paper';
 
 /**
  * Marks every {@link PaperView} instance for {@link isPaperView} — the same

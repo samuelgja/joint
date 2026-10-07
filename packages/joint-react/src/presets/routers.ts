@@ -1,5 +1,5 @@
 import type { routers } from '@joint/core';
-import { routers as routerFns } from '@joint/core';
+import { rightAngle } from '@joint/core/routers';
 import { getMarkerLength } from './utils';
 
 /**
@@ -13,7 +13,7 @@ export function rightAngleRouter(margin: number, minPathMargin: number): routers
     const targetMarkerLength = getMarkerLength(linkView!, 'target');
     const effectiveSourceMargin = Math.max(margin - sourceMarkerLength, 0);
     const effectiveTargetMargin = Math.max(margin - targetMarkerLength, 0);
-    return routerFns.rightAngle(vertices, {
+    return rightAngle(vertices, {
       useVertices: true,
       sourceMargin: effectiveSourceMargin,
       targetMargin: effectiveTargetMargin,

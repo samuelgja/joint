@@ -1,3 +1,4 @@
+import { addPaper } from '../paper-store';
 import { dia } from '@joint/core';
 import { GraphStore, DEFAULT_CELL_NAMESPACE } from '../graph-store';
 import { ELEMENT_MODEL_TYPE } from '../../mvc/element-model';
@@ -124,7 +125,7 @@ describe('GraphStore feature lifecycle', () => {
 
   it('setPaperFeature stores the feature and bumps that paper version', () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     const versionBefore = store.internalState.get().papers.p1.version;
 
     const feature = makeFeature('feat-1');
@@ -138,7 +139,7 @@ describe('GraphStore feature lifecycle', () => {
 
   it('setPaperFeature skips version bump when re-registering the same instance', () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     const feature = makeFeature('feat-1');
     store.setPaperFeature('p1', feature);
     const versionAfterFirst = store.internalState.get().papers.p1.version;
@@ -163,7 +164,7 @@ describe('GraphStore feature lifecycle', () => {
 
   it('removePaperFeature calls clean, removes the entry, and bumps the paper version', () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     const feature = makeFeature('feat-1');
     store.setPaperFeature('p1', feature);
     const versionBefore = store.internalState.get().papers.p1.version;
@@ -179,7 +180,7 @@ describe('GraphStore feature lifecycle', () => {
 
   it('removePaperFeature releases cellVisibility ownership held by the removed feature', () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     const feature = makeFeature('feat-1');
     store.setPaperFeature('p1', feature);
     const paperStore = store.getPaperStore('p1')!;
@@ -201,7 +202,7 @@ describe('GraphStore feature lifecycle', () => {
 
   it('removePaperFeature is a no-op when feature is missing', () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     const versionBefore = store.internalState.get().papers.p1.version;
 
     expect(() => store.removePaperFeature('p1', 'missing-feature')).not.toThrow();
@@ -222,7 +223,7 @@ describe('GraphStore feature notification timing (StrictMode reactivity)', () =>
 
   it('setPaperFeature notifies subscribers synchronously when sync=true', async () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     await flush(); // drain the addPaper snapshot notification
 
     const listener = jest.fn();
@@ -239,7 +240,7 @@ describe('GraphStore feature notification timing (StrictMode reactivity)', () =>
 
   it('setPaperFeature defers notification to a microtask by default (sync=false)', async () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     await flush();
 
     const listener = jest.fn();
@@ -257,7 +258,7 @@ describe('GraphStore feature notification timing (StrictMode reactivity)', () =>
 
   it('removePaperFeature notifies subscribers synchronously when sync=true', async () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     store.setPaperFeature('p1', makeFeature('feat-1'), true);
     await flush();
 
@@ -408,7 +409,7 @@ describe('GraphStore.clearViewForElementAndLinks', () => {
     store.graph.addCell(link);
     await flush();
 
-    const { paperStore } = store.addPaper('p1', { paperOptions: {} });
+    const { paperStore } = addPaper(store, 'p1', { paperOptions: {} });
 
     // Stub the paper internals so clearViewForElementAndLinks's getCellView
     // returns a real-shaped element view. We also replace findView on the link
@@ -461,7 +462,7 @@ describe('GraphStore.clearViewForElementAndLinks', () => {
 describe('GraphStore.setPaperViews', () => {
   it('triggers the layout-update event with the changes payload', () => {
     const store = new GraphStore({});
-    store.addPaper('p1', { paperOptions: {} });
+    addPaper(store, 'p1', { paperOptions: {} });
     const triggerSpy = jest.spyOn(store.graph, 'trigger');
     const changes = new Map<string, { type: 'change'; data: dia.Cell }>();
     store.setPaperViews('p1', changes as never);

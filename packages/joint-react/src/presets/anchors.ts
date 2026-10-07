@@ -1,5 +1,5 @@
-import type { dia } from '@joint/core';
-import { anchors } from '@joint/core';
+import type { anchors, dia } from '@joint/core';
+import { center, midSide, perpendicular } from '@joint/core/anchors';
 import { getMarkerLength, MODEL_GEOMETRY_OPTIONS } from './utils';
 
 /**
@@ -16,9 +16,9 @@ export const centerAnchor: anchors.Anchor = (
   elementView, magnet, ref, _, endType, linkView
 ) => {
   if (magnet === elementView.el || magnet.getAttribute('port')) {
-    return anchors.center(elementView, magnet, ref, MODEL_GEOMETRY_OPTIONS, endType, linkView);
+    return center(elementView, magnet, ref, MODEL_GEOMETRY_OPTIONS, endType, linkView);
   }
-  return anchors.center(elementView, magnet, ref, _, endType, linkView);
+  return center(elementView, magnet, ref, _, endType, linkView);
 };
 
 /**
@@ -35,9 +35,9 @@ export const perpendicularAnchor: anchors.Anchor = (
   elementView, magnet, ref, _, endType, linkView
 ) => {
   if (magnet === elementView.el || magnet.getAttribute('port')) {
-    return anchors.perpendicular(elementView, magnet, ref, MODEL_GEOMETRY_OPTIONS, endType, linkView);
+    return perpendicular(elementView, magnet, ref, MODEL_GEOMETRY_OPTIONS, endType, linkView);
   }
-  return anchors.perpendicular(elementView, magnet, ref, _, endType, linkView);
+  return perpendicular(elementView, magnet, ref, _, endType, linkView);
 };
 
 /**
@@ -69,7 +69,7 @@ export function midSideAnchor(mode: LinkMode = 'auto', sourceOffset = 0, targetO
     if (magnet === elementView.el) {
       // For the root element, use midSide with model geometry and padding
       const rootArgs = { useModelGeometry: true, rotate: true, mode, padding };
-      return anchors.midSide(elementView, magnet, ref, rootArgs, endType, linkView);
+      return midSide(elementView, magnet, ref, rootArgs, endType, linkView);
     }
     const element = elementView.model as dia.Element;
     const portId = magnet.getAttribute('port');
@@ -100,6 +100,6 @@ export function midSideAnchor(mode: LinkMode = 'auto', sourceOffset = 0, targetO
     }
     // For other magnets, use midSide with DOM geometry
     const magnetArgs = { mode, rotate: true, padding } as anchors.MidSideAnchorArguments;
-    return anchors.midSide(elementView, magnet, ref, magnetArgs, endType, linkView);
+    return midSide(elementView, magnet, ref, magnetArgs, endType, linkView);
   };
 }

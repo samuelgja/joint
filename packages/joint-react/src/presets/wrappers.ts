@@ -1,5 +1,5 @@
 import type { routers, connectors as connectorTypes, anchors, connectionPoints} from '@joint/core';
-import { connectors as connectorFns } from '@joint/core';
+import { straight } from '@joint/core/connectors';
 
 /**
  * Wraps a router so it falls back to straight-line routing when either end
@@ -27,7 +27,7 @@ export function straightRouterUntilConnected(router: routers.Router): routers.Ro
 export function straightConnectorUntilConnected(connector: connectorTypes.Connector): connectorTypes.Connector {
   return (sourcePoint, targetPoint, routePoints, args, linkView) => {
     if (!linkView?.model.getSourceCell() || !linkView.model.getTargetCell()) {
-      return connectorFns.straight(sourcePoint, targetPoint, routePoints, {}, linkView);
+      return straight(sourcePoint, targetPoint, routePoints, {}, linkView);
     }
     return connector(sourcePoint, targetPoint, routePoints, args, linkView);
   };

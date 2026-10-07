@@ -4,7 +4,7 @@ import type { PaperStore } from '../store';
 import { useGraphStore } from './use-graph-store';
 import { useInternalData } from './use-stores';
 import type { PaperView } from '../mvc/paper';
-import { DEFAULT_PAPER_ID } from '../mvc/paper';
+import { DEFAULT_PAPER_ID } from '../mvc/paper-id';
 import type { PaperTarget } from '../types';
 import { resolvePaperId } from '../utils/resolve-paper-target';
 import { isRef } from '../utils/is';

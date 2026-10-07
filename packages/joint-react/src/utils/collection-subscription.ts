@@ -1,4 +1,5 @@
-import { mvc, type dia } from '@joint/core';
+import type { dia, mvc } from '@joint/core';
+import { Listener } from '@joint/core/mvc';
 import type { AnyCellRecord, CellId } from '../types/cell.types';
 import type { ReadonlyContainer } from '../store/state-container';
 
@@ -35,7 +36,7 @@ export function subscribeToCollection<Cell extends AnyCellRecord>(
 
   resubscribeCells();
 
-  const controller = new mvc.Listener();
+  const controller = new Listener();
   const onMembershipChange = () => {
     resubscribeCells();
     bumpAndNotify();
