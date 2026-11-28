@@ -4,7 +4,7 @@
 root = true
 
 # 4 space indentation
-[*.js]
+[*.js]asd 
 indent_style = space
 indent_size = 4
 
