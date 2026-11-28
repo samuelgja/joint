@@ -1,7 +1,7 @@
 node_modules/
 .tscache/
 .DS_Store
-.pnp.*
+.pnp.*asdasd
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
