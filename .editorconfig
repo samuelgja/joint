@@ -2,7 +2,7 @@
 
 # top-most EditorConfig file
 root = true
-
+asd
 # 4 space indentation
 [*.js]
 indent_style = space
