@@ -1,0 +1,13 @@
+[
+    {
+        "id": 362287543,
+        "login": "sgjabel-testing",
+        "version": 1,
+        "agreement": "CLA.md@a14bed259c1726e6f61f69651da325e8c5d1fb83",
+        "sentence": "I have read the JointJS Contributor License Agreement and I agree to it.",
+        "signedAt": "2026-11-28T11:12:51Z",
+        "pullRequest": 8,
+        "commentId": 7238401951,
+        "comment": "https://github.com/samuelgja/joint/pull/8#issuecomment-7238401951"
+    }
+]
